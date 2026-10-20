@@ -126,7 +126,7 @@
   let mode='title',levelIndex=0,level=null,p=null,cam=0,frame=0,lastTime=0,acc=0,toast='',toastTime=0,storyText='',bossHint=false;
   const fixed=1/60;
   let stageCoins=0,allCoins=0,purchasedHearts=0,shopStage=0;
-  let stageSeconds=0,stageHits=0;
+  let stageSeconds=0,stageHits=0,stageRecords=[];
   const lifeCapacity=()=>C.SETTINGS.startingHearts+purchasedHearts;
   const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
   const coinBox=(x,y)=>({x:x-12,y:y-12,w:24,h:24});
@@ -157,6 +157,18 @@
       // Optional fields: existing checkpoint saves created before the pacing update remain valid.
       if(s.seconds!==undefined&&(!Number.isFinite(s.seconds)||s.seconds<0||s.seconds>36000))return null;
       if(s.hits!==undefined&&(!int(s.hits)||s.hits<0||s.hits>9999))return null;
+      // Completion history was introduced after the original checkpoint format.
+      if(s.records!==undefined){
+        if(!Array.isArray(s.records)||s.records.length>chapterInfo.length)return null;
+        const used=new Set();
+        for(const r of s.records){
+          if(!r||!int(r.stage)||r.stage<1||r.stage>s.levelIndex+1||used.has(r.stage))return null;
+          if(!Number.isFinite(r.seconds)||r.seconds<0||r.seconds>36000)return null;
+          if(!int(r.hits)||r.hits<0||r.hits>9999)return null;
+          if(!int(r.coins)||r.coins<0||r.coins>C.SETTINGS.coinsPerStage)return null;
+          used.add(r.stage);
+        }
+      }
       if(typeof s.bossDown!=='boolean')return null;
       if(s.mode==='shop'&&(!C.isShopStage(s.levelIndex+1)||!s.bossDown))return null;
       if(s.mode==='between'&&s.levelIndex>=chapterInfo.length-1)return null;
@@ -172,7 +184,7 @@
       coins:level.coins.filter(x=>x.got).map(x=>x.id),
       switches:level.switches.map((x,i)=>x.on?i:-1).filter(x=>x>=0),
       checkpoint:level.activeCheckpoint,hearts:p.hearts,
-      seconds:Math.round(stageSeconds*10)/10,hits:stageHits,
+      seconds:Math.round(stageSeconds*10)/10,hits:stageHits,records:stageRecords.map(x=>({...x})),
       bossDown:!!level.boss&&!level.boss.alive};
     try{localStorage.setItem(SAVE_KEY,JSON.stringify(data));startupSave=data;}catch(e){}
   }
@@ -181,7 +193,7 @@
     if(!s)return false;
     newLevel(s.levelIndex,false);
     allCoins=s.wallet;purchasedHearts=s.purchased;stageCoins=s.stageCoins;
-    stageSeconds=s.seconds??0;stageHits=s.hits??0;
+    stageSeconds=s.seconds??0;stageHits=s.hits??0;stageRecords=(s.records||[]).map(x=>({...x}));
     for(const item of level.fragments)item.got=s.fragments.includes(item.id);
     for(const item of level.coins)item.got=s.coins.includes(item.id);
     level.switches.forEach((sw,i)=>{sw.on=s.switches.includes(i)});
@@ -360,6 +372,8 @@
     if(hudChanged||checkpointChanged)persist();
     if(p.x+p.w >level.gate-30){
       if(C.canExit(level.fragments.filter(x=>x.got).length,!!level.boss,!level.boss||!level.boss.alive)){
+        if(!stageRecords.some(r=>r.stage===levelIndex+1))
+          stageRecords.push({stage:levelIndex+1,seconds:Math.round(stageSeconds*10)/10,hits:stageHits,coins:stageCoins});
         storyText=level.endText; if(C.isShopStage(levelIndex+1)){mode='shop';shopStage=levelIndex+1;} else mode=levelIndex===chapterInfo.length-1?'victory':'between';
         persist();
       } else if(toastTime<=0){
@@ -553,11 +567,12 @@
     } else {
       drawWorld();
       if(mode==='paused')overlay('ПАУЗА',['Игра остановлена.','P — продолжить • R — начать заново'],'P — ПРОДОЛЖИТЬ');
-      else if(mode==='between')overlay('УРОВЕНЬ ПРОЙДЕН!',[level.endText,`Следующий уровень: ${chapterInfo[levelIndex+1].name}`],`ENTER — УРОВЕНЬ ${levelIndex+2}`);
+      else if(mode==='between')overlay('УРОВЕНЬ ПРОЙДЕН!',[level.endText,`Время: ${formatClock(stageSeconds)} · попаданий: ${stageHits} · монет: ${stageCoins}/90`,`Следующий уровень: ${chapterInfo[levelIndex+1].name}`],`ENTER — УРОВЕНЬ ${levelIndex+2}`);
       else if(mode==='shop'){
         const offer=C.nextHeartPurchase(shopStage,purchasedHearts,allCoins);
         const n=C.unlockedUpgrades(shopStage);
         const lines=[`Монеты: ${allCoins} · Сердца: ${lifeCapacity()}/7`,
+          `Уровень ${levelIndex+1}: ${formatClock(stageSeconds)} · попаданий: ${stageHits} · монет: ${stageCoins}/90`,
           `Открыто улучшений: ${n} из 4 · Куплено: ${purchasedHearts}`];
         if(offer.price){
           lines.push(`Следующее сердечко: ${offer.price} монет`);
@@ -567,7 +582,7 @@
         overlay('МОКИ — ЛАВКА СЕРДЕЦ',lines,'ENTER — ПРОДОЛЖИТЬ');
         text('♥',745,180,33,'#d75f6d','center');
       }
-      else if(mode==='victory')overlay('ЗАВОДНОЙ ГОРОД ПРОЙДЕН!',['Рикиту восстановил 8 маршрутных шестерёнок и раскрыл новые улики.','Следующий пункт расследования — Забытые горы.',`Осталось монет: ${allCoins}`],'ENTER — СЫГРАТЬ СНОВА');
+      else if(mode==='victory')overlay('ЗАВОДНОЙ ГОРОД ПРОЙДЕН!',['Рикиту восстановил 8 маршрутных шестерёнок и раскрыл новые улики.',`Последний уровень: ${formatClock(stageSeconds)} · попаданий: ${stageHits}`,'Следующий пункт расследования — Забытые горы.',`Осталось монет: ${allCoins}`],'ENTER — СЫГРАТЬ СНОВА');
     }
   }
   function togglePause(){if(mode==='playing'){mode='paused'}else if(mode==='paused'){mode='playing'}}
@@ -580,7 +595,7 @@
     announce(`Спасибо, Моки! Теперь ${lifeCapacity()} сердечка здоровья!`,2.3);
     updateHud();persist();return true;
   }
-  function resetCampaign(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}startupSave=null;allCoins=0;purchasedHearts=0;shopStage=0;newLevel(0);}
+  function resetCampaign(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}startupSave=null;allCoins=0;purchasedHearts=0;shopStage=0;stageRecords=[];newLevel(0);}
   function act(){
     if(mode==='title'){if(!resume())resetCampaign();}
     else if(mode==='between')newLevel(levelIndex+1);
@@ -617,7 +632,7 @@
     paint();requestAnimationFrame(loop);
   }
   // Read-only health probe for browser integration tests.
-  window.RIKITU_TEST_STATE=()=>({mode,level:levelIndex+1,playerX:p?.x,playerY:p?.y,fragments:level?.fragments.filter(x=>x.got).length,coins:stageCoins,bossHP:level?.boss?.hp??null,bossX:level?.boss?.x??null,bossY:level?.boss?.y??null,checkpoint:level?.activeCheckpoint,checkpointCount:level?.checkpointCount,hearts:p?.hearts,maxHearts:lifeCapacity(),wallet:allCoins,bought:purchasedHearts,shopStage,hasSave:!!startupSave,elapsedSeconds:Math.round(stageSeconds*100)/100,hitCount:stageHits});
+  window.RIKITU_TEST_STATE=()=>({mode,level:levelIndex+1,playerX:p?.x,playerY:p?.y,fragments:level?.fragments.filter(x=>x.got).length,coins:stageCoins,bossHP:level?.boss?.hp??null,bossX:level?.boss?.x??null,bossY:level?.boss?.y??null,checkpoint:level?.activeCheckpoint,checkpointCount:level?.checkpointCount,hearts:p?.hearts,maxHearts:lifeCapacity(),wallet:allCoins,bought:purchasedHearts,shopStage,hasSave:!!startupSave,elapsedSeconds:Math.round(stageSeconds*100)/100,hitCount:stageHits,stageRecords:stageRecords.map(x=>({...x}))});
   window.RIKITU_TEST_SHOP=(coins=0,bought=purchasedHearts,stage=shopStage)=>C.nextHeartPurchase(stage,bought,coins);
   window.RIKITU_TEST_COLLECT_COINS=(count=90)=>{
     if(!level||!Number.isInteger(count)||count<0)return false;
