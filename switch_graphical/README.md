@@ -380,3 +380,19 @@ Strict GCC/Clang C99 integration tests and Node.js browser-source parity
 are provided. This technical prototype does NOT certify controller-only
 level completion, approved character art/audio integration, nor
 persistent saves for MAP08. MAP01 saves stay isolated.
+
+## MAP09 — Misty Pass native C99 (Stage 48)
+
+The ninth original game.js stage is selectable with Y after MAP08.
+Misty Pass covers 9520 world units, 18 solids, 90 coins,
+three fragments, three checkpoints (2280/4880/7290),
+six patrols and a fragment-only gate at x9330.
+
+Three gust lifts, at x=1240/3880/7520, use the existing real
+60Hz engine and browser's -690 vertical impulse. They do
+not add horizontal drift and do not retrigger mid-flight.
+Browser-to-C99 data parity and host GCC/Clang game tests are included.
+
+This remains a neutral debug NRO without redesigned character sprites.
+Full controller-only playthrough, hardware save tests and final audio/art
+are not yet verified.

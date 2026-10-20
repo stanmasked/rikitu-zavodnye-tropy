@@ -15,6 +15,7 @@
 #include "rikitu_delivery.h"
 #include "rikitu_clock.h"
 #include "rikitu_orders.h"
+#include "rikitu_mist.h"
 #include "rikitu_save.h"
 
 #define MAP01_A "sdmc:/switch/RIKITU/map01-a.rks"
@@ -80,8 +81,8 @@ int main(void) {
         (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
       break;
     }
-    /* Y cycles eight source-parity levels; only MAP01 has
-     * persistence. MAP02-08 never read or delete MAP01 saves. */
+    /* Y cycles nine source-parity levels; only MAP01 has
+     * persistence. MAP02-09 never read or delete MAP01 saves. */
     if(pressed & HidNpadButton_Y){
       if(scene.level_id==1){
         if(save_ready && rikitu_save_encode(now,&scene,&game,1))
@@ -99,6 +100,8 @@ int main(void) {
         rikitu_clock_init(&scene);
       }else if(scene.level_id==7){
         rikitu_orders_init(&scene);
+      }else if(scene.level_id==8){
+        rikitu_mist_init(&scene);
       }else{
         rikitu_flower_init(&scene);
         if(save_ready)
@@ -117,6 +120,7 @@ int main(void) {
       else if(scene.level_id==6)rikitu_delivery_init(&scene);
       else if(scene.level_id==7)rikitu_clock_init(&scene);
       else if(scene.level_id==8)rikitu_orders_init(&scene);
+      else if(scene.level_id==9)rikitu_mist_init(&scene);
       else rikitu_flower_init(&scene);
       memset(&game,0,sizeof(game));
       game.player=scene.player;
