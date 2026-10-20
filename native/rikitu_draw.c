@@ -142,8 +142,11 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
       box(&c,x-16,(int)l->y-24,45,14,rgb(175,109,203));
       diamond(&c,x+6,(int)l->y-27,7,rgb(242,185,237));
     }else{
-      box(&c,x-14,522,40,18,rgb(89,177,197));
-      diamond(&c,x+6,517,10,rgb(187,246,242));
+      /* Use each source launcher height (MAP06 steam y=456).
+       * The synthetic test room uses y=540 and renders identically. */
+      const int top=(int)l->y-18;
+      box(&c,x-14,top,40,18,rgb(89,177,197));
+      diamond(&c,x+6,top-5,10,rgb(187,246,242));
     }
   }
   for(i=0;i<(int)s->coin_total;i++){
