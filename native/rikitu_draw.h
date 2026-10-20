@@ -8,13 +8,14 @@
 #include "rikitu_loop.h"
 #include "rikitu_stage.h"
 #include "rikitu_surfaces.h"
+#include "rikitu_enemies.h"
 
 enum { RIKITU_SCENE_WIDTH = 1280, RIKITU_SCENE_HEIGHT = 720,
        RIKITU_DEMO_COINS = 18, RIKITU_DEMO_SOLIDS = 4,
        RIKITU_DEMO_BELTS = 2, RIKITU_DEMO_LAUNCHERS = 2,
        RIKITU_MAX_SOLIDS = 32, RIKITU_MAX_COINS = 90,
        RIKITU_MAX_BELTS = 4, RIKITU_MAX_LAUNCHERS = 4,
-       RIKITU_MAX_CHECKPOINTS = 3 };
+       RIKITU_MAX_CHECKPOINTS = 3, RIKITU_MAX_ENEMIES = 12 };
 
 typedef struct RikituScene {
   RikituPlayer player;
@@ -25,9 +26,12 @@ typedef struct RikituScene {
   RikituConveyor belts[RIKITU_MAX_BELTS];
   RikituLauncher launchers[RIKITU_MAX_LAUNCHERS];
   float checkpoints[RIKITU_MAX_CHECKPOINTS];
+  RikituEnemy enemies[RIKITU_MAX_ENEMIES];
   float world_width, gate_x, active_checkpoint;
   size_t solid_count, coin_total, belt_count, launcher_count;
-  size_t checkpoint_total;
+  size_t checkpoint_total, enemy_count;
+  int hearts, max_hearts, damage_count;
+  float invulnerability_seconds;
   int reached_checkpoints, level_id, paused;
 } RikituScene;
 

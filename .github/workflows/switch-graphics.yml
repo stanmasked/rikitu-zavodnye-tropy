@@ -6,6 +6,10 @@ on:
       - 'native/rikitu_demo.*'
       - 'native/rikitu_flower.*'
       - 'native/rikitu_flower_data.h'
+      - 'native/rikitu_flower_enemies_data.h'
+      - 'native/rikitu_enemies.*'
+      - 'native/test_enemies.c'
+      - 'tests/test-flower-enemies.cjs'
       - 'native/test_flower.c'
       - 'tests/test-flower-source.cjs'
       - 'native/test_demo_step.c'
@@ -22,6 +26,10 @@ on:
       - 'native/rikitu_demo.*'
       - 'native/rikitu_flower.*'
       - 'native/rikitu_flower_data.h'
+      - 'native/rikitu_flower_enemies_data.h'
+      - 'native/rikitu_enemies.*'
+      - 'native/test_enemies.c'
+      - 'tests/test-flower-enemies.cjs'
       - 'native/test_flower.c'
       - 'tests/test-flower-source.cjs'
       - 'native/test_demo_step.c'
@@ -42,30 +50,40 @@ jobs:
       - name: GCC portable renderer and deterministic preview
         run: |
           mkdir -p artifacts
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_draw.c native/rikitu_demo.c native/test_draw.c -lm -o /tmp/rikitu-draw-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_draw.c native/rikitu_demo.c native/rikitu_enemies.c native/test_draw.c -lm -o /tmp/rikitu-draw-gcc
           /tmp/rikitu-draw-gcc artifacts/rikitu-debug-scene.ppm
       - name: Clang portable renderer
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_draw.c native/rikitu_demo.c native/test_draw.c -lm -o /tmp/rikitu-draw-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_draw.c native/rikitu_demo.c native/rikitu_enemies.c native/test_draw.c -lm -o /tmp/rikitu-draw-clang
           /tmp/rikitu-draw-clang
       - name: GCC measured time and per-tick gameplay regression
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/test_demo_step.c -lm -o /tmp/rikitu-measured-step-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/test_demo_step.c -lm -o /tmp/rikitu-measured-step-gcc
           /tmp/rikitu-measured-step-gcc
       - name: Clang measured time and per-tick gameplay regression
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/test_demo_step.c -lm -o /tmp/rikitu-measured-step-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/test_demo_step.c -lm -o /tmp/rikitu-measured-step-clang
           /tmp/rikitu-measured-step-clang
       - name: Verify native Flower Trail data against actual game.js
         run: node tests/test-flower-source.cjs
       - name: GCC real level geometry and checkpoint tests
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_flower.c native/test_flower.c -lm -o /tmp/rikitu-flower-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_flower.c native/rikitu_enemies.c native/test_flower.c -lm -o /tmp/rikitu-flower-gcc
           /tmp/rikitu-flower-gcc
       - name: Clang real level geometry and checkpoint tests
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_flower.c native/test_flower.c -lm -o /tmp/rikitu-flower-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_flower.c native/rikitu_enemies.c native/test_flower.c -lm -o /tmp/rikitu-flower-clang
           /tmp/rikitu-flower-clang
+      - name: Browser-source parity for all six MAP01 enemies
+        run: node tests/test-flower-enemies.cjs
+      - name: GCC enemy patrol combat and respawn regression
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_flower.c native/rikitu_enemies.c native/test_enemies.c -lm -o /tmp/rikitu-enemies-gcc
+          /tmp/rikitu-enemies-gcc
+      - name: Clang enemy patrol combat and respawn regression
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_flower.c native/rikitu_enemies.c native/test_enemies.c -lm -o /tmp/rikitu-enemies-clang
+          /tmp/rikitu-enemies-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
