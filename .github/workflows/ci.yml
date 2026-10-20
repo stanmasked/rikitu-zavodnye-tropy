@@ -1,5 +1,9 @@
 name: Browser and game-rule checks
 on: [push, pull_request, workflow_dispatch]
+# Push and PR for the same branch share a group to avoid duplicate stale runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
 jobs:
   prototype:
     runs-on: ubuntu-latest
