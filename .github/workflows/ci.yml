@@ -52,3 +52,7 @@ jobs:
         run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/motion_probe.c -o /tmp/rikitu-motion-gcc && node tests/test-motion-parity.cjs /tmp/rikitu-motion-gcc
       - name: Browser-source movement parity versus native C99 (Clang)
         run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/motion_probe.c -o /tmp/rikitu-motion-clang && node tests/test-motion-parity.cjs /tmp/rikitu-motion-clang
+      - name: Native surface mechanics (GCC)
+        run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/test_surfaces.c -lm -o /tmp/rikitu-surfaces-gcc && /tmp/rikitu-surfaces-gcc
+      - name: Native surface mechanics (Clang)
+        run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/test_surfaces.c -lm -o /tmp/rikitu-surfaces-clang && /tmp/rikitu-surfaces-clang
