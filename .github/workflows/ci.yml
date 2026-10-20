@@ -19,6 +19,7 @@ jobs:
       - run: python -m playwright install --with-deps chromium
       - run: python scripts/build_singlefile.py --check
       - run: python tests/test-nro-checker.py
+      - run: node tests/test-flower-source.cjs
       - run: node tests/test-core.cjs
       - run: python tests/test-browser.py
       - run: python tests/test-moki.py

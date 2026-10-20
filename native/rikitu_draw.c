@@ -86,7 +86,11 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
   if(!pixels||!s||width<320||height<240||stride_pixels<width||
      width>3840||height>2160||!isfinite(s->world_width)||
      s->world_width<=0.0f||!isfinite(s->player.x)||
-     !isfinite(s->player.y)||!isfinite(s->gate_x))return 0;
+     !isfinite(s->player.y)||!isfinite(s->gate_x)||
+     s->solid_count>RIKITU_MAX_SOLIDS || s->coin_total>RIKITU_MAX_COINS ||
+     s->belt_count>RIKITU_MAX_BELTS ||
+     s->launcher_count>RIKITU_MAX_LAUNCHERS ||
+     s->checkpoint_total>RIKITU_MAX_CHECKPOINTS)return 0;
   c.pixels=pixels;c.w=width;c.h=height;c.stride=stride_pixels;
   camera=s->player.x-width*.37f;
   if(camera<0.0f)camera=0.0f;
@@ -105,7 +109,7 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
     box(&c,x-55,310+i%3*24,90,26,rgb(54,115,132));
   }
   /* A few geometry-only scenery elements; no altered approved art. */
-  for(i=0;i<RIKITU_DEMO_SOLIDS;i++){
+  for(i=0;i<(int)s->solid_count;i++){
     const RikituRect *b=&s->solids[i];
     if(!isfinite(b->x)||!isfinite(b->y)||!isfinite(b->w)||!isfinite(b->h))
       return 0;
@@ -115,20 +119,20 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
     for(int tile=0;tile<(int)b->w;tile+=56)
       box(&c,x+tile,y+22,22,5,rgb(93,103,117));
   }
-  for(i=0;i<RIKITU_DEMO_BELTS;i++){
+  for(i=0;i<(int)s->belt_count;i++){
     const RikituConveyor *belt=&s->belts[i];
     x=worldx(belt->x,camera);
     box(&c,x,529,(int)belt->width,11,rgb(181,133,61));
     for(int col=6;col<(int)belt->width;col+=28)
       diamond(&c,x+col,534,3,rgb(239,218,142));
   }
-  for(i=0;i<RIKITU_DEMO_LAUNCHERS;i++){
+  for(i=0;i<(int)s->launcher_count;i++){
     const RikituLauncher *l=&s->launchers[i];
     x=worldx(l->x,camera);
     box(&c,x-14,522,40,18,rgb(89,177,197));
     diamond(&c,x+6,517,10,rgb(187,246,242));
   }
-  for(i=0;i<RIKITU_DEMO_COINS;i++){
+  for(i=0;i<(int)s->coin_total;i++){
     if(!s->stage.coins[i]){
       x=worldx(s->coins[i].x,camera);y=(int)s->coins[i].y;
       disk(&c,x,y,10,rgb(255,219,75));
@@ -157,10 +161,15 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
   /* Fixed-screen HUD: title, counters and controller instructions. */
   box(&c,0,0,width,84,rgb(16,30,49));
   box(&c,0,80,width,4,rgb(76,176,187));
-  label(&c,25,15,"RIKITU TECH DEMO",3,ink);
+  label(&c,25,15,s->level_id==1?"RIKITU 01 FLOWER TRAIL":"RIKITU TECH DEMO",3,ink);
   (void)snprintf(status,sizeof(status),"FRAGMENTS %d/3  COINS %d",
        s->stage.fragment_count,s->stage.coin_count);
   label(&c,26,56,status,2,rgb(250,220,124));
+  if(s->level_id==1){
+    (void)snprintf(status,sizeof(status),"CHECKPOINTS %d/3",
+                   s->reached_checkpoints);
+    label(&c,590,56,status,2,rgb(149,221,203));
+  }
   label(&c,width-370,25,"A JUMP / R RUN",2,ink);
   label(&c,width-370,51,"PLUS EXIT",2,ink);
   if(s->paused) {
