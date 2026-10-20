@@ -16,30 +16,36 @@ def state(page):
     return page.evaluate('RIKITU_TEST_STATE()')
 
 def collect_parts(page,i):
-    for x,y in FRAGS[i]:
+    for count,(x,y) in enumerate(FRAGS[i],start=1):
         page.evaluate('(pos)=>RIKITU_TEST_MOVE(...pos)',[x,y])
-        page.wait_for_timeout(80)
-    assert state(page)['fragments']==3
+        page.wait_for_function('(expected)=>RIKITU_TEST_STATE().fragments>=expected',arg=count,timeout=4000)
+    assert state(page)['fragments']==3,state(page)
 
 def beat_boss(page):
     for hp in (2,1,0):
-        page.wait_for_timeout(920)
-        s=state(page)
-        page.evaluate('(p)=>RIKITU_TEST_MOVE(p[0]+14,p[1]-58)',[s['bossX'],s['bossY']])
-        page.wait_for_timeout(350)
-        assert state(page)['bossHP']==hp
+        # Wait for the boss's invulnerable cooldown, then use a controlled stomp.
+        page.wait_for_timeout(1000)
+        for attempt in range(4):
+            s=state(page)
+            page.evaluate('(p)=>RIKITU_TEST_MOVE(p[0]+14,p[1]-58)',[s['bossX'],s['bossY']])
+            try:
+                page.wait_for_function('(expected)=>RIKITU_TEST_STATE().bossHP===expected',arg=hp,timeout=900)
+                break
+            except Exception:
+                if attempt==3:raise AssertionError(f'Boss stomp not registered: {state(page)}')
+        assert state(page)['bossHP']==hp,state(page)
 
 def finish_level(page,i):
     collect_parts(page,i)
     if i in (1,3):
         beat_boss(page)
     page.evaluate('(pos)=>RIKITU_TEST_MOVE(...pos)',[GATES[i],400])
-    page.wait_for_timeout(100)
-    assert state(page)['mode']==('shop' if i in (1,3) else 'between')
+    page.wait_for_function('(expected)=>RIKITU_TEST_STATE().mode===expected',
+                           arg=('shop' if i in (1,3) else 'between'),timeout=5000)
     
 def press_next(page):
     page.keyboard.press('Enter')
-    page.wait_for_timeout(110)
+    page.wait_for_timeout(125)
 
 with sync_playwright() as p:
     path=os.environ.get('RIKITU_CHROMIUM_PATH') or ('/usr/bin/chromium' if Path('/usr/bin/chromium').exists() else None)
