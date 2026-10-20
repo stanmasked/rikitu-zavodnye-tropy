@@ -227,3 +227,29 @@ The same native guest suite also compiles and runs under strict GCC/Clang.
 Its passing status is evidence of execution **inside NeXium** but not a
 player-controlled start-to-finish completion of MAP03. Original approved
 sprites, sounds and persistent saves for MAP03 remain future work.
+
+## MAP04 native route — Bridge of Gears (experimental)
+
+The fourth original browser map is now an asset-free Switch scene
+selected by pressing Y after MAP03: Flower Trail → Mill Creek →
+Mushroom Grove → Bridge of Gears → Flower Trail. Button X resets the
+currently selected route; only MAP01 stores SDMC saves.
+
+The MAP04 C99 copy uses 8880 game units, five separated ground spans,
+13 platforms, 90 coins, three collectible fragments, three checkpoints,
+six patrolling enemies, three lever switches at x=2260,4930,6990,
+and guardian boss x=8290 with three stomp-hit HP. The exit is x=8740.
+
+Levers follow the *actual browser implementation*: automatic activation
+when horizontally overlapping [x,x+34] while the player's bottom is
+within 75 pixels of ground level 456. They activate only once and use
+simple green/grey geometric indicators. They do NOT gate completion:
+three collected fragments AND defeating the guardian are mandatory.
+The existing portable three-hit boss mechanic is reused.
+
+The source-parity test verifies every piece of geometry against the
+current game.js. Native C99 tests check all three levers, repeat-touch
+idempotence, bonus visual interaction vs gate logic and guardian hits.
+The route is not a finished asset-integrated release or a confirmed
+controller-only playthrough; neither MAP04 saves nor sound/approved
+sprites are implemented yet.
