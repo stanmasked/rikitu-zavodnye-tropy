@@ -48,3 +48,7 @@ jobs:
         run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/test_loop.c -o /tmp/rikitu-loop-gcc && /tmp/rikitu-loop-gcc
       - name: C99 fixed-step player loop (Clang)
         run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/test_loop.c -o /tmp/rikitu-loop-clang && /tmp/rikitu-loop-clang
+      - name: Browser-source movement parity versus native C99 (GCC)
+        run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/motion_probe.c -o /tmp/rikitu-motion-gcc && node tests/test-motion-parity.cjs /tmp/rikitu-motion-gcc
+      - name: Browser-source movement parity versus native C99 (Clang)
+        run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/motion_probe.c -o /tmp/rikitu-motion-clang && node tests/test-motion-parity.cjs /tmp/rikitu-motion-clang
