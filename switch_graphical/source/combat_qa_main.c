@@ -11,7 +11,7 @@ static void overlay_result(uint32_t *frame,int stride_pixels,unsigned bits) {
   int i,y,x;
   for(i=0;i<4;i++) {
     const uint32_t color=(bits&(1u<<i))?0xff22df22u:0xff3030dfu;
-    const int left=120+i*170;
+    const int left=280+i*200; /* avoid NeXium's x<240 diagnostic HUD */
     for(y=118;y<174;y++)
       for(x=left;x<left+64;x++)
         frame[(size_t)y*(size_t)stride_pixels+(size_t)x]=color;

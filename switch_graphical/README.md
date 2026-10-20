@@ -100,7 +100,7 @@ invulnerable frames, falling stomp bounce and enemy death, and a pit
 respawn at checkpoint 2050 with collected fragments, coins and defeated
 patrols preserved. These checks also run natively under GCC and Clang.
 
-Four large rectangles at positions x=120, 290, 460, 630 on the guest
+Four large rectangles at positions x=280, 480, 680, 880 on the guest
 frame are green for PASS and red for FAIL, one per scenario in that order.
 The actual NeXium screenshot files are examined by
 `tests/check_combat_guest.py`; the guest run fails if a rectangle is not
