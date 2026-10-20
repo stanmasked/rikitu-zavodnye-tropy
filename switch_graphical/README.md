@@ -342,3 +342,23 @@ Host GCC/Clang execute the same C99 QA function. These are controlled
 real engine checks *inside* the guest, not a complete ordinary-controller
 playthrough. Final character art and persistent MAP06 saves remain
 unverified and unchanged.
+
+## MAP07 — Clock Square native C99 scene (Stage 45)
+
+The seventh original browser stage is now selectable with Y after MAP06.
+Its original 9470-unit world has 18 solids, 90 optional coins, six
+patrols, three fragments, three checkpoints (2240/4930/7240), and gate
+x=9290; there is no mini-boss on this level.
+
+The 60-Hz native portable scene reproduces two grounded conveyors
+(+40 at x=2600, -42 at x=6030) and three clock-dial spring platforms
+at x=1350, 4140 and 7770. Their -675 upward impulses match the browser
+implementation and are not re-triggered while airborne.
+C99 GCC/Clang tests exercise the two conveyor directions, three clock
+pads, in-air protection, checkpoints, and fragment-only exit. A Node.js
+source audit checks all actual browser geometry, coins and patrol data.
+
+The graphics are neutral technical indicators, not redesigns of the
+approved Rikitu/other character sprites. End-to-end controller
+completion, physical Switch saves for MAP07, final sound and assets
+remain unverified. MAP01 save-slot isolation is preserved.
