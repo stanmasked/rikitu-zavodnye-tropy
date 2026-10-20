@@ -476,3 +476,17 @@ Sprites in the technical NRO are placeholders, not updated
 versions of approved Rikitu LAB characters. No full
 ordinary-controller playthrough, approved audio, hardware
 saves or asset-based remake completion is claimed.
+
+## MAP14 — Heart Foundry source-parity C99 scene (Stage 54)
+
+The fourteenth original level runs in the technical NRO (Y to
+cycle after MAP13, X to reset; MAP01 saves remain isolated).
+Geometry: 11200 world units, 18 solids, 90 coins, six patrols,
+three fragments, three checkpoints 2600/5800/8690, and gate x11020.
+Three grounded steam jets x1570/5420/8380 apply a -705 lift,
+three conveyor belts x800/4670/8940 use +45/-42/+47 speeds,
+and optional touch levers x2380/6500/8770 do not gate the exit.
+The 3-HP Assembly Giant at x10470 must also be defeated.
+Exact browser data parity and host GCC/Clang C99 fixed-step tests
+are included. This is neutral graphics, not approved sprite art or
+an input-only playthrough / hardware save validation.
