@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>RIKITU: Заводные тропы — игровой прототип v0.3</title>
+<title>RIKITU: Заводные тропы — игровой прототип v0.6</title>
 <style>
 :root{color-scheme:light;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#e8f4ec;color:#254653}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 15% 0%,#f8f7d9,transparent 50%),linear-gradient(155deg,#e0f8ef,#def1fb 70%,#f8edca)}
@@ -14,16 +14,16 @@
 <body>
 <main class="shell">
   <header class="top">
-    <div><div class="eyebrow">RIKITU / ИГРОВОЙ ПРОТОТИП v0.3</div><h1>Заводные тропы</h1></div>
+    <div><div class="eyebrow">RIKITU / ИГРОВОЙ ПРОТОТИП v0.6</div><h1>Заводные тропы</h1></div>
     <div class="topactions"><button id="start">Начать / далее</button><button id="pause">Пауза</button><button id="restart">Заново</button><button id="buy-heart">♥ Купить у Моки (B)</button></div>
   </header>
   <div id="hud" class="hud" aria-live="polite"><span>♥ 3</span><span>🟡 0</span><span>◆ 0/3</span><span>RIKITU</span></div>
-  <div class="stage"><canvas id="game" width="960" height="540" aria-label="Игровой прототип четырёх уровней RIKITU"></canvas></div>
+  <div class="stage"><canvas id="game" width="960" height="540" aria-label="Игровой прототип шести уровней RIKITU"></canvas></div>
   <div class="touchbar" aria-label="Экранное управление"><button data-touch="left">◀</button><button data-touch="right">▶</button><button data-touch="jump">ПРЫЖОК</button></div>
   <div class="help">
     <div><b>Управление:</b> ← → или A/D — движение · Пробел / ↑ / W — прыжок · Shift — быстрее</div>
     <div><b>Дополнительно:</b> Enter — начать/следующий уровень · P — пауза · R — заново · Gamepad — поддержка</div>
-    <div><b>Задача:</b> найти 3 бирюзовых фрагмента, собрать монетки по желанию и добраться до выхода. Мини-боссы после 2-го и 4-го уровней: трижды прыгни сверху. Затем лавка Моки: B — купить, Enter — продолжить.</div>
+    <div><b>Задача:</b> найти 3 бирюзовых фрагмента, собрать монетки по желанию и добраться до выхода. Мини-боссы после 2-го, 4-го и 6-го уровней: трижды прыгни сверху. Затем лавка Моки: B — купить, Enter — продолжить.</div>
     <div class="note">Внешность лисёнка Рикиту не перерисовывается: бирюзовый маркер «Р» — временный технический символ до интеграции оригинальных утверждённых спрайтов. Эта версия предназначена для ПК/браузера, не для Switch.</div>
   </div>
 </main>
@@ -150,6 +150,32 @@
       gate:8740,boss:{x:8290,hp:3,name:'Страж моста'},
       startText:'Мост шестерён: включи рычаги, найди три фрагмента и одолей Стража!',
       endText:'Приказ закрыть мост отдали заранее. Рикиту с Рейной идут в Заводной город.',decor:'bridge'}
+    ,{name:'Улица мастерских',world:'Заводной город',width:9140,
+      ground:[[0,1790],[1865,3450],[3530,5020],[5095,6650],[6730,9140]],
+      platforms:[[510,385,190],[1080,381,190],[1550,383,205],[2250,379,195],[2840,384,210],
+        [3710,386,180],[4170,380,210],[4660,385,180],[5480,383,210],
+        [5960,379,205],[7120,380,185],[7580,385,190],[8160,383,220]],
+      conveyors:[[1070,430,300,48],[3890,430,300,-42],[6960,430,300,52]],
+      fragments:[[1700,345],[4590,346],[7780,345]],checkpoints:[2200,4760,6920],
+      enemies:[{x:780,a:670,b:1050},{x:2490,a:2370,b:2710},{x:3920,a:3760,b:4080},
+        {x:5680,a:5540,b:5830},{x:6500,a:6360,b:6620},{x:8480,a:8330,b:8630}],
+      sections:[[0,'Часовая улица'],[2280,'Фабричные дворы'],[4580,'Улица посылок'],[6890,'Площадь мастерских']],
+      gate:8950,boss:null,startText:'Новый мир: Заводной город! Найди три фрагмента и накладную Кэша.',
+      endText:'Кэш показывает накладную: все грузы везли через Подземную доставку.',decor:'city'},
+    {name:'Подземная доставка',world:'Заводной город',width:9910,
+      ground:[[0,1870],[1940,3550],[3630,5280],[5360,7020],[7100,9910]],
+      platforms:[[520,382,185],[1230,378,210],[1720,380,205],[2440,383,200],[3080,379,190],
+        [3910,382,205],[4680,378,195],[5160,386,175],[5910,383,190],
+        [6520,379,210],[7550,385,190],[8170,381,195],[8780,383,205]],
+      conveyors:[[590,431,310,42],[3980,430,310,-48],[7480,430,330,50]],
+      vents:[[1350,GROUND],[4740,GROUND],[7910,GROUND]],
+      fragments:[[1810,342],[5220,340],[8120,345]],checkpoints:[2300,5060,7360],
+      enemies:[{x:780,a:680,b:1030},{x:2680,a:2550,b:2930},{x:3820,a:3700,b:4000},
+        {x:5550,a:5430,b:5690},{x:6860,a:6770,b:6990},{x:8420,a:8260,b:8610}],
+      sections:[[0,'Транспортный тоннель'],[2390,'Пневматические шахты'],[4870,'Зона сортировки'],[7350,'Главный грузовой склад']],
+      gate:9730,boss:{x:9210,hp:3,name:'Пыльный бурильщик'},
+      startText:'Подземная доставка: паровые подъёмники и конвейеры помогут найти детали.',
+      endText:'Магистр Пыль подтверждает: тоннели закрыли по странному приказу.',decor:'tunnel'}
   ].map(d=>{
     const coins=[...coinsAlong(d.ground),...platformCoins(d.platforms)];
     let i=0;
@@ -231,6 +257,8 @@
       fragments:d.fragments.map((a,i)=>({id:i,x:a[0],y:a[1],w:25,h:25,got:false})),
       coins:d.coins.map((a,i)=>({id:i,x:a[0],y:a[1],got:false})),
       mushrooms:(d.mushrooms||[]).map(([x,y])=>({x,y})),
+      conveyors:(d.conveyors||[]).map(([x,y,w,speed])=>({x,y,w,speed})),
+      vents:(d.vents||[]).map(([x,y])=>({x,y})),
       switches:(d.switches||[]).map(([x,y])=>({x,y,on:false})),
       enemies:d.enemies.map((e,i)=>({id:i,x:e.x,y:GROUND-28,w:33,h:28,a:e.a,b:e.b,dir:i%2?1:-1,dead:false})),
       boss:d.boss?{x:d.boss.x,y:GROUND-57,w:72,h:57,center:d.boss.x,hp:d.boss.hp,name:d.boss.name,hit:0,dir:1,alive:true}:null,
@@ -297,6 +325,19 @@
       if(p.x+p.w <= b.x+3||p.x>=b.x+b.w-3)continue;
       if(p.vy>=0 && oldBottom<=b.y+10 && p.y+p.h>=b.y && p.y<=b.y){
         p.y=b.y-p.h;p.vy=0;p.grounded=true;
+      }
+    }
+    // Gentle moving floor belts and steam updrafts: no new action buttons.
+    if(p.grounded){
+      for(const belt of level.conveyors){
+        if(p.x+p.w>belt.x&&p.x<belt.x+belt.w){
+          p.x=clamp(p.x+belt.speed*dt,0,level.width-p.w);break;
+        }
+      }
+      for(const vent of level.vents){
+        if(p.x+p.w>vent.x-18&&p.x<vent.x+52){
+          p.vy=-705;p.grounded=false;announce('Паровой подъёмник!',1.2);break;
+        }
       }
     }
     // Spring mushrooms are forgiving, optional vertical shortcuts in the Grove.
@@ -394,6 +435,8 @@
   function background(){
     const gradient=ctx.createLinearGradient(0,0,0,H);
     if(level?.decor==='mill'){gradient.addColorStop(0,'#81d6ec');gradient.addColorStop(1,'#f3fbba');}
+    else if(level?.decor==='city'){gradient.addColorStop(0,'#a7d3dc');gradient.addColorStop(1,'#ffe7bb');}
+    else if(level?.decor==='tunnel'){gradient.addColorStop(0,'#637e9a');gradient.addColorStop(1,'#cad1ba');}
     else {gradient.addColorStop(0,'#8bdaf3');gradient.addColorStop(1,'#fbf8d5');}
     ctx.fillStyle=gradient;ctx.fillRect(0,0,W,H);
     ctx.fillStyle='#fff7ba';ctx.beginPath();ctx.arc(800-cam*.03,89,42,0,Math.PI*2);ctx.fill();
@@ -413,6 +456,18 @@
       }
     }
     ctx.restore();
+    if(level?.decor==='city'||level?.decor==='tunnel'){
+      ctx.save();ctx.translate(-cam*.28,0);
+      for(let x=-300;x<level.width+W;x+=310){
+        rounded(x+48,238,185,242,12,level.decor==='tunnel'?'#718592':'#a7a2a3');
+        rounded(x+76,265,44,62,6,'#f4ddaa');
+        rounded(x+145,265,44,62,6,'#f4ddaa');
+        rounded(x+162,180,27,100,4,'#827e83');
+        ctx.fillStyle='#e2e7df';ctx.beginPath();ctx.arc(x+175,180,31,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#8a9f9f';ctx.beginPath();ctx.arc(x+175,180,20,0,Math.PI*2);ctx.fill();
+      }
+      ctx.restore();
+    }
   }
   function windmill(){
     const x=750-cam*.65,y=273;
@@ -438,6 +493,19 @@
       }
     }
     for(const b of level.platforms){rounded(b.x,b.y,b.w,b.h,7,'#b77a4d');rounded(b.x,b.y-5,b.w,11,6,'#72c760');}
+    for(const belt of level.conveyors){
+      rounded(belt.x,belt.y,belt.w,26,5,'#5b7078');
+      for(let x=belt.x+18;x<belt.x+belt.w-12;x+=55)
+        text(belt.speed>0?'›':'‹',x,belt.y+20,25,'#ffe8aa','center','800');
+    }
+    for(const vent of level.vents){
+      rounded(vent.x-15,GROUND-16,65,16,5,'#758fa0');
+      for(let i=0;i<3;i++){
+        const yy=GROUND-20-((frame*1.5+i*27)%85);
+        ctx.fillStyle='rgba(230,245,250,.6)';
+        ctx.beginPath();ctx.arc(vent.x+i*16,yy,9,0,Math.PI*2);ctx.fill();
+      }
+    }
     for(const m of level.mushrooms){
       rounded(m.x+14,m.y-22,13,22,3,'#fff2df');
       ctx.fillStyle='#e58a7e';ctx.beginPath();ctx.ellipse(m.x+20,m.y-22,37,18,0,Math.PI,0);ctx.fill();
@@ -513,7 +581,7 @@
       rounded(115,105,730,345,26,'rgba(252,255,238,.91)');
       text('RIKITU',480,190,69,'#318168','center','900');
       text('ЗАВОДНЫЕ ТРОПЫ',480,250,35,'#284b5f','center','850');
-      text('Игровой прототип • Солнечная долина',480,293,20,'#5d7d79','center','600');
+      text('Игровой прототип • Солнечная долина и Заводной город',480,293,18,'#5d7d79','center','600');
       rounded(268,341,424,55,15,'#338f70');text(startupSave?'ENTER — ПРОДОЛЖИТЬ':'ENTER / ПРОБЕЛ — НАЧАТЬ',480,378,20,'#fff','center');
       text('Герой временно обозначен маркером «Р» — дизайн Рикиту не изменяется.',480,486,15,'#345e65','center','500');
     } else {
@@ -533,7 +601,7 @@
         overlay('МОКИ — ЛАВКА СЕРДЕЦ',lines,'ENTER — ПРОДОЛЖИТЬ');
         text('♥',745,180,33,'#d75f6d','center');
       }
-      else if(mode==='victory')overlay('СОЛНЕЧНАЯ ДОЛИНА ПРОЙДЕНА!',['Рикиту собрал 12 фрагментов и восстановил четыре детали.','Открыт путь к Заводному городу.',`Осталось монет: ${allCoins}`],'ENTER — СЫГРАТЬ СНОВА');
+      else if(mode==='victory')overlay('ЗАВОДНОЙ ГОРОД — ПЕРВАЯ ЧАСТЬ ПРОЙДЕНА!',['Рикиту восстановил 6 маршрутных шестерёнок.','Новая улика ведёт на Часовую площадь.',`Осталось монет: ${allCoins}`],'ENTER — СЫГРАТЬ СНОВА');
     }
   }
   function togglePause(){if(mode==='playing'){mode='paused'}else if(mode==='paused'){mode='playing'}}
@@ -593,7 +661,7 @@
     }
     updateHud();return true;
   };
-  window.RIKITU_TEST_LEVELS=()=>chapterInfo.map(d=>({width:d.width,fragments:d.fragments,coins:d.coins.length,checkpoints:d.checkpoints,sections:d.sections,gate:d.gate,boss:d.boss,mushrooms:d.mushrooms||[],switches:d.switches||[]}));
+  window.RIKITU_TEST_LEVELS=()=>chapterInfo.map(d=>({width:d.width,fragments:d.fragments,coins:d.coins.length,checkpoints:d.checkpoints,sections:d.sections,gate:d.gate,boss:d.boss,mushrooms:d.mushrooms||[],switches:d.switches||[],conveyors:d.conveyors||[],vents:d.vents||[]}));
   window.RIKITU_TEST_MOVE=(x,y)=>{if(p&&level){p.x=clamp(x,0,level.width-p.w);p.y=y;p.vy=0;p.inv=2;}};
   updateHud();requestAnimationFrame(loop);
 })();

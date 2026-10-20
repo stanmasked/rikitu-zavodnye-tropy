@@ -11,8 +11,9 @@ with sync_playwright() as p:
     page.keyboard.press('Enter');page.wait_for_timeout(160)
     assert page.evaluate('RIKITU_TEST_STATE().mode')=='playing'
     a=page.evaluate('RIKITU_TEST_LEVELS()')
-    assert len(a)==4 and all(d['coins']==90 for d in a)
-    assert [d['width'] for d in a]==[7900,8550,8270,8880]
+    assert len(a)==6 and all(d['coins']==90 for d in a)
+    assert [d['width'] for d in a]==[7900,8550,8270,8880,9140,9910]
+    assert len(a[4]['conveyors'])==3 and len(a[5]['vents'])==3
     assert len(a[2]['mushrooms'])==3 and len(a[3]['switches'])==3
     assert len(a[0]['checkpoints'])==3 and len(a[0]['sections'])==4
     for x,y in [(1520,354),(3640,339),(6860,354)]:
@@ -58,7 +59,7 @@ with sync_playwright() as p:
     page.evaluate('RIKITU_TEST_MOVE(8750,400)');page.wait_for_timeout(100)
     assert page.evaluate('RIKITU_TEST_STATE().mode')=='shop'
     page.keyboard.press('Enter');page.wait_for_timeout(80)
-    assert page.evaluate('RIKITU_TEST_STATE().mode')=='victory'
+    assert page.evaluate('RIKITU_TEST_STATE().mode')=='between'
     assert not errors,errors
-    print('PASS browser route, fragment gate, mini boss, Moki shop, four levels')
+    print('PASS browser route, fragment gate, mini boss, Moki shop, first four levels of six')
     browser.close()
