@@ -165,6 +165,34 @@
       gate:10530,boss:{x:9930,hp:3,name:'Буровой караул'},
       startText:'Шахта молчания: используй пар и конвейеры, затем останови Буровой караул.',
       endText:'Шахтный регистратор подтвердил опасное ускорение Сердца дорог. Нужно найти способ безопасного ремонта.',decor:'mine'}
+    ,{name:'Замковые сады',world:'Замок механизмов',width:9950,
+      ground:[[0,1950],[2030,3890],[3970,5860],[5940,7750],[7830,9950]],
+      platforms:[[570,381,205],[1240,383,195],[1770,380,190],[2520,381,210],
+        [3240,379,190],[4230,382,200],[4880,379,210],[5570,381,185],
+        [6410,379,205],[7150,383,190],[8060,381,195],[8620,380,205],[9150,383,210]],
+      mushrooms:[[1100,GROUND],[4780,GROUND],[8190,GROUND]],
+      switches:[[2330,GROUND],[6110,GROUND],[8080,GROUND]],
+      fragments:[[1840,344],[5240,342],[8730,346]],checkpoints:[2520,5280,7950],
+      enemies:[{x:890,a:750,b:1070},{x:2790,a:2660,b:2960},{x:4380,a:4230,b:4630},
+        {x:6580,a:6440,b:6760},{x:7640,a:7500,b:7740},{x:9060,a:8920,b:9250}],
+      sections:[[0,'Розарий башен'],[2510,'Аллея статуй'],[5060,'Сад заводных ворот'],[7640,'Путь в литейную']],
+      gate:9780,boss:null,startText:'Замковые сады: ищи три фрагмента, мягкие грибы и безопасные механические рычаги.',
+      endText:'Барон Грейсток раскрыл свои сделки и указал дорогу к мастерской Моториуса.',decor:'gardens'},
+    {name:'Литейная Сердца',world:'Замок механизмов',width:11200,
+      ground:[[0,2040],[2120,4220],[4300,6420],[6500,8660],[8740,11200]],
+      platforms:[[530,382,200],[1230,379,205],[1890,383,190],[2690,380,205],
+        [3520,381,195],[4700,382,210],[5310,379,205],[6000,380,195],
+        [6950,381,205],[7680,383,195],[8800,379,190],[9450,383,195],[10140,380,205]],
+      conveyors:[[800,430,310,45],[4670,430,300,-42],[8940,430,320,47]],
+      vents:[[1570,GROUND],[5420,GROUND],[8380,GROUND]],
+      switches:[[2380,GROUND],[6500,GROUND],[8770,GROUND]],
+      fragments:[[1960,343],[5900,344],[9560,342]],checkpoints:[2600,5800,8690],
+      enemies:[{x:870,a:740,b:1040},{x:2990,a:2790,b:3160},{x:4740,a:4540,b:4920},
+        {x:6930,a:6710,b:7130},{x:8350,a:8200,b:8590},{x:9590,a:9460,b:9800}],
+      sections:[[0,'Зал руды'],[2740,'Кузнечные механизмы'],[5470,'Литейные конвейеры'],[8760,'Главная сборочная']],
+      gate:11020,boss:{x:10470,hp:3,name:'Сборочный исполин'},
+      startText:'Литейная Сердца: поднимайся на пару, обходи машины и останови Сборочного исполина.',
+      endText:'Моториус показал ограничитель скорости. Теперь Сердце дорог можно восстановить безопасно.',decor:'foundry'}
   ].map(d=>{
     const coins=[...coinsAlong(d.ground),...platformCoins(d.platforms)];
     let i=0;
@@ -200,6 +228,7 @@
       if(s.mode==='victory'&&s.levelIndex===5&&chapterInfo.length>6)s.mode='between';
       if(s.mode==='victory'&&s.levelIndex===7&&chapterInfo.length>8)s.mode='between';
       if(s.mode==='victory'&&s.levelIndex===9&&chapterInfo.length>10)s.mode='between';
+      if(s.mode==='victory'&&s.levelIndex===11&&chapterInfo.length>12)s.mode='between';
       if(!int(s.wallet)||s.wallet<0||s.wallet>chapterInfo.length*C.SETTINGS.coinsPerStage)return null;
       if(!int(s.purchased)||s.purchased<0||s.purchased>4||s.purchased>C.unlockedUpgrades(s.levelIndex+1))return null;
       if(!Array.isArray(s.fragments)||!Array.isArray(s.coins)||!Array.isArray(s.switches))return null;
@@ -486,6 +515,8 @@
     else if(level?.decor==='skyport'){gradient.addColorStop(0,'#77bcdb');gradient.addColorStop(1,'#f7e4bf');}
     else if(level?.decor==='crystal'){gradient.addColorStop(0,'#7788b0');gradient.addColorStop(1,'#d6bfdc');}
     else if(level?.decor==='mine'){gradient.addColorStop(0,'#788a91');gradient.addColorStop(1,'#d7bca6');}
+    else if(level?.decor==='gardens'){gradient.addColorStop(0,'#a5bccc');gradient.addColorStop(1,'#e9e8bf');}
+    else if(level?.decor==='foundry'){gradient.addColorStop(0,'#758296');gradient.addColorStop(1,'#e7b997');}
     else {gradient.addColorStop(0,'#8bdaf3');gradient.addColorStop(1,'#fbf8d5');}
     ctx.fillStyle=gradient;ctx.fillRect(0,0,W,H);
     ctx.fillStyle='#fff7ba';ctx.beginPath();ctx.arc(800-cam*.03,89,42,0,Math.PI*2);ctx.fill();
@@ -511,6 +542,16 @@
         ctx.fillStyle=level.decor==='skyport'?'#a8cdd3':'#7f9aab';
         ctx.beginPath();ctx.moveTo(x,440);ctx.lineTo(x+230,155);ctx.lineTo(x+475,440);ctx.closePath();ctx.fill();
         ctx.fillStyle='#edf5ed';ctx.beginPath();ctx.moveTo(x+180,219);ctx.lineTo(x+230,155);ctx.lineTo(x+285,217);ctx.closePath();ctx.fill();
+      }
+      ctx.restore();
+    }
+    if(level?.decor==='gardens'||level?.decor==='foundry'){
+      ctx.save();ctx.translate(-cam*.24,0);
+      for(let x=-350;x<level.width+W;x+=410){
+        rounded(x+60,240,205,230,12,level.decor==='gardens'?'#8496a8':'#8f7c7f');
+        rounded(x+120,145,83,125,7,level.decor==='gardens'?'#7b889b':'#786e7b');
+        ctx.fillStyle=level.decor==='gardens'?'#dfe8b7':'#f7d3a5';
+        ctx.beginPath();ctx.arc(x+165,300,30,0,Math.PI*2);ctx.fill();
       }
       ctx.restore();
     }
@@ -693,7 +734,7 @@
         overlay('МОКИ — ЛАВКА СЕРДЕЦ',lines,'ENTER — ПРОДОЛЖИТЬ');
         text('♥',745,180,33,'#d75f6d','center');
       }
-      else if(mode==='victory')overlay('ЗАБЫТЫЕ ГОРЫ ПРОЙДЕНЫ!',['Восстановлено двенадцать маршрутных шестерёнок.',`Последний уровень: ${formatClock(stageSeconds)} · попаданий: ${stageHits}`,'Сердце дорог было опасно перегрето ещё до остановки.','Следующий маршрут — Замок механизмов.'],'ENTER — СЫГРАТЬ СНОВА');
+      else if(mode==='victory')overlay('ЗАМОК МЕХАНИЗМОВ — ПЕРВАЯ ЧАСТЬ ПРОЙДЕНА!',['Восстановлено четырнадцать маршрутных шестерёнок.',`Последний уровень: ${formatClock(stageSeconds)} · попаданий: ${stageHits}`,'Регулятор Моториуса готов. Осталась Галерея часов.'],'ENTER — СЫГРАТЬ СНОВА');
     }
   }
   function togglePause(){if(mode==='playing'){mode='paused'}else if(mode==='paused'){mode='playing'}}
