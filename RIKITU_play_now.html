@@ -167,7 +167,62 @@
   const lifeCapacity=()=>C.SETTINGS.startingHearts+purchasedHearts;
   const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
   const coinBox=(x,y)=>({x:x-12,y:y-12,w:24,h:24});
-  function newLevel(index) {
+
+  const SAVE_KEY='rikitu-zavodnye-tropy-checkpoint-v1';
+  const allowedSaveModes=new Set(['playing','between','shop','victory']);
+  function readSave(){
+    try{
+      const raw=localStorage.getItem(SAVE_KEY);
+      if(!raw)return null;
+      const s=JSON.parse(raw);
+      const int=x=>Number.isInteger(x);
+      if(!s||s.version!==1||!allowedSaveModes.has(s.mode))return null;
+      if(!int(s.levelIndex)||s.levelIndex<0||s.levelIndex>=chapterInfo.length)return null;
+      if(!int(s.wallet)||s.wallet<0||s.wallet>chapterInfo.length*C.SETTINGS.coinsPerStage)return null;
+      if(!int(s.purchased)||s.purchased<0||s.purchased>4||s.purchased>C.unlockedUpgrades(s.levelIndex+1))return null;
+      if(!Array.isArray(s.fragments)||!Array.isArray(s.coins)||!Array.isArray(s.switches))return null;
+      const d=chapterInfo[s.levelIndex];
+      const validIds=(ids,max)=>ids.length<=max&&new Set(ids).size===ids.length&&ids.every(v=>int(v)&&v>=0&&v<max);
+      if(!validIds(s.fragments,3)||!validIds(s.coins,d.coins.length)||!validIds(s.switches,(d.switches||[]).length))return null;
+      if(!int(s.stageCoins)||s.stageCoins!==s.coins.length)return null; // Wallet may be lower after Moki purchases.
+      if(!int(s.checkpoint)||![105,...d.checkpoints].includes(s.checkpoint))return null;
+      if(!int(s.hearts)||s.hearts<1||s.hearts>3+s.purchased)return null;
+      if(typeof s.bossDown!=='boolean')return null;
+      if(s.mode==='shop'&&(!C.isShopStage(s.levelIndex+1)||!s.bossDown))return null;
+      if(s.mode==='between'&&s.levelIndex>=chapterInfo.length-1)return null;
+      if(s.mode==='victory'&&s.levelIndex!==chapterInfo.length-1)return null;
+      return s;
+    }catch(e){return null;}
+  }
+  let startupSave=readSave();
+  function persist(){
+    if(!level||!p||!allowedSaveModes.has(mode))return;
+    const data={version:1,levelIndex,mode,wallet:allCoins,purchased:purchasedHearts,
+      stageCoins,fragments:level.fragments.filter(x=>x.got).map(x=>x.id),
+      coins:level.coins.filter(x=>x.got).map(x=>x.id),
+      switches:level.switches.map((x,i)=>x.on?i:-1).filter(x=>x>=0),
+      checkpoint:level.activeCheckpoint,hearts:p.hearts,
+      bossDown:!!level.boss&&!level.boss.alive};
+    try{localStorage.setItem(SAVE_KEY,JSON.stringify(data));startupSave=data;}catch(e){}
+  }
+  function resume(){
+    const s=startupSave;
+    if(!s)return false;
+    newLevel(s.levelIndex,false);
+    allCoins=s.wallet;purchasedHearts=s.purchased;stageCoins=s.stageCoins;
+    for(const item of level.fragments)item.got=s.fragments.includes(item.id);
+    for(const item of level.coins)item.got=s.coins.includes(item.id);
+    level.switches.forEach((sw,i)=>{sw.on=s.switches.includes(i)});
+    level.activeCheckpoint=s.checkpoint;
+    level.checkpointCount=level.checkpoints.filter(cp=>cp<=s.checkpoint).length;
+    p.spawnX=s.checkpoint;p.x=p.spawnX;p.y=GROUND-p.h;p.hearts=s.hearts;p.inv=1;
+    if(s.bossDown&&level.boss){level.boss.alive=false;level.boss.hp=0;}
+    mode=s.mode;shopStage=mode==='shop'?levelIndex+1:0;
+    announce('Игра восстановлена с контрольной точки',2.5);
+    updateHud();persist();return true;
+  }
+
+  function newLevel(index,save=true) {
     levelIndex=index;
     const d=chapterInfo[index];
     level={...d,
@@ -187,7 +242,7 @@
       spawnX:105, facing:1};
     cam=0;bossHint=false;toast=d.startText;toastTime=4.8;
     mode='playing';
-    updateHud();
+    updateHud();if(save)persist();
   }
   function updateHud(){
     const fragmentCount=level?.fragments.filter(x=>x.got).length||0;
@@ -200,7 +255,7 @@
     p.hearts=C.heartAfterDamage(p.hearts);p.inv=C.SETTINGS.invincibility;
     announce(p.hearts?'Осторожнее!':'Не беда! Вернёмся к контрольной точке.',1.6);
     if(p.hearts===0){p.hearts=lifeCapacity();respawn();}
-    updateHud();
+    updateHud();persist();
   }
   function respawn(){
     p.x=p.spawnX;p.y=GROUND-p.h;p.vx=0;p.vy=0;p.inv=1.4;p.grounded=false;
@@ -259,9 +314,10 @@
       }
     }
     if(p.y>H+150){damage();respawn();}
+    let checkpointChanged=false;
     for(const cp of level.checkpoints){
       if(p.x>=cp && level.activeCheckpoint<cp){
-        level.activeCheckpoint=cp;level.checkpointCount++;p.spawnX=cp;
+        level.activeCheckpoint=cp;level.checkpointCount++;p.spawnX=cp;checkpointChanged=true;
         announce(`✓ Контрольная точка ${level.checkpointCount}/3. Находки сохраняются!`,2.9);
       }
     }
@@ -298,14 +354,16 @@
         if(boss.hit<=0&&C.stompFromAbove(oldBottom,p.y+p.h,boss.y,p.vy>=0)){
           boss.hp--;boss.hit=0.85;p.vy=-490;p.y=boss.y-p.h-1;
           announce(boss.hp?`${boss.name}: осталось ${boss.hp} попаданий!`:`${boss.name} остановлен! Иди к выходу.`,2.3);
-          if(boss.hp===0)boss.alive=false;
+          if(boss.hp===0){boss.alive=false;persist();}
         }else if(boss.hit<=0) damage();
       }
     }
     if(hudChanged)updateHud();
+    if(hudChanged||checkpointChanged)persist();
     if(p.x+p.w >level.gate-30){
       if(C.canExit(level.fragments.filter(x=>x.got).length,!!level.boss,!level.boss||!level.boss.alive)){
         storyText=level.endText; if(C.isShopStage(levelIndex+1)){mode='shop';shopStage=levelIndex+1;} else mode=levelIndex===chapterInfo.length-1?'victory':'between';
+        persist();
       } else if(toastTime<=0){
         const missing=level.fragments.filter(x=>!x.got);
         if(missing.length){
@@ -456,7 +514,7 @@
       text('RIKITU',480,190,69,'#318168','center','900');
       text('ЗАВОДНЫЕ ТРОПЫ',480,250,35,'#284b5f','center','850');
       text('Игровой прототип • Солнечная долина',480,293,20,'#5d7d79','center','600');
-      rounded(268,341,424,55,15,'#338f70');text('ENTER / ПРОБЕЛ — НАЧАТЬ',480,378,20,'#fff','center');
+      rounded(268,341,424,55,15,'#338f70');text(startupSave?'ENTER — ПРОДОЛЖИТЬ':'ENTER / ПРОБЕЛ — НАЧАТЬ',480,378,20,'#fff','center');
       text('Герой временно обозначен маркером «Р» — дизайн Рикиту не изменяется.',480,486,15,'#345e65','center','500');
     } else {
       drawWorld();
@@ -486,13 +544,13 @@
     purchasedHearts=purchase.purchasedCount;allCoins=purchase.coins;
     if(p)p.hearts=Math.min(lifeCapacity(),p.hearts+1);
     announce(`Спасибо, Моки! Теперь ${lifeCapacity()} сердечка здоровья!`,2.3);
-    updateHud();return true;
+    updateHud();persist();return true;
   }
-  function resetCampaign(){allCoins=0;purchasedHearts=0;shopStage=0;newLevel(0);}
+  function resetCampaign(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}startupSave=null;allCoins=0;purchasedHearts=0;shopStage=0;newLevel(0);}
   function act(){
-    if(mode==='title')resetCampaign();
+    if(mode==='title'){if(!resume())resetCampaign();}
     else if(mode==='between')newLevel(levelIndex+1);
-    else if(mode==='shop')mode=levelIndex===chapterInfo.length-1?'victory':'between';
+    else if(mode==='shop'){mode=levelIndex===chapterInfo.length-1?'victory':'between';persist();}
     else if(mode==='victory')resetCampaign();
     else if(mode==='paused')togglePause();
   }
@@ -525,7 +583,7 @@
     paint();requestAnimationFrame(loop);
   }
   // Read-only health probe for browser integration tests.
-  window.RIKITU_TEST_STATE=()=>({mode,level:levelIndex+1,playerX:p?.x,playerY:p?.y,fragments:level?.fragments.filter(x=>x.got).length,coins:stageCoins,bossHP:level?.boss?.hp??null,bossX:level?.boss?.x??null,bossY:level?.boss?.y??null,checkpoint:level?.activeCheckpoint,checkpointCount:level?.checkpointCount,hearts:p?.hearts,maxHearts:lifeCapacity(),wallet:allCoins,bought:purchasedHearts,shopStage});
+  window.RIKITU_TEST_STATE=()=>({mode,level:levelIndex+1,playerX:p?.x,playerY:p?.y,fragments:level?.fragments.filter(x=>x.got).length,coins:stageCoins,bossHP:level?.boss?.hp??null,bossX:level?.boss?.x??null,bossY:level?.boss?.y??null,checkpoint:level?.activeCheckpoint,checkpointCount:level?.checkpointCount,hearts:p?.hearts,maxHearts:lifeCapacity(),wallet:allCoins,bought:purchasedHearts,shopStage,hasSave:!!startupSave});
   window.RIKITU_TEST_SHOP=(coins=0,bought=purchasedHearts,stage=shopStage)=>C.nextHeartPurchase(stage,bought,coins);
   window.RIKITU_TEST_COLLECT_COINS=(count=90)=>{
     if(!level||!Number.isInteger(count)||count<0)return false;
