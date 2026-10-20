@@ -24,7 +24,9 @@ jobs:
       - name: Confirm toolchain
         run: |
           test -f "$DEVKITPRO/libnx/switch_rules"
-          command -v aarch64-none-elf-gcc
+          test -x "$DEVKITPRO/devkitA64/bin/aarch64-none-elf-gcc"
+          echo "$DEVKITPRO/devkitA64/bin" >> "$GITHUB_PATH"
+          echo "$DEVKITPRO/tools/bin" >> "$GITHUB_PATH"
       - name: Compile minimal RIKITU native probe
         run: make -C switch -j2
       - name: Verify NRO artifact
