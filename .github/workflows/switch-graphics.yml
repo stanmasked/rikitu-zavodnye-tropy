@@ -16,6 +16,10 @@ on:
       - 'native/rikitu_workshop_guest_qa.*'
       - 'native/rikitu_delivery.*'
       - 'native/rikitu_clock.*'
+      - 'native/rikitu_orders.*'
+      - 'native/rikitu_orders_data.h'
+      - 'native/test_orders.c'
+      - 'tests/test-orders-source.cjs'
       - 'native/rikitu_clock_data.h'
       - 'native/test_clock.c'
       - 'tests/test-clock-source.cjs'
@@ -75,6 +79,10 @@ on:
       - 'native/rikitu_workshop_guest_qa.*'
       - 'native/rikitu_delivery.*'
       - 'native/rikitu_clock.*'
+      - 'native/rikitu_orders.*'
+      - 'native/rikitu_orders_data.h'
+      - 'native/test_orders.c'
+      - 'tests/test-orders-source.cjs'
       - 'native/rikitu_clock_data.h'
       - 'native/test_clock.c'
       - 'tests/test-clock-source.cjs'
@@ -278,6 +286,16 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_clock.c native/test_clock.c -lm -o /tmp/rikitu-clock-clang
           /tmp/rikitu-clock-clang
+      - name: Verify MAP08 Orders Depot browser source parity
+        run: node tests/test-orders-source.cjs
+      - name: GCC MAP08 conveyors, levers, boss gate
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_orders.c native/test_orders.c -lm -o /tmp/rikitu-orders-gcc
+          /tmp/rikitu-orders-gcc
+      - name: Clang MAP08 conveyors, levers, boss gate
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_orders.c native/test_orders.c -lm -o /tmp/rikitu-orders-clang
+          /tmp/rikitu-orders-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
