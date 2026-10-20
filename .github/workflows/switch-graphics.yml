@@ -11,6 +11,10 @@ on:
       - 'native/rikitu_boss.*'
       - 'native/rikitu_mill.*'
       - 'native/rikitu_grove.*'
+      - 'native/rikitu_bridge.*'
+      - 'native/rikitu_bridge_data.h'
+      - 'native/test_bridge.c'
+      - 'tests/test-bridge-source.cjs'
       - 'native/rikitu_grove_data.h'
       - 'native/test_grove.c'
       - 'native/rikitu_grove_guest_qa.*'
@@ -48,6 +52,10 @@ on:
       - 'native/rikitu_boss.*'
       - 'native/rikitu_mill.*'
       - 'native/rikitu_grove.*'
+      - 'native/rikitu_bridge.*'
+      - 'native/rikitu_bridge_data.h'
+      - 'native/test_bridge.c'
+      - 'tests/test-bridge-source.cjs'
       - 'native/rikitu_grove_data.h'
       - 'native/test_grove.c'
       - 'native/rikitu_grove_guest_qa.*'
@@ -170,6 +178,16 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_enemies.c native/rikitu_grove.c native/rikitu_grove_guest_qa.c native/test_grove_guest_qa.c -lm -o /tmp/rikitu-grove-guest-clang
           /tmp/rikitu-grove-guest-clang
+      - name: Verify MAP04 against authoritative browser geometry
+        run: node tests/test-bridge-source.cjs
+      - name: GCC three bridge levers, boss and fragment-gated exit
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_bridge.c native/test_bridge.c -lm -o /tmp/rikitu-bridge-gcc
+          /tmp/rikitu-bridge-gcc
+      - name: Clang three bridge levers, boss and fragment-gated exit
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_bridge.c native/test_bridge.c -lm -o /tmp/rikitu-bridge-clang
+          /tmp/rikitu-bridge-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:

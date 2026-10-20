@@ -91,6 +91,7 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
      s->belt_count>RIKITU_MAX_BELTS ||
      s->launcher_count>RIKITU_MAX_LAUNCHERS ||
      s->checkpoint_total>RIKITU_MAX_CHECKPOINTS ||
+     s->lever_count>RIKITU_MAX_LEVERS ||
      s->enemy_count>RIKITU_MAX_ENEMIES)return 0;
   c.pixels=pixels;c.w=width;c.h=height;c.stride=stride_pixels;
   camera=s->player.x-width*.37f;
@@ -175,6 +176,13 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
     box(&c,x+16,y+15,8,8,rgb(32,32,55));
     box(&c,x+48,y+15,8,8,rgb(32,32,55));
   }
+  for(i=0;i<(int)s->lever_count;i++){
+    const RikituLever *lever=&s->levers[i];
+    if(!isfinite(lever->x)||!isfinite(lever->y))return 0;
+    x=worldx(lever->x,camera);y=(int)lever->y;
+    box(&c,x,y-48,14,48,lever->on?rgb(73,153,119):rgb(121,106,102));
+    diamond(&c,x+7,y-55,7,lever->on?rgb(132,231,172):rgb(244,202,142));
+  }
   x=worldx(s->gate_x,camera);
   box(&c,x,436,26,104,rgb(23,40,53));
   box(&c,x-15,420,56,22,
@@ -190,9 +198,10 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
   /* Fixed-screen HUD: title, counters and controller instructions. */
   box(&c,0,0,width,84,rgb(16,30,49));
   box(&c,0,80,width,4,rgb(76,176,187));
-  label(&c,25,15,s->level_id==3?"RIKITU 03 MUSHROOM GROVE":
+  label(&c,25,15,s->level_id==4?"RIKITU 04 GEAR BRIDGE":
+                   (s->level_id==3?"RIKITU 03 MUSHROOM GROVE":
                    (s->level_id==2?"RIKITU 02 MILL CREEK":
-                   (s->level_id==1?"RIKITU 01 FLOWER TRAIL":"RIKITU TECH DEMO")),3,ink);
+                   (s->level_id==1?"RIKITU 01 FLOWER TRAIL":"RIKITU TECH DEMO"))),3,ink);
   (void)snprintf(status,sizeof(status),"FRAGMENTS %d/3  COINS %d",
        s->stage.fragment_count,s->stage.coin_count);
   label(&c,26,56,status,2,rgb(250,220,124));
@@ -203,6 +212,10 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
     (void)snprintf(status,sizeof(status),"CHECKPOINTS %d/3",
                    s->reached_checkpoints);
     label(&c,590,56,status,2,rgb(149,221,203));
+  }
+  if(s->level_id==4){
+    (void)snprintf(status,sizeof(status),"LEVERS %d/3",s->levers_on);
+    label(&c,660,56,status,2,rgb(148,226,180));
   }
   if(s->stage.boss_required) {
     (void)snprintf(status,sizeof(status),"BOSS HP %d/3",s->boss.hp);

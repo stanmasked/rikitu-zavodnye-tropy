@@ -64,6 +64,7 @@ int rikitu_demo_advance(RikituScene *s,RikituLoop *loop,
      s->launcher_count>RIKITU_MAX_LAUNCHERS ||
      s->checkpoint_total>RIKITU_MAX_CHECKPOINTS ||
      s->enemy_count>RIKITU_MAX_ENEMIES ||
+     s->lever_count>RIKITU_MAX_LEVERS ||
      s->max_hearts<1 || s->max_hearts>RIKITU_MAX_HEARTS ||
      s->hearts<1 || s->hearts>s->max_hearts ||
      !isfinite(s->invulnerability_seconds) || s->invulnerability_seconds<0.0f ||
@@ -114,6 +115,19 @@ int rikitu_demo_advance(RikituScene *s,RikituLoop *loop,
                         old_bottom,RIKITU_FIXED_DT);
       if(event==RIKITU_ENEMY_INVALID)return -1;
       if(event==RIKITU_ENEMY_CONTACT)take_damage(s,loop);
+    }
+    /* Browser bridge switches trigger once by rectangular player overlap.
+     * Decorative movement triggers, never a gate requirement (game.js). */
+    for(i=0;i<s->lever_count;i++){
+      RikituLever *sw=&s->levers[i];
+      if(!isfinite(sw->x)||!isfinite(sw->y) ||
+         (sw->on!=0&&sw->on!=1))return -1;
+      if(!sw->on && loop->player.x+loop->player.w>sw->x &&
+         loop->player.x<sw->x+34.0f &&
+         fabsf(loop->player.y+loop->player.h-sw->y)<75.0f){
+        sw->on=1;
+        s->levers_on++;
+      }
     }
     if(s->stage.boss_required) {
       const RikituBossEvent event=rikitu_boss_tick(&s->boss,&loop->player,
