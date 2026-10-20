@@ -183,3 +183,28 @@ The same C99 function is tested natively under GCC and Clang.
 This is a guest-side gameplay-state test. It does not yet certify an
 unassisted start-to-finish playthrough of the second level or rendering
 of the approved original mascot/boss sprites.
+
+## MAP03 native route — Mushroom Grove
+
+The graphics NRO now cycles its technical routes with **Y**:
+Flower Trail → Mill by the Creek → Mushroom Grove → Flower Trail.
+X restarts the selected route. Only MAP01 has SDMC persistence; MAP02
+and MAP03 never overwrite or delete the MAP01 saves.
+
+MAP03 geometry is copied exactly from the browser game.js:
+8270 world units, five ground sections, 13 extra platforms, 90 coins,
+three fragments, three checkpoints, six patrol enemies and gate x=8140.
+Three optional spring mushrooms are at x=940, 2670 and 5660.
+They use the existing portable C99 launcher engine with the browser's
+-730 upward impulse when grounded and touching the mushroom top.
+The temporary mushroom indicators are simple geometric placeholders
+and are **not** approved or newly designed artwork.
+
+The source-parity test checks every coordinate, enemy patrol and mushroom
+launcher against game.js. GCC/Clang also test each mushroom on a full
+fixed-timestep update and verify a boss-free exit after the third fragment.
+Switch NRO compilation, existing MAP01/MAP02 guest audits, and browser
+regression must all pass before merging the map.
+
+This is not an end-to-end playthrough. MAP03 sound, story screens, original
+character sprites and persistent MAP03 saves are not implemented.

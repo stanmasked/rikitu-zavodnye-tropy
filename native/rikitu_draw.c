@@ -130,8 +130,15 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
   for(i=0;i<(int)s->launcher_count;i++){
     const RikituLauncher *l=&s->launchers[i];
     x=worldx(l->x,camera);
-    box(&c,x-14,522,40,18,rgb(89,177,197));
-    diamond(&c,x+6,517,10,rgb(187,246,242));
+    if(l->kind==RIKITU_LAUNCH_MUSHROOM) {
+      /* Mushroom spring marker, not an approved character/sprite redesign. */
+      box(&c,x+1,(int)l->y-12,11,12,rgb(218,198,162));
+      box(&c,x-16,(int)l->y-24,45,14,rgb(175,109,203));
+      diamond(&c,x+6,(int)l->y-27,7,rgb(242,185,237));
+    }else{
+      box(&c,x-14,522,40,18,rgb(89,177,197));
+      diamond(&c,x+6,517,10,rgb(187,246,242));
+    }
   }
   for(i=0;i<(int)s->coin_total;i++){
     if(!s->stage.coins[i]){
@@ -183,8 +190,9 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
   /* Fixed-screen HUD: title, counters and controller instructions. */
   box(&c,0,0,width,84,rgb(16,30,49));
   box(&c,0,80,width,4,rgb(76,176,187));
-  label(&c,25,15,s->level_id==2?"RIKITU 02 MILL CREEK":
-                   (s->level_id==1?"RIKITU 01 FLOWER TRAIL":"RIKITU TECH DEMO"),3,ink);
+  label(&c,25,15,s->level_id==3?"RIKITU 03 MUSHROOM GROVE":
+                   (s->level_id==2?"RIKITU 02 MILL CREEK":
+                   (s->level_id==1?"RIKITU 01 FLOWER TRAIL":"RIKITU TECH DEMO")),3,ink);
   (void)snprintf(status,sizeof(status),"FRAGMENTS %d/3  COINS %d",
        s->stage.fragment_count,s->stage.coin_count);
   label(&c,26,56,status,2,rgb(250,220,124));
