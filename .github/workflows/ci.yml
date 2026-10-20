@@ -25,3 +25,7 @@ jobs:
       - run: python tests/test-world3-finale.py
       - run: python tests/test-castle.py
       - run: python tests/test-finale.py
+      - name: Native C99 rules (GCC)
+        run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/test_rules.c -o /tmp/rikitu-gcc && /tmp/rikitu-gcc
+      - name: Native C99 rules (Clang)
+        run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/test_rules.c -o /tmp/rikitu-clang && /tmp/rikitu-clang
