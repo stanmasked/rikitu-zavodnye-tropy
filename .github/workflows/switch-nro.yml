@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'switch/**'
+      - 'tests/check_nro.py'
+      - 'tests/test-nro-checker.py'
       - 'native/rikitu_rules.*'
       - 'native/rikitu_loop.*'
       - '.github/workflows/switch-nro.yml'
@@ -32,6 +34,7 @@ jobs:
       - name: Verify NRO artifact
         run: |
           test -s switch/rikitu_native_probe.nro
+          python3 tests/check_nro.py switch/rikitu_native_probe.nro
           ls -lh switch/rikitu_native_probe.nro
       - uses: actions/upload-artifact@v4
         with:

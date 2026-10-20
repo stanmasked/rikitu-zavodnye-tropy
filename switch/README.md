@@ -28,3 +28,9 @@ real-device or emulator verification before calling it the final game loop.
 Future work: renderable levels, proper frame pacing, all gameplay systems,
 audio, storage/save migration, visual character assets (only when authorized),
 full game validation, and a separately verified distributable NRO.
+
+A dedicated structural check now validates the NRO0 signature at file
+offset 0x10 and the declared program size. Run its negative-fixture tests
+on a PC with `python3 tests/test-nro-checker.py`, then validate a built file
+with `python3 tests/check_nro.py switch/rikitu_native_probe.nro`.
+This is a binary-format sanity check, **not** emulator validation.
