@@ -1,0 +1,25 @@
+name: Level pacing geometry audit
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/pacing_audit.py"
+      - ".github/workflows/pacing-audit.yml"
+      - "game.js"
+      - "game-core.js"
+      - "RIKITU_play_now.html"
+jobs:
+  pacing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install playwright==1.57.0
+      - run: python -m playwright install --with-deps chromium
+      - run: python scripts/pacing_audit.py --output pacing-audit.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pacing-geometry-audit
+          path: pacing-audit.json
