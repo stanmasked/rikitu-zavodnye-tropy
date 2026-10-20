@@ -32,7 +32,7 @@ static const SceneInit scene_init[16]={
   rikitu_mist_init,rikitu_cloud_init,rikitu_crystal_init,rikitu_mine_init,
   rikitu_gardens_init,rikitu_foundry_init,rikitu_gallery_init,rikitu_heart_init
 };
-enum { W=640,H=360,PAD=4 };
+enum { W=RIKITU_SCENE_WIDTH,H=RIKITU_SCENE_HEIGHT,PAD=4 };
 int main(void){
   RikituScene scene;
   RikituLoop loop;
@@ -81,6 +81,19 @@ int main(void){
     assert(!scene.stage.completed);
     for(i=0;i<count+2u*PAD;i++)pixels[i]=0xa55a5aa5u;
     assert(rikitu_draw_scene(pixels+PAD,W,H,W,&scene)==1);
+    /* A 640x360 canvas only showed the sky: the actual player is
+     * below y=400. At the real 1280x720 resolution, assert one
+     * unoccluded body pixel, not merely nonempty background.
+     * Initial x=105 also ensures that the camera is at the origin. */
+    assert(scene.player.x>=0.0f && scene.player.x<200.0f);
+    assert(scene.player.y>=0.0f && scene.player.y<520.0f);
+    {
+      const size_t body_pixel=PAD+
+          (size_t)((int)scene.player.y+20)*W+
+          (size_t)((int)scene.player.x+15);
+      assert(body_pixel<PAD+count);
+      assert(pixels[body_pixel]==0xffe9dc4eu);
+    }
     for(i=0;i<PAD;i++){
       assert(pixels[i]==0xa55a5aa5u);
       assert(pixels[count+PAD+i]==0xa55a5aa5u);
@@ -97,10 +110,10 @@ int main(void){
     scene_init[level-1](&scene);
     assert(scene.level_id==level && scene.hearts==RIKITU_STARTING_HEARTS &&
            !scene.stage.coins[0] && scene.stage.coin_count==0);
-    printf("MAP%02d: one tick, framebuffer, canary and reset PASS\n",level);
+    printf("MAP%02d: one tick, player pixel, framebuffer guard and reset PASS\n",level);
   }
   assert(seen_five==1 && boss_count>=1);
   free(pixels);
-  puts("PASS 16/16 campaign scene initialization, input tick, render and reset");
+  puts("PASS 16/16 campaign scenes: tick, visible player pixels, buffer bounds and reset");
   return 0;
 }
