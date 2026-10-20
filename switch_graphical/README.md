@@ -253,3 +253,17 @@ idempotence, bonus visual interaction vs gate logic and guardian hits.
 The route is not a finished asset-integrated release or a confirmed
 controller-only playthrough; neither MAP04 saves nor sound/approved
 sprites are implemented yet.
+
+## MAP04 bridge levers and Guardian: NeXium guest audit
+
+An extra fourth row in the separate QA NRO checks actual C99 gameplay
+inside NeXium. Sixteen squares now cover the four currently ported
+maps (four checks per map); the new four cover Bridge of Gears map
+parameters, the touch/once-only operation of three levers, the first
+Guardian stomp and temporary hit immunity, and victory after collecting
+three fragments and defeating the boss even when zero levers are on.
+
+Two real NeXium framebuffer captures must show all 16 green squares;
+the same MAP04 checks run with GCC and Clang. This is guest-side state
+evidence, not a full normal-controller level playthrough and not a
+substitute for final approved character/boss sprites.

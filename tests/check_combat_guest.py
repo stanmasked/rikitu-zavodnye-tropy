@@ -13,6 +13,7 @@ from PIL import Image
 NAMES = ("43/s patrol", "contact/immunity", "stomp bounce", "checkpoint respawn")
 MILL_NAMES = ("map02 data", "beetle stomp/recovery", "boss contact/immunity", "three hits + exit")
 GROVE_NAMES = ("MAP03 data", "first spring", "second and third springs", "airborne safety + gate")
+BRIDGE_NAMES = ("MAP04 geometry", "three touch levers", "guardian hit", "boss-gated exit")
 
 
 def check(path: Path) -> None:
@@ -20,6 +21,16 @@ def check(path: Path) -> None:
         screen = src.convert("RGB")
     if screen.size != (1280, 720):
         raise AssertionError(f"Expected 1280x720 NeXium capture, got {screen.size}")
+    for index, name in enumerate(BRIDGE_NAMES):
+        left = 280 + 200 * index
+        samples = [screen.getpixel((x,y))
+                   for x in range(left-24,left+100,8)
+                   for y in range(466, 556, 8)]
+        green=sum(g>=170 and r<100 and b<100 for r,g,b in samples)
+        if green<32:
+            raise AssertionError(
+                f"NeXium guest MAP04 {name} failed: {green}/{len(samples)} green")
+        print(f"PASS guest MAP04 {name}: {green} green samples ({path.name})")
     for index, name in enumerate(GROVE_NAMES):
         left = 280 + 200 * index
         samples = [screen.getpixel((x,y))
@@ -67,4 +78,4 @@ if __name__ == "__main__":
         raise SystemExit("Usage: check_combat_guest.py <before.png> <after.png>")
     check(Path(sys.argv[1]))
     check(Path(sys.argv[2]))
-    print("PASS all 12 MAP01/MAP02/MAP03 guest-side checks in both NeXium frames")
+    print("PASS all 16 MAP01/MAP02/MAP03/MAP04 guest-side checks in both NeXium frames")
