@@ -17,7 +17,7 @@ function arr(key,next){
 function cdata(name,arity){
  const m=header.match(new RegExp('static const \\w+ '+name+'\\[\\d+\\]=\\s*\\{([\\s\\S]*?)\\};'));
  assert(m,'Missing native array '+name);
- return [...m[1].matchAll(/\\{([^{}]+)\\}/g)].map(q=>{
+ return [...m[1].matchAll(/\{([^{}]+)\}/g)].map(q=>{
   const values=q[1].split(',').map(z=>Number(z.trim().replace(/f$/,'')));
   assert.equal(values.length,arity,name);return values;
  });
@@ -27,7 +27,7 @@ const platforms=arr('platforms','conveyors');
 const conveyors=arr('conveyors','fragments');
 const fragments=arr('fragments','checkpoints');
 const checkpoints=arr('checkpoints','enemies');
-const enemies=[...source.matchAll(/\\{x:(\\d+),a:(\\d+),b:(\\d+)\\}/g)]
+const enemies=[...source.matchAll(/\{x:(\d+),a:(\d+),b:(\d+)\}/g)]
  .map((m,i)=>[+m[1],428,33,28,+m[2],+m[3],i%2?1:-1,0]);
 const solids=[...ground.map(([a,b])=>[a,456,b-a,264]),
  ...platforms.map(([x,y,w])=>[x,y,w,16])];
@@ -43,7 +43,7 @@ while(coins.length<90){
  if(++i>5000)throw Error('Cannot generate 90 source coins');
 }
 const belts=conveyors.map(([x,y,w,speed])=>{assert.equal(y,430);return [x,w,speed];});
-const cps=header.match(/static const float rikitu_workshop_checkpoints\\[3\\]=\\{([^}]+)\\};/);
+const cps=header.match(/static const float rikitu_workshop_checkpoints\[3\]=\{([^}]+)\};/);
 assert(cps);
 assert.equal(ground.length,5);
 assert.equal(platforms.length,13);
@@ -56,7 +56,7 @@ assert.deepEqual(cdata('rikitu_workshop_coins',2),coins.slice(0,90));
 assert.deepEqual(cdata('rikitu_workshop_enemies',8),enemies);
 assert.deepEqual(cdata('rikitu_workshop_belts',3),belts);
 assert.deepEqual(cps[1].split(',').map(v=>Number(v.trim().replace(/f$/,''))),checkpoints);
-assert.equal(Number(source.match(/width:(\\d+)/)[1]),9140);
-assert.equal(Number(source.match(/gate:(\\d+)/)[1]),8950);
+assert.equal(Number(source.match(/width:(\d+)/)[1]),9140);
+assert.equal(Number(source.match(/gate:(\d+)/)[1]),8950);
 assert(source.includes('boss:null'));
 console.log('PASS MAP05 source parity: 18 solids, 90 coins, 6 patrols, 3 conveyors, 3 fragments and 3 checkpoints');
