@@ -1,4 +1,5 @@
 #include "rikitu_workshop.h"
+#include "rikitu_demo.h"
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
