@@ -1,5 +1,9 @@
 name: Browser and game-rule checks
 on: [push, pull_request, workflow_dispatch]
+# Push and PR for the same branch share a group to avoid duplicate stale runs.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
 jobs:
   prototype:
     runs-on: ubuntu-latest
@@ -25,6 +29,15 @@ jobs:
       - run: python tests/test-world3-finale.py
       - run: python tests/test-castle.py
       - run: python tests/test-finale.py
+      - run: python tests/test-real-controls.py
+      - run: python tests/test-export-results.py
+      - name: Save real-control frames for visual QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rikitu-real-controls-frames
+          path: artifacts/real-controls/*.png
+          if-no-files-found: warn
       - name: Native C99 rules (GCC)
         run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/test_rules.c -o /tmp/rikitu-gcc && /tmp/rikitu-gcc
       - name: Native C99 rules (Clang)
