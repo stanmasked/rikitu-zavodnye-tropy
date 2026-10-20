@@ -23,6 +23,10 @@ on:
       - 'native/rikitu_mine.*'
       - 'native/rikitu_gardens.*'
       - 'native/rikitu_foundry.*'
+      - 'native/rikitu_gallery.*'
+      - 'native/rikitu_gallery_data.h'
+      - 'native/test_gallery.c'
+      - 'tests/test-gallery-source.cjs'
       - 'native/rikitu_foundry_data.h'
       - 'native/test_foundry.c'
       - 'tests/test-foundry-source.cjs'
@@ -110,6 +114,10 @@ on:
       - 'native/rikitu_mine.*'
       - 'native/rikitu_gardens.*'
       - 'native/rikitu_foundry.*'
+      - 'native/rikitu_gallery.*'
+      - 'native/rikitu_gallery_data.h'
+      - 'native/test_gallery.c'
+      - 'tests/test-gallery-source.cjs'
       - 'native/rikitu_foundry_data.h'
       - 'native/test_foundry.c'
       - 'tests/test-foundry-source.cjs'
@@ -404,6 +412,16 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_foundry.c native/test_foundry.c -lm -o /tmp/rikitu-foundry-clang
           /tmp/rikitu-foundry-clang
+      - name: Verify MAP15 Clock Gallery browser source parity
+        run: node tests/test-gallery-source.cjs
+      - name: GCC MAP15 dial pads, levers and fragment gate
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_gallery.c native/test_gallery.c -lm -o /tmp/rikitu-gallery-gcc
+          /tmp/rikitu-gallery-gcc
+      - name: Clang MAP15 dial pads, levers and fragment gate
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_gallery.c native/test_gallery.c -lm -o /tmp/rikitu-gallery-clang
+          /tmp/rikitu-gallery-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:

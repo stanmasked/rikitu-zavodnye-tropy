@@ -490,3 +490,22 @@ The 3-HP Assembly Giant at x10470 must also be defeated.
 Exact browser data parity and host GCC/Clang C99 fixed-step tests
 are included. This is neutral graphics, not approved sprite art or
 an input-only playthrough / hardware save validation.
+
+## MAP15 — Clock Gallery C99 browser parity (Stage 55)
+
+The fifteenth original stage is accessible via Y after MAP14,
+X restarts the stage, and MAP01 save-slot isolation is unchanged.
+World width 10300, 18 solid geometry items, 90 coins, six patrols,
+three fragments, checkpoints x2500/5430/8210, gate x10120,
+and no mandatory boss or countdown timer.
+
+Three grounded-only clock dials x1150/4500/8470 give an upward
+-675 impulse without horizontal drift; three optional switches
+x2320/6360/8550 visually activate once but never gate the exit.
+A Node.js coordinate parity auditor and strict GCC/Clang
+C99 engine tests check launcher action, airborne exclusions,
+normal directional control, levers, checkpoints and fragment exit.
+
+This remains a neutral geometry/debug NRO, not new or modified
+approved character art. Complete controller-input playthrough,
+real Switch hardware and final audio/assets are not verified.

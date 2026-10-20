@@ -99,7 +99,7 @@ export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 ifeq ($(QA_MODE),1)
 CFILES := combat_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_draw.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c rikitu_boss.c rikitu_combat_guest_qa.c rikitu_mill.c rikitu_mill_guest_qa.c rikitu_grove.c rikitu_grove_guest_qa.c rikitu_bridge.c rikitu_bridge_guest_qa.c rikitu_workshop.c rikitu_workshop_guest_qa.c rikitu_delivery.c rikitu_delivery_guest_qa.c
 else
-CFILES := main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_draw.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c rikitu_boss.c rikitu_mill.c rikitu_save.c rikitu_save_io.c rikitu_grove.c rikitu_bridge.c rikitu_workshop.c rikitu_delivery.c rikitu_clock.c rikitu_orders.c rikitu_mist.c rikitu_cloud.c rikitu_crystal.c rikitu_mine.c rikitu_gardens.c rikitu_foundry.c
+CFILES := main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_draw.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c rikitu_boss.c rikitu_mill.c rikitu_save.c rikitu_save_io.c rikitu_grove.c rikitu_bridge.c rikitu_workshop.c rikitu_delivery.c rikitu_clock.c rikitu_orders.c rikitu_mist.c rikitu_cloud.c rikitu_crystal.c rikitu_mine.c rikitu_gardens.c rikitu_foundry.c rikitu_gallery.c
 endif
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
