@@ -455,3 +455,24 @@ fragment-and-boss exit and malformed scene capacities.
 Graphics in this NRO are technical placeholders rather than
 approved character art. No final controller-only playthrough,
 real hardware save or audio/visual certification is claimed.
+
+## MAP13 — Castle Gardens browser source parity (Stage 53)
+
+The thirteenth technical NRO stage is available by cycling Y
+after MAP12, reset with X without affecting MAP01 save slots.
+Original world width 9950, 18 solids, 90 optional coins, six
+patrols, three fragments, checkpoints 2520/5280/7950,
+and fragment-only gate x9780.
+
+Three mushroom springs at x1100/4780/8190 give -730 upwards
+from the grounded state and do not auto-trigger in flight.
+Three one-touch levers x2330/6110/8080 are optional
+decorative interactions; they do not unlock the exit.
+Source-to-C99 audits and strict GCC/Clang fixed-step engine
+tests cover spring impulses, player control, all switches,
+airborne safety, checkpoint and fragment-only completion.
+
+Sprites in the technical NRO are placeholders, not updated
+versions of approved Rikitu LAB characters. No full
+ordinary-controller playthrough, approved audio, hardware
+saves or asset-based remake completion is claimed.
