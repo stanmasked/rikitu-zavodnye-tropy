@@ -87,7 +87,7 @@ export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
 
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
-CFILES := main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_draw.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c
+CFILES := main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_draw.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c rikitu_save.c rikitu_save_io.c
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))

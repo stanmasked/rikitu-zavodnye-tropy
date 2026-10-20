@@ -86,3 +86,34 @@ enemy coordinates and the matching damage/bounce constants.
 
 Remaining: approved sprites, audio, full boss mechanics, actual complete
 campaign maps, persistent saves/loads and end-to-end manual playtesting.
+
+## MAP01 native checkpoint persistence (experimental)
+
+The Switch NRO now attempts to mount SDMC through libnx. If available,
+progress is stored under `sdmc:/switch/RIKITU/` in two alternating
+files, `map01-a.rks` and `map01-b.rks`. When SDMC cannot be mounted,
+the game continues without persistent storage instead of crashing.
+
+The C99 save format is `RKS1` with a version byte, strict bounds,
+generation number and a CRC32 checksum. It includes the latest of the
+three checkpoints, health, completed fragments, up to 90 coins, six
+defeated patrols, hit count, stage completion and elapsed time. On
+resume the player starts at the saved checkpoint with brief immunity.
+The other slot retains the last valid generation if a write is partial
+or corrupted. This is recovery-oriented file alternation, **not** a
+guarantee against every possible SD corruption or sudden power failure.
+
+The state snapshot writes after game progress changes (at most one
+attempt per two seconds of on-screen time), and a final write is
+attempted before exiting with Plus. X deliberately resets the level
+and removes both save slots. Only Flower Trail is supported; the native
+format is deliberately separate from browser localStorage and cannot
+import or export the browser JSON save yet.
+
+Host verification:
+`native/test_save.c` (GCC and Clang) exercises encoding, checksum,
+bounds, progress restoration, invalid-data rejection, two-slot
+alternation, a corrupted newest slot and partially written slot.
+
+Filesystem mounting and persistence *across two independent NeXium
+sessions or on real hardware* still require runtime validation.

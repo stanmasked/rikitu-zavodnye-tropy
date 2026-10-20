@@ -3,8 +3,15 @@
  */
 #include <stdint.h>
 #include <string.h>
+#include <sys/stat.h>
+#include <stdio.h>
+#include <errno.h>
 #include <switch.h>
 #include "rikitu_flower.h"
+#include "rikitu_save.h"
+
+#define MAP01_A "sdmc:/switch/RIKITU/map01-a.rks"
+#define MAP01_B "sdmc:/switch/RIKITU/map01-b.rks"
 
 static unsigned input_mask(u64 held) {
   unsigned mask=0;
@@ -25,9 +32,25 @@ int main(void) {
   RikituLoop game;
   u64 last_tick;
   int error=0;
+  int sd_mounted=0,save_ready=0,have_last=0;
+  float save_elapsed=0.0f;
+  uint8_t last_saved[28]={0};
+  uint8_t now[RIKITU_SAVE_BYTES];
   rikitu_flower_init(&scene);
   memset(&game,0,sizeof(game));
   game.player=scene.player;
+  if(R_SUCCEEDED(fsdevMountSdmc())){
+    sd_mounted=1;
+    (void)mkdir("sdmc:/switch",0777);
+    if(mkdir("sdmc:/switch/RIKITU",0777)==0 || errno==EEXIST)
+      save_ready=1;
+  }
+  if(save_ready){
+    (void)rikitu_save_load_pair(MAP01_A,MAP01_B,&scene,&game);
+    if(rikitu_save_encode(now,&scene,&game,1)){
+      memcpy(last_saved,now,sizeof(last_saved));have_last=1;
+    }
+  }
   framebufferCreate(&fb,nwindowGetDefault(),RIKITU_SCENE_WIDTH,
                     RIKITU_SCENE_HEIGHT,PIXEL_FORMAT_RGBA_8888,2);
   framebufferMakeLinear(&fb);
@@ -44,11 +67,18 @@ int main(void) {
     padUpdate(&pad);
     held=padGetButtons(&pad);
     pressed=padGetButtonsDown(&pad);
-    if(pressed & HidNpadButton_Plus)break;
+    if(pressed & HidNpadButton_Plus){
+      if(save_ready && rikitu_save_encode(now,&scene,&game,1) &&
+         (!have_last || memcmp(now,last_saved,sizeof(last_saved))!=0))
+        (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
+      break;
+    }
     if(pressed & HidNpadButton_X){
       rikitu_flower_init(&scene);
       memset(&game,0,sizeof(game));
       game.player=scene.player;
+      have_last=0;save_elapsed=0.0f;
+      if(save_ready){(void)remove(MAP01_A);(void)remove(MAP01_B);}
     }
     if(pressed & HidNpadButton_Minus)game.paused=!game.paused;
     /* The accumulator caps catch-up at 100ms/six ticks, pauses do not
@@ -63,10 +93,25 @@ int main(void) {
       error=2;break;
     }
     framebufferEnd(&fb);
+    if(save_ready && rikitu_save_encode(now,&scene,&game,1)){
+      /* Ignore elapsed time for change detection: save at progress events,
+       * not on each 60-Hz frame. Time is recorded in the chosen snapshot. */
+      const int dirty=!have_last ||
+        memcmp(now,last_saved,sizeof(last_saved))!=0;
+      save_elapsed+=wall_seconds;
+      if(dirty && save_elapsed>=2.0f){
+        if(rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game)){
+          memcpy(last_saved,now,sizeof(last_saved));
+          have_last=1;
+        }
+        save_elapsed=0.0f;
+      }
+    }
     /* A short yielding sleep reduces a busy-loop, but it does not define
      * simulation speed: measured clock deltas do. */
     svcSleepThread(1000000LL);
   }
   framebufferClose(&fb);
+  if(sd_mounted)fsdevUnmountDevice("sdmc");
   return error;
 }
