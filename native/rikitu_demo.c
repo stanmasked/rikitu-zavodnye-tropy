@@ -11,6 +11,8 @@ void rikitu_demo_init(RikituScene *s) {
   s->belt_count=RIKITU_DEMO_BELTS;
   s->launcher_count=RIKITU_DEMO_LAUNCHERS;
   s->active_checkpoint=105.0f;
+  s->hearts=RIKITU_STARTING_HEARTS;
+  s->max_hearts=RIKITU_STARTING_HEARTS;
   rikitu_player_init(&s->player,120.0f,497.0f);
   s->player.grounded=1;
   rikitu_stage_init(&s->stage,0);
@@ -31,18 +33,43 @@ void rikitu_demo_init(RikituScene *s) {
   s->launchers[1]=(RikituLauncher){RIKITU_LAUNCH_CLOCK,1850.0f,540.0f};
 }
 
-/* An environment update belongs to each physics tick, never to a rendered
- * frame; otherwise a 30fps device would get half-speed conveyors. */
-int rikitu_demo_advance(RikituScene *s, RikituLoop *loop,
-                        float wall_seconds, unsigned input) {
+
+/* Match browser respawn: keep collected parts, coins, killed enemies and
+ * checkpoint progress. Stop the current motion and grant 1.4s safety. */
+static void respawn(RikituScene *s,RikituLoop *loop) {
+  loop->player.x=s->active_checkpoint;
+  loop->player.y=456.0f-loop->player.h;
+  loop->player.vx=0.0f;
+  loop->player.vy=0.0f;
+  loop->player.grounded=0;
+  s->invulnerability_seconds=1.4f;
+}
+static void take_damage(RikituScene *s,RikituLoop *loop) {
+  if(s->invulnerability_seconds>0.0f)return;
+  s->hearts=rikitu_heart_after_damage(s->hearts);
+  s->invulnerability_seconds=1.6f;
+  s->damage_count++;
+  if(s->hearts==0) {
+    s->hearts=s->max_hearts;
+    respawn(s,loop);
+  }
+}
+int rikitu_demo_advance(RikituScene *s,RikituLoop *loop,
+                        float wall_seconds,unsigned input) {
   int ticks=0;
+  size_t i;
   if(!s || !loop || s->solid_count>RIKITU_MAX_SOLIDS ||
      s->coin_total>RIKITU_MAX_COINS ||
      s->belt_count>RIKITU_MAX_BELTS ||
      s->launcher_count>RIKITU_MAX_LAUNCHERS ||
      s->checkpoint_total>RIKITU_MAX_CHECKPOINTS ||
+     s->enemy_count>RIKITU_MAX_ENEMIES ||
+     s->max_hearts<1 || s->max_hearts>RIKITU_MAX_HEARTS ||
+     s->hearts<1 || s->hearts>s->max_hearts ||
+     !isfinite(s->invulnerability_seconds) || s->invulnerability_seconds<0.0f ||
      !isfinite(wall_seconds) || wall_seconds<0.0f ||
-     !isfinite(s->world_width) || s->world_width<loop->player.w) return -1;
+     !isfinite(s->world_width) || s->world_width<loop->player.w)
+    return -1;
   s->paused=loop->paused!=0;
   if(s->paused || s->stage.completed) {
     loop->accumulator_seconds=0.0f;
@@ -52,6 +79,9 @@ int rikitu_demo_advance(RikituScene *s, RikituLoop *loop,
   if(wall_seconds>0.1f)wall_seconds=0.1f;
   loop->accumulator_seconds+=wall_seconds;
   while(loop->accumulator_seconds+0.0000001f>=RIKITU_FIXED_DT && ticks<6) {
+    const float old_bottom=loop->player.y+loop->player.h;
+    s->invulnerability_seconds=fmaxf(0.0f,
+                               s->invulnerability_seconds-RIKITU_FIXED_DT);
     if(!rikitu_player_step(&loop->player,input,RIKITU_FIXED_DT,
                            s->world_width,s->solids,s->solid_count))
       return -1;
@@ -59,21 +89,37 @@ int rikitu_demo_advance(RikituScene *s, RikituLoop *loop,
                              s->belts,s->belt_count,
                              s->launchers,s->launcher_count)<0)
       return -1;
+    /* Browser's world height is 540; death threshold is 540+150. */
+    if(loop->player.y>690.0f) {
+      take_damage(s,loop);
+      respawn(s,loop);
+    }
+    for(i=0;i<s->checkpoint_total;i++) {
+      if(loop->player.x>=s->checkpoints[i] &&
+         s->active_checkpoint<s->checkpoints[i]) {
+        s->active_checkpoint=s->checkpoints[i];
+        s->reached_checkpoints++;
+      }
+    }
     {
       const RikituRect player={loop->player.x,loop->player.y,
                                loop->player.w,loop->player.h};
       if(rikitu_stage_pickups(&s->stage,player,s->fragments,
                               s->coins,s->coin_total)<0)
         return -1;
+    }
+    for(i=0;i<s->enemy_count;i++) {
+      const RikituEnemyEvent event=rikitu_enemy_tick(
+                        &s->enemies[i],&loop->player,
+                        old_bottom,RIKITU_FIXED_DT);
+      if(event==RIKITU_ENEMY_INVALID)return -1;
+      if(event==RIKITU_ENEMY_CONTACT)take_damage(s,loop);
+    }
+    {
+      const RikituRect player={loop->player.x,loop->player.y,
+                               loop->player.w,loop->player.h};
       if(rikitu_stage_touch_gate(&s->stage,player,s->gate_x)==RIKITU_GATE_INVALID)
         return -1;
-    }
-    for(size_t i=0;i<s->checkpoint_total;i++) {
-      if(loop->player.x>=s->checkpoints[i] &&
-         s->active_checkpoint<s->checkpoints[i]) {
-        s->active_checkpoint=s->checkpoints[i];
-        s->reached_checkpoints++;
-      }
     }
     loop->accumulator_seconds-=RIKITU_FIXED_DT;
     if(loop->accumulator_seconds<0.0f)loop->accumulator_seconds=0.0f;

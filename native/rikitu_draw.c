@@ -90,7 +90,8 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
      s->solid_count>RIKITU_MAX_SOLIDS || s->coin_total>RIKITU_MAX_COINS ||
      s->belt_count>RIKITU_MAX_BELTS ||
      s->launcher_count>RIKITU_MAX_LAUNCHERS ||
-     s->checkpoint_total>RIKITU_MAX_CHECKPOINTS)return 0;
+     s->checkpoint_total>RIKITU_MAX_CHECKPOINTS ||
+     s->enemy_count>RIKITU_MAX_ENEMIES)return 0;
   c.pixels=pixels;c.w=width;c.h=height;c.stride=stride_pixels;
   camera=s->player.x-width*.37f;
   if(camera<0.0f)camera=0.0f;
@@ -146,6 +147,17 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
       diamond(&c,x,y,10,rgb(255,240,155));
     }
   }
+  /* Neutral orange patrol rectangles, not approved antagonist sprites. */
+  for(i=0;i<(int)s->enemy_count;i++) {
+    const RikituEnemy *e=&s->enemies[i];
+    if(e->dead)continue;
+    x=worldx(e->x,camera);
+    y=(int)e->y;
+    box(&c,x-2,y-2,(int)e->w+4,(int)e->h+4,rgb(39,43,63));
+    box(&c,x,y,(int)e->w,(int)e->h,rgb(236,141,87));
+    box(&c,x+6,y+8,5,5,rgb(49,56,71));
+    box(&c,x+22,y+8,5,5,rgb(49,56,71));
+  }
   x=worldx(s->gate_x,camera);
   box(&c,x,436,26,104,rgb(23,40,53));
   box(&c,x-15,420,56,22,
@@ -165,6 +177,9 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
   (void)snprintf(status,sizeof(status),"FRAGMENTS %d/3  COINS %d",
        s->stage.fragment_count,s->stage.coin_count);
   label(&c,26,56,status,2,rgb(250,220,124));
+  (void)snprintf(status,sizeof(status),"HEARTS %d/%d HITS %d",
+                 s->hearts,s->max_hearts,s->damage_count);
+  label(&c,495,15,status,2,rgb(247,166,161));
   if(s->level_id==1){
     (void)snprintf(status,sizeof(status),"CHECKPOINTS %d/3",
                    s->reached_checkpoints);

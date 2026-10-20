@@ -65,3 +65,24 @@ respawn/checkpoint persistence, decorative sprites, music or real character
 art. The first native level is therefore not yet a fully playable or
 finishable reproduction of its browser counterpart. The original browser
 level remains the source of truth and is not modified.
+
+## Flower Trail patrols, combat and checkpoint respawn
+
+The six MAP01 patrol spawn positions and their bounds match game.js.
+Every 60 Hz tick advances alive enemies by 43 units/s, reversing at the
+original patrol endpoints. Falling onto a patrol kills it and bounces the
+player at -360; sideways contact costs one heart with 1.6 seconds of
+invulnerability. Falling below the browser's world height+150 threshold
+returns to the latest checkpoint, with 1.4 seconds of invulnerability.
+Coins, fragments, cleared patrols and checkpoint progress are retained.
+After all hearts are lost, hearts refill and the player respawns rather
+than reaching a game-over screen, matching the browser's accessible rules.
+A neutral orange rectangle represents each enemy until approved original
+sprites can be integrated without redesign.
+
+GCC/Clang tests cover patrol bounds, stomps, immunity, checkpoint respawn,
+full heart reset and pause. A separate JS source-parity test checks all six
+enemy coordinates and the matching damage/bounce constants.
+
+Remaining: approved sprites, audio, full boss mechanics, actual complete
+campaign maps, persistent saves/loads and end-to-end manual playtesting.
