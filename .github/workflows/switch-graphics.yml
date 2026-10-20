@@ -10,6 +10,7 @@ on:
       - 'native/rikitu_enemies.*'
       - 'native/rikitu_boss.*'
       - 'native/rikitu_mill.*'
+      - 'native/test_mill_guest_qa.c'
       - 'native/rikitu_mill_data.h'
       - 'native/test_mill.c'
       - 'tests/test-mill-source.cjs'
@@ -40,6 +41,7 @@ on:
       - 'native/rikitu_enemies.*'
       - 'native/rikitu_boss.*'
       - 'native/rikitu_mill.*'
+      - 'native/test_mill_guest_qa.c'
       - 'native/rikitu_mill_data.h'
       - 'native/test_mill.c'
       - 'tests/test-mill-source.cjs'
@@ -130,6 +132,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_mill.c native/rikitu_enemies.c native/test_mill.c -lm -o /tmp/rikitu-map02-clang
           /tmp/rikitu-map02-clang
+      - name: GCC native MAP02 guest check parity
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_enemies.c native/rikitu_mill.c native/rikitu_mill_guest_qa.c native/test_mill_guest_qa.c -lm -o /tmp/rikitu-mill-guest-gcc
+          /tmp/rikitu-mill-guest-gcc
+      - name: Clang native MAP02 guest check parity
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_enemies.c native/rikitu_mill.c native/rikitu_mill_guest_qa.c native/test_mill_guest_qa.c -lm -o /tmp/rikitu-mill-guest-clang
+          /tmp/rikitu-mill-guest-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
