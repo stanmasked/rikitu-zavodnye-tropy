@@ -25,3 +25,11 @@ jobs:
       - run: python tests/test-world3-finale.py
       - run: python tests/test-castle.py
       - run: python tests/test-finale.py
+      - run: python tests/test-real-controls.py
+      - name: Save real-control frames for visual QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rikitu-real-controls-frames
+          path: artifacts/real-controls/*.png
+          if-no-files-found: warn
