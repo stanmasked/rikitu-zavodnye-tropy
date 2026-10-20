@@ -60,3 +60,7 @@ jobs:
         run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/surfaces_probe.c -lm -o /tmp/rikitu-surfaces-parity-gcc && node tests/test-surfaces-parity.cjs /tmp/rikitu-surfaces-parity-gcc
       - name: Browser-source surface parity versus C99 (Clang)
         run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/surfaces_probe.c -lm -o /tmp/rikitu-surfaces-parity-clang && node tests/test-surfaces-parity.cjs /tmp/rikitu-surfaces-parity-clang
+      - name: Native stage objectives (GCC)
+        run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/test_stage.c -lm -o /tmp/rikitu-stage-gcc && /tmp/rikitu-stage-gcc
+      - name: Native stage objectives (Clang)
+        run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/test_stage.c -lm -o /tmp/rikitu-stage-clang && /tmp/rikitu-stage-clang
