@@ -29,7 +29,7 @@ def clear_city(page):
     page.keyboard.press('Enter')
     page.wait_for_function("()=>RIKITU_TEST_STATE().level===7",timeout=5000)
     levels=page.evaluate('RIKITU_TEST_LEVELS()')
-    assert len(levels)==12 and all(d['coins']==90 and len(d['fragments'])==3 for d in levels)
+    assert len(levels)==14 and all(d['coins']==90 and len(d['fragments'])==3 for d in levels)
     assert len(levels[6]['clockPads'])==3 and len(levels[7]['switches'])==3
     move(page,1355,413)
     page.wait_for_function('()=>RIKITU_TEST_STATE().playerY<400',timeout=5000)
