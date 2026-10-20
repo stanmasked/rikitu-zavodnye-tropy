@@ -15,6 +15,10 @@ on:
       - 'native/rikitu_workshop.*'
       - 'native/rikitu_workshop_guest_qa.*'
       - 'native/rikitu_delivery.*'
+      - 'native/rikitu_clock.*'
+      - 'native/rikitu_clock_data.h'
+      - 'native/test_clock.c'
+      - 'tests/test-clock-source.cjs'
       - 'native/rikitu_delivery_data.h'
       - 'native/test_delivery.c'
       - 'native/rikitu_delivery_guest_qa.*'
@@ -70,6 +74,10 @@ on:
       - 'native/rikitu_workshop.*'
       - 'native/rikitu_workshop_guest_qa.*'
       - 'native/rikitu_delivery.*'
+      - 'native/rikitu_clock.*'
+      - 'native/rikitu_clock_data.h'
+      - 'native/test_clock.c'
+      - 'tests/test-clock-source.cjs'
       - 'native/rikitu_delivery_data.h'
       - 'native/test_delivery.c'
       - 'native/rikitu_delivery_guest_qa.*'
@@ -260,6 +268,16 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_delivery.c native/rikitu_delivery_guest_qa.c native/test_delivery_guest_qa.c -lm -o /tmp/rikitu-delivery-guest-clang
           /tmp/rikitu-delivery-guest-clang
+      - name: Verify MAP07 clock-square browser parity
+        run: node tests/test-clock-source.cjs
+      - name: GCC MAP07 clock pads, conveyors and fragment exit
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_clock.c native/test_clock.c -lm -o /tmp/rikitu-clock-gcc
+          /tmp/rikitu-clock-gcc
+      - name: Clang MAP07 clock pads, conveyors and fragment exit
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_clock.c native/test_clock.c -lm -o /tmp/rikitu-clock-clang
+          /tmp/rikitu-clock-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
