@@ -13,6 +13,8 @@ on:
       - 'native/rikitu_demo.*'
       - 'native/rikitu_workshop_guest_qa.*'
       - 'native/test_workshop_guest_qa.c'
+      - 'native/rikitu_delivery_guest_qa.*'
+      - 'native/test_delivery_guest_qa.c'
   push:
     paths:
       - '.github/workflows/switch-graphics-emulator.yml'
@@ -26,6 +28,8 @@ on:
       - 'native/rikitu_demo.*'
       - 'native/rikitu_workshop_guest_qa.*'
       - 'native/test_workshop_guest_qa.c'
+      - 'native/rikitu_delivery_guest_qa.*'
+      - 'native/test_delivery_guest_qa.c'
   workflow_dispatch:
 permissions:
   contents: read
@@ -115,7 +119,7 @@ jobs:
           export XDG_RUNTIME_DIR=/tmp/rikitu-xdg-runtime
           timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
             bash tests/run_nexium_graphical.sh
-      - name: Run 20 real Switch-side MAP01-MAP05 gameplay checks
+      - name: Run 24 real Switch-side MAP01-MAP06 gameplay checks
         shell: bash
         run: |
           set -euo pipefail

@@ -17,6 +17,8 @@ on:
       - 'native/rikitu_delivery.*'
       - 'native/rikitu_delivery_data.h'
       - 'native/test_delivery.c'
+      - 'native/rikitu_delivery_guest_qa.*'
+      - 'native/test_delivery_guest_qa.c'
       - 'tests/test-delivery-source.cjs'
       - 'native/test_workshop_guest_qa.c'
       - 'native/rikitu_workshop_data.h'
@@ -70,6 +72,8 @@ on:
       - 'native/rikitu_delivery.*'
       - 'native/rikitu_delivery_data.h'
       - 'native/test_delivery.c'
+      - 'native/rikitu_delivery_guest_qa.*'
+      - 'native/test_delivery_guest_qa.c'
       - 'tests/test-delivery-source.cjs'
       - 'native/test_workshop_guest_qa.c'
       - 'native/rikitu_workshop_data.h'
@@ -248,6 +252,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_delivery.c native/test_delivery.c -lm -o /tmp/rikitu-delivery-clang
           /tmp/rikitu-delivery-clang
+      - name: GCC MAP06 guest steam and boss parity
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_delivery.c native/rikitu_delivery_guest_qa.c native/test_delivery_guest_qa.c -lm -o /tmp/rikitu-delivery-guest-gcc
+          /tmp/rikitu-delivery-guest-gcc
+      - name: Clang MAP06 guest steam and boss parity
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_delivery.c native/rikitu_delivery_guest_qa.c native/test_delivery_guest_qa.c -lm -o /tmp/rikitu-delivery-guest-clang
+          /tmp/rikitu-delivery-guest-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
