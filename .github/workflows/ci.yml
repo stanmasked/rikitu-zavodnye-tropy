@@ -38,3 +38,9 @@ jobs:
           name: rikitu-real-controls-frames
           path: artifacts/real-controls/*.png
           if-no-files-found: warn
+      - name: Native C99 rules (GCC)
+        run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/test_rules.c -o /tmp/rikitu-gcc && /tmp/rikitu-gcc
+      - name: Native C99 rules (Clang)
+        run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/test_rules.c -o /tmp/rikitu-clang && /tmp/rikitu-clang
+      - name: Direct C99 vs JavaScript rules parity (GCC)
+        run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/parity_probe.c -o /tmp/rikitu-parity && node tests/test-native-parity.cjs /tmp/rikitu-parity
