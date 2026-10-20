@@ -1,0 +1,40 @@
+name: RIKITU native Switch NRO smoke
+on:
+  pull_request:
+    paths:
+      - 'switch/**'
+      - 'native/rikitu_rules.*'
+      - 'native/rikitu_loop.*'
+      - '.github/workflows/switch-nro.yml'
+  push:
+    paths:
+      - 'switch/**'
+      - 'native/rikitu_rules.*'
+      - 'native/rikitu_loop.*'
+      - '.github/workflows/switch-nro.yml'
+  workflow_dispatch:
+
+jobs:
+  build-nro:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:20260219
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm toolchain
+        run: |
+          test -f "$DEVKITPRO/libnx/switch_rules"
+          test -x "$DEVKITPRO/devkitA64/bin/aarch64-none-elf-gcc"
+          echo "$DEVKITPRO/devkitA64/bin" >> "$GITHUB_PATH"
+          echo "$DEVKITPRO/tools/bin" >> "$GITHUB_PATH"
+      - name: Compile minimal RIKITU native probe
+        run: make -C switch -j2
+      - name: Verify NRO artifact
+        run: |
+          test -s switch/rikitu_native_probe.nro
+          ls -lh switch/rikitu_native_probe.nro
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rikitu-first-libnx-input-probe
+          path: switch/rikitu_native_probe.nro
+          if-no-files-found: error
