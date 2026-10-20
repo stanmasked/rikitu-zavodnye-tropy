@@ -1,8 +1,15 @@
 name: Browser and game-rule checks
-on: [push, pull_request, workflow_dispatch]
-# Push and PR for the same branch share a group to avoid duplicate stale runs.
+# Only the protected main branch needs a push run. Feature branches are
+# tested by their pull_request event, avoiding duplicate queued builds.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+# PRs are keyed by number, and distinct event types cannot cancel each other.
+# A new push to the same PR still supersedes its previous outdated PR CI.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name }}
   cancel-in-progress: true
 jobs:
   prototype:
