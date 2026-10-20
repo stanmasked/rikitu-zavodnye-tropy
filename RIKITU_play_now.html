@@ -18,13 +18,13 @@
     <div class="topactions"><button id="start">Начать / далее</button><button id="pause">Пауза</button><button id="restart">Заново</button><button id="buy-heart">♥ Купить у Моки (B)</button></div>
   </header>
   <div id="hud" class="hud" aria-live="polite"><span>♥ 3</span><span>🟡 0</span><span>◆ 0/3</span><span>RIKITU</span></div>
-  <div class="stage"><canvas id="game" width="960" height="540" aria-label="Игровой прототип шести уровней RIKITU"></canvas></div>
+  <div class="stage"><canvas id="game" width="960" height="540" aria-label="Игровой прототип восьми уровней RIKITU"></canvas></div>
   <div class="touchbar" aria-label="Экранное управление"><button data-touch="left">◀</button><button data-touch="right">▶</button><button data-touch="jump">ПРЫЖОК</button></div>
   <div class="help">
     <div><b>Управление:</b> ← → или A/D — движение · Пробел / ↑ / W — прыжок · Shift — быстрее</div>
     <div><b>Дополнительно:</b> Enter — начать/следующий уровень · P — пауза · R — заново · Gamepad — поддержка</div>
     <div><b>Статистика:</b> секундомер считает только активное игровое время и фиксирует потери здоровья. Данные сохраняются на контрольных точках.</div>
-    <div><b>Задача:</b> найти 3 бирюзовых фрагмента, собрать монетки по желанию и добраться до выхода. Мини-боссы после 2-го, 4-го и 6-го уровней: трижды прыгни сверху. Затем лавка Моки: B — купить, Enter — продолжить.</div>
+    <div><b>Задача:</b> найти 3 бирюзовых фрагмента, собрать монетки по желанию и добраться до выхода. Мини-боссы после 2-го, 4-го, 6-го и 8-го уровней: трижды прыгни сверху. Затем лавка Моки: B — купить, Enter — продолжить.</div>
     <div class="note">Внешность лисёнка Рикиту не перерисовывается: бирюзовый маркер «Р» — временный технический символ до интеграции оригинальных утверждённых спрайтов. Эта версия предназначена для ПК/браузера, не для Switch.</div>
   </div>
 </main>
@@ -177,6 +177,33 @@
       gate:9730,boss:{x:9210,hp:3,name:'Пыльный бурильщик'},
       startText:'Подземная доставка: паровые подъёмники и конвейеры помогут найти детали.',
       endText:'Магистр Пыль подтверждает: тоннели закрыли по странному приказу.',decor:'tunnel'}
+    ,{name:'Часовая площадь',world:'Заводной город',width:9470,
+      ground:[[0,1820],[1895,3520],[3600,5220],[5300,6840],[6920,9470]],
+      platforms:[[510,383,200],[1180,379,190],[1590,383,205],[2440,382,180],[3130,378,200],
+        [3900,385,205],[4560,379,190],[5030,383,180],[5650,381,220],
+        [6370,385,190],[7360,382,205],[8050,379,190],[8670,381,210]],
+      clockPads:[[1350,GROUND],[4140,GROUND],[7770,GROUND]],
+      conveyors:[[2600,430,310,40],[6030,430,300,-42]],
+      fragments:[[1740,345],[4760,345],[8110,344]],checkpoints:[2240,4930,7240],
+      enemies:[{x:850,a:720,b:1070},{x:2700,a:2590,b:2910},{x:4000,a:3830,b:4190},
+        {x:5560,a:5450,b:5750},{x:6590,a:6470,b:6800},{x:8410,a:8280,b:8560}],
+      sections:[[0,'Колокольная улица'],[2360,'Площадь механиков'],[4720,'Архивный проход'],[7040,'Старый регистратор']],
+      gate:9290,boss:null,startText:'Часовая площадь: циферблаты поднимают Рикиту без ограничения времени.',
+      endText:'Регистратор сохранил время 07:12. Кто-то позднее исправил записи!',decor:'clock'},
+    {name:'Склад приказов',world:'Заводной город',width:10180,
+      ground:[[0,1900],[1980,3700],[3780,5520],[5600,7450],[7530,10180]],
+      platforms:[[480,381,195],[1250,384,205],[1690,380,190],[2390,379,205],
+        [3120,385,195],[4100,381,200],[4770,383,205],[5390,380,185],
+        [6160,382,195],[6840,379,210],[7660,384,200],[8310,381,205],[8970,379,190]],
+      conveyors:[[890,430,315,45],[4320,430,300,-48],[7730,430,330,47]],
+      switches:[[2120,GROUND],[5390,GROUND],[7560,GROUND]],
+      fragments:[[1820,344],[5080,343],[8450,343]],checkpoints:[2380,5230,7710],
+      enemies:[{x:850,a:740,b:1090},{x:2720,a:2590,b:2870},{x:4250,a:4100,b:4480},
+        {x:5840,a:5720,b:6080},{x:7230,a:7050,b:7410},{x:8560,a:8460,b:8820}],
+      sections:[[0,'Приёмная склада'],[2460,'Линия сортировки'],[4990,'Комната печатей'],[7650,'Хранилище распоряжений']],
+      gate:9990,boss:{x:9470,hp:3,name:'Патрульный автомат'},
+      startText:'Склад приказов: активируй печати и найди три детали до выхода.',
+      endText:'Рэтчет предъявил приказ центральной службы. Нить расследования ведёт в Забытые горы.',decor:'depot'}
   ].map(d=>{
     const coins=[...coinsAlong(d.ground),...platformCoins(d.platforms)];
     let i=0;
@@ -209,6 +236,7 @@
       if(!int(s.levelIndex)||s.levelIndex<0||s.levelIndex>=chapterInfo.length)return null;
       // v0.5 ended after level 4; migrate its victory screen into the level-5 transition.
       if(s.mode==='victory'&&s.levelIndex===3&&chapterInfo.length>4)s.mode='between';
+      if(s.mode==='victory'&&s.levelIndex===5&&chapterInfo.length>6)s.mode='between';
       if(!int(s.wallet)||s.wallet<0||s.wallet>chapterInfo.length*C.SETTINGS.coinsPerStage)return null;
       if(!int(s.purchased)||s.purchased<0||s.purchased>4||s.purchased>C.unlockedUpgrades(s.levelIndex+1))return null;
       if(!Array.isArray(s.fragments)||!Array.isArray(s.coins)||!Array.isArray(s.switches))return null;
@@ -269,6 +297,7 @@
       mushrooms:(d.mushrooms||[]).map(([x,y])=>({x,y})),
       conveyors:(d.conveyors||[]).map(([x,y,w,speed])=>({x,y,w,speed})),
       vents:(d.vents||[]).map(([x,y])=>({x,y})),
+      clockPads:(d.clockPads||[]).map(([x,y])=>({x,y})),
       switches:(d.switches||[]).map(([x,y])=>({x,y,on:false})),
       enemies:d.enemies.map((e,i)=>({id:i,x:e.x,y:GROUND-28,w:33,h:28,a:e.a,b:e.b,dir:i%2?1:-1,dead:false})),
       boss:d.boss?{x:d.boss.x,y:GROUND-57,w:72,h:57,center:d.boss.x,hp:d.boss.hp,name:d.boss.name,hit:0,dir:1,alive:true}:null,
@@ -349,6 +378,14 @@
       for(const vent of level.vents){
         if(p.x+p.w>vent.x-18&&p.x<vent.x+52){
           p.vy=-705;p.grounded=false;announce('Паровой подъёмник!',1.2);break;
+        }
+      }
+    }
+    if(p.grounded){
+      for(const dial of level.clockPads){
+        if(p.x+p.w>dial.x-16&&p.x<dial.x+54){
+          p.vy=-675;p.grounded=false;
+          announce('Часовая пружина! Никакого таймера.',1.4);break;
         }
       }
     }
@@ -449,6 +486,8 @@
     if(level?.decor==='mill'){gradient.addColorStop(0,'#81d6ec');gradient.addColorStop(1,'#f3fbba');}
     else if(level?.decor==='city'){gradient.addColorStop(0,'#a7d3dc');gradient.addColorStop(1,'#ffe7bb');}
     else if(level?.decor==='tunnel'){gradient.addColorStop(0,'#637e9a');gradient.addColorStop(1,'#cad1ba');}
+    else if(level?.decor==='clock'){gradient.addColorStop(0,'#c4c9ea');gradient.addColorStop(1,'#f8edbf');}
+    else if(level?.decor==='depot'){gradient.addColorStop(0,'#a9b4c7');gradient.addColorStop(1,'#e6d2ac');}
     else {gradient.addColorStop(0,'#8bdaf3');gradient.addColorStop(1,'#fbf8d5');}
     ctx.fillStyle=gradient;ctx.fillRect(0,0,W,H);
     ctx.fillStyle='#fff7ba';ctx.beginPath();ctx.arc(800-cam*.03,89,42,0,Math.PI*2);ctx.fill();
@@ -468,7 +507,7 @@
       }
     }
     ctx.restore();
-    if(level?.decor==='city'||level?.decor==='tunnel'){
+    if(['city','tunnel','clock','depot'].includes(level?.decor)){
       ctx.save();ctx.translate(-cam*.28,0);
       for(let x=-300;x<level.width+W;x+=310){
         rounded(x+48,238,185,242,12,level.decor==='tunnel'?'#718592':'#a7a2a3');
@@ -509,6 +548,13 @@
       rounded(belt.x,belt.y,belt.w,26,5,'#5b7078');
       for(let x=belt.x+18;x<belt.x+belt.w-12;x+=55)
         text(belt.speed>0?'›':'‹',x,belt.y+20,25,'#ffe8aa','center','800');
+    }
+    for(const dial of level.clockPads){
+      rounded(dial.x-9,GROUND-15,59,13,5,'#708aa8');
+      ctx.fillStyle='#fff6d4';ctx.beginPath();ctx.arc(dial.x+20,GROUND-36,25,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#51728e';ctx.lineWidth=4;ctx.stroke();
+      ctx.beginPath();ctx.moveTo(dial.x+20,GROUND-36);ctx.lineTo(dial.x+20,GROUND-52);
+      ctx.moveTo(dial.x+20,GROUND-36);ctx.lineTo(dial.x+32,GROUND-36);ctx.stroke();
     }
     for(const vent of level.vents){
       rounded(vent.x-15,GROUND-16,65,16,5,'#758fa0');
@@ -613,7 +659,7 @@
         overlay('МОКИ — ЛАВКА СЕРДЕЦ',lines,'ENTER — ПРОДОЛЖИТЬ');
         text('♥',745,180,33,'#d75f6d','center');
       }
-      else if(mode==='victory')overlay('ЗАВОДНОЙ ГОРОД — ПЕРВАЯ ЧАСТЬ ПРОЙДЕНА!',['Рикиту восстановил 6 маршрутных шестерёнок.','Новая улика ведёт на Часовую площадь.',`Осталось монет: ${allCoins}`],'ENTER — СЫГРАТЬ СНОВА');
+      else if(mode==='victory')overlay('ЗАВОДНОЙ ГОРОД ПРОЙДЕН!',['Рикиту восстановил 8 маршрутных шестерёнок и раскрыл новые улики.','Следующий пункт расследования — Забытые горы.',`Осталось монет: ${allCoins}`],'ENTER — СЫГРАТЬ СНОВА');
     }
   }
   function togglePause(){if(mode==='playing'){mode='paused'}else if(mode==='paused'){mode='playing'}}
@@ -673,7 +719,7 @@
     }
     updateHud();return true;
   };
-  window.RIKITU_TEST_LEVELS=()=>chapterInfo.map(d=>({width:d.width,fragments:d.fragments,coins:d.coins.length,checkpoints:d.checkpoints,sections:d.sections,gate:d.gate,boss:d.boss,mushrooms:d.mushrooms||[],switches:d.switches||[],conveyors:d.conveyors||[],vents:d.vents||[]}));
+  window.RIKITU_TEST_LEVELS=()=>chapterInfo.map(d=>({width:d.width,fragments:d.fragments,coins:d.coins.length,checkpoints:d.checkpoints,sections:d.sections,gate:d.gate,boss:d.boss,mushrooms:d.mushrooms||[],switches:d.switches||[],conveyors:d.conveyors||[],vents:d.vents||[],clockPads:d.clockPads||[]}));
   window.RIKITU_TEST_MOVE=(x,y)=>{if(p&&level){p.x=clamp(x,0,level.width-p.w);p.y=y;p.vy=0;p.inv=2;}};
   updateHud();requestAnimationFrame(loop);
 })();
