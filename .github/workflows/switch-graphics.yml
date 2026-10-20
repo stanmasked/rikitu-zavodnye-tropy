@@ -1,0 +1,70 @@
+name: RIKITU graphical Switch scene
+on:
+  pull_request:
+    paths:
+      - 'native/rikitu_draw.*'
+      - 'native/rikitu_demo.*'
+      - 'native/test_draw.c'
+      - 'native/rikitu_loop.*'
+      - 'native/rikitu_stage.*'
+      - 'native/rikitu_surfaces.*'
+      - 'switch_graphical/**'
+      - 'tests/check_nro.py'
+      - '.github/workflows/switch-graphics.yml'
+  push:
+    paths:
+      - 'native/rikitu_draw.*'
+      - 'native/rikitu_demo.*'
+      - 'native/test_draw.c'
+      - 'native/rikitu_loop.*'
+      - 'native/rikitu_stage.*'
+      - 'native/rikitu_surfaces.*'
+      - 'switch_graphical/**'
+      - '.github/workflows/switch-graphics.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  host-render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: GCC portable renderer and deterministic preview
+        run: |
+          mkdir -p artifacts
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_draw.c native/rikitu_demo.c native/test_draw.c -lm -o /tmp/rikitu-draw-gcc
+          /tmp/rikitu-draw-gcc artifacts/rikitu-debug-scene.ppm
+      - name: Clang portable renderer
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_draw.c native/rikitu_demo.c native/test_draw.c -lm -o /tmp/rikitu-draw-clang
+          /tmp/rikitu-draw-clang
+      - name: Upload pixel-accurate host render
+        uses: actions/upload-artifact@v4
+        with:
+          name: rikitu-debug-scene-preview-ppm
+          path: artifacts/rikitu-debug-scene.ppm
+          if-no-files-found: error
+  switch-nro:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:20260219
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SDK
+        run: |
+          test -x "$DEVKITPRO/devkitA64/bin/aarch64-none-elf-gcc"
+          test -f "$DEVKITPRO/libnx/switch_rules"
+          echo "$DEVKITPRO/devkitA64/bin" >> "$GITHUB_PATH"
+          echo "$DEVKITPRO/tools/bin" >> "$GITHUB_PATH"
+      - name: Build 1280x720 graphical NRO
+        run: make -C switch_graphical -j2
+      - name: Verify NRO0 header
+        run: |
+          test -s switch_graphical/rikitu_scene_probe.nro
+          python3 tests/check_nro.py switch_graphical/rikitu_scene_probe.nro
+      - name: Upload graphical NRO
+        uses: actions/upload-artifact@v4
+        with:
+          name: rikitu-first-graphical-nro
+          path: switch_graphical/rikitu_scene_probe.nro
+          if-no-files-found: error
