@@ -45,7 +45,7 @@ int rikitu_apply_surfaces(RikituPlayer *p, float dt, float world_width,
       if(l->kind<RIKITU_LAUNCH_STEAM ||
          l->kind>RIKITU_LAUNCH_MUSHROOM ||
          !isfinite(l->x) || !isfinite(l->y)) return -1;
-      if(l->kind!=kind || !hit_launcher(p,l)) continue;
+      if((int)l->kind!=kind || !hit_launcher(p,l)) continue;
       switch(kind) {
         case RIKITU_LAUNCH_STEAM:p->vy=-705.0f;break;
         case RIKITU_LAUNCH_CLOCK:p->vy=-675.0f;break;
