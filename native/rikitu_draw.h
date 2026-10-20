@@ -9,6 +9,7 @@
 #include "rikitu_stage.h"
 #include "rikitu_surfaces.h"
 #include "rikitu_enemies.h"
+#include "rikitu_boss.h"
 
 enum { RIKITU_SCENE_WIDTH = 1280, RIKITU_SCENE_HEIGHT = 720,
        RIKITU_DEMO_COINS = 18, RIKITU_DEMO_SOLIDS = 4,
@@ -27,6 +28,7 @@ typedef struct RikituScene {
   RikituLauncher launchers[RIKITU_MAX_LAUNCHERS];
   float checkpoints[RIKITU_MAX_CHECKPOINTS];
   RikituEnemy enemies[RIKITU_MAX_ENEMIES];
+  RikituBoss boss;
   float world_width, gate_x, active_checkpoint;
   size_t solid_count, coin_total, belt_count, launcher_count;
   size_t checkpoint_total, enemy_count;

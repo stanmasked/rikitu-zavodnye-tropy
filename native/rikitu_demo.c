@@ -115,6 +115,13 @@ int rikitu_demo_advance(RikituScene *s,RikituLoop *loop,
       if(event==RIKITU_ENEMY_INVALID)return -1;
       if(event==RIKITU_ENEMY_CONTACT)take_damage(s,loop);
     }
+    if(s->stage.boss_required) {
+      const RikituBossEvent event=rikitu_boss_tick(&s->boss,&loop->player,
+                                                    old_bottom,RIKITU_FIXED_DT);
+      if(event==RIKITU_BOSS_INVALID)return -1;
+      if(event==RIKITU_BOSS_CONTACT)take_damage(s,loop);
+      if(event==RIKITU_BOSS_DEFEATED)s->stage.boss_defeated=1;
+    }
     {
       const RikituRect player={loop->player.x,loop->player.y,
                                loop->player.w,loop->player.h};

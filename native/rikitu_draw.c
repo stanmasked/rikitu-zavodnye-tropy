@@ -158,6 +158,16 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
     box(&c,x+6,y+8,5,5,rgb(49,56,71));
     box(&c,x+22,y+8,5,5,rgb(49,56,71));
   }
+  if(s->stage.boss_required && s->boss.alive) {
+    /* Placeholder only: this rectangle is not the approved boss design. */
+    const RikituBoss *b=&s->boss;
+    x=worldx(b->x,camera);y=(int)b->y;
+    box(&c,x-3,y-3,(int)b->w+6,(int)b->h+6,rgb(37,33,65));
+    box(&c,x,y,(int)b->w,(int)b->h,
+        b->hit_seconds>0.0f?rgb(246,181,191):rgb(180,99,207));
+    box(&c,x+16,y+15,8,8,rgb(32,32,55));
+    box(&c,x+48,y+15,8,8,rgb(32,32,55));
+  }
   x=worldx(s->gate_x,camera);
   box(&c,x,436,26,104,rgb(23,40,53));
   box(&c,x-15,420,56,22,
@@ -173,7 +183,8 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
   /* Fixed-screen HUD: title, counters and controller instructions. */
   box(&c,0,0,width,84,rgb(16,30,49));
   box(&c,0,80,width,4,rgb(76,176,187));
-  label(&c,25,15,s->level_id==1?"RIKITU 01 FLOWER TRAIL":"RIKITU TECH DEMO",3,ink);
+  label(&c,25,15,s->level_id==2?"RIKITU 02 MILL CREEK":
+                   (s->level_id==1?"RIKITU 01 FLOWER TRAIL":"RIKITU TECH DEMO"),3,ink);
   (void)snprintf(status,sizeof(status),"FRAGMENTS %d/3  COINS %d",
        s->stage.fragment_count,s->stage.coin_count);
   label(&c,26,56,status,2,rgb(250,220,124));
@@ -184,6 +195,10 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
     (void)snprintf(status,sizeof(status),"CHECKPOINTS %d/3",
                    s->reached_checkpoints);
     label(&c,590,56,status,2,rgb(149,221,203));
+  }
+  if(s->stage.boss_required) {
+    (void)snprintf(status,sizeof(status),"BOSS HP %d/3",s->boss.hp);
+    label(&c,870,56,status,2,rgb(249,182,224));
   }
   label(&c,width-370,25,"A JUMP / R RUN",2,ink);
   label(&c,width-370,51,"PLUS EXIT",2,ink);

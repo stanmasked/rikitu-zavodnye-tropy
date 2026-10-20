@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <switch.h>
 #include "rikitu_flower.h"
+#include "rikitu_mill.h"
 #include "rikitu_save.h"
 
 #define MAP01_A "sdmc:/switch/RIKITU/map01-a.rks"
@@ -73,12 +74,32 @@ int main(void) {
         (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
       break;
     }
+    /* Y switches between source-parity MAP01 and experimental MAP02.
+     * Only MAP01 is persisted. MAP02 never touches MAP01 save files. */
+    if(pressed & HidNpadButton_Y){
+      if(scene.level_id==1){
+        if(save_ready && rikitu_save_encode(now,&scene,&game,1))
+          (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
+        rikitu_mill_init(&scene);
+      }else{
+        rikitu_flower_init(&scene);
+        if(save_ready)
+          (void)rikitu_save_load_pair(MAP01_A,MAP01_B,&scene,&game);
+      }
+      memset(&game,0,sizeof(game));
+      game.player=scene.player;
+      save_elapsed=0.0f;
+      have_last=0;
+    }
     if(pressed & HidNpadButton_X){
-      rikitu_flower_init(&scene);
+      if(scene.level_id==2)rikitu_mill_init(&scene);
+      else rikitu_flower_init(&scene);
       memset(&game,0,sizeof(game));
       game.player=scene.player;
       have_last=0;save_elapsed=0.0f;
-      if(save_ready){(void)remove(MAP01_A);(void)remove(MAP01_B);}
+      if(save_ready && scene.level_id==1){
+        (void)remove(MAP01_A);(void)remove(MAP01_B);
+      }
     }
     if(pressed & HidNpadButton_Minus)game.paused=!game.paused;
     /* The accumulator caps catch-up at 100ms/six ticks, pauses do not
