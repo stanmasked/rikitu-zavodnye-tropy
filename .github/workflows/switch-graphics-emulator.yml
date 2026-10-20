@@ -4,6 +4,9 @@ on:
     paths:
       - '.github/workflows/switch-graphics-emulator.yml'
       - 'tests/run_nexium_graphical.sh'
+      - 'native/rikitu_combat_guest_qa.*'
+      - 'native/test_combat_guest_qa.c'
+      - 'tests/check_combat_guest.py'
       - 'tests/check_emulator_scene.py'
       - 'switch_graphical/**'
       - 'native/rikitu_draw.*'
@@ -12,6 +15,9 @@ on:
     paths:
       - '.github/workflows/switch-graphics-emulator.yml'
       - 'tests/run_nexium_graphical.sh'
+      - 'native/rikitu_combat_guest_qa.*'
+      - 'native/test_combat_guest_qa.c'
+      - 'tests/check_combat_guest.py'
       - 'tests/check_emulator_scene.py'
       - 'switch_graphical/**'
       - 'native/rikitu_draw.*'
@@ -32,6 +38,16 @@ jobs:
           echo "$DEVKITPRO/tools/bin" >> "$GITHUB_PATH"
           PATH="$DEVKITPRO/devkitA64/bin:$DEVKITPRO/tools/bin:$PATH" make -C switch_graphical -j2
           python3 tests/check_nro.py switch_graphical/rikitu_scene_probe.nro
+      - name: Build guest-only C99 combat QA NRO
+        run: |
+          PATH="$DEVKITPRO/devkitA64/bin:$DEVKITPRO/tools/bin:$PATH" make -C switch_graphical QA_MODE=1 -j2
+          python3 tests/check_nro.py switch_graphical/rikitu_combat_qa_probe.nro
+      - name: Upload guest combat QA NRO
+        uses: actions/upload-artifact@v4
+        with:
+          name: rikitu-nexium-combat-qa-nro
+          path: switch_graphical/rikitu_combat_qa_probe.nro
+          if-no-files-found: error
       - name: Upload graphical NRO
         uses: actions/upload-artifact@v4
         with:
@@ -48,6 +64,10 @@ jobs:
         with:
           name: rikitu-nexium-qa-input-nro
           path: nro
+      - uses: actions/download-artifact@v4
+        with:
+          name: rikitu-nexium-combat-qa-nro
+          path: nro-combat
       - name: Install headless NeXium dependencies
         shell: bash
         run: |
@@ -89,6 +109,18 @@ jobs:
           mkdir -p /tmp/rikitu-xdg-runtime
           chmod 700 /tmp/rikitu-xdg-runtime
           export XDG_RUNTIME_DIR=/tmp/rikitu-xdg-runtime
+          timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
+            bash tests/run_nexium_graphical.sh
+      - name: Run real Switch-side patrol, contact, stomp and respawn checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          icd="$(find /usr/share/vulkan/icd.d -maxdepth 1 -name 'lvp_icd*.json' -print -quit)"
+          test -n "$icd"
+          export VK_ICD_FILENAMES="$icd"
+          export NRO_PATH="$GITHUB_WORKSPACE/nro-combat/rikitu_combat_qa_probe.nro"
+          export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/combat"
+          export RIKITU_QA_MODE=1
           timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
             bash tests/run_nexium_graphical.sh
       - name: Upload runtime screenshot evidence

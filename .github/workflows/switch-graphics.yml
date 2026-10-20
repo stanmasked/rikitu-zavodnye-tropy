@@ -8,6 +8,8 @@ on:
       - 'native/rikitu_flower_data.h'
       - 'native/rikitu_flower_enemies_data.h'
       - 'native/rikitu_enemies.*'
+      - 'native/rikitu_combat_guest_qa.*'
+      - 'native/test_combat_guest_qa.c'
       - 'native/test_enemies.c'
       - 'tests/test-flower-enemies.cjs'
       - 'native/test_flower.c'
@@ -28,6 +30,8 @@ on:
       - 'native/rikitu_flower_data.h'
       - 'native/rikitu_flower_enemies_data.h'
       - 'native/rikitu_enemies.*'
+      - 'native/rikitu_combat_guest_qa.*'
+      - 'native/test_combat_guest_qa.c'
       - 'native/test_enemies.c'
       - 'tests/test-flower-enemies.cjs'
       - 'native/test_flower.c'
@@ -84,6 +88,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_flower.c native/rikitu_enemies.c native/test_enemies.c -lm -o /tmp/rikitu-enemies-clang
           /tmp/rikitu-enemies-clang
+      - name: GCC execute same C99 combat tests as NeXium guest
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_combat_guest_qa.c native/test_combat_guest_qa.c -lm -o /tmp/rikitu-combat-guest-gcc
+          /tmp/rikitu-combat-guest-gcc
+      - name: Clang execute same C99 combat tests as NeXium guest
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_combat_guest_qa.c native/test_combat_guest_qa.c -lm -o /tmp/rikitu-combat-guest-clang
+          /tmp/rikitu-combat-guest-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
