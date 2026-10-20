@@ -32,7 +32,7 @@ jobs:
       - name: Verify NRO artifact
         run: |
           test -s switch/rikitu_native_probe.nro
-          file switch/rikitu_native_probe.nro
+          ls -lh switch/rikitu_native_probe.nro
       - uses: actions/upload-artifact@v4
         with:
           name: rikitu-first-libnx-input-probe
