@@ -11,8 +11,9 @@ with sync_playwright() as p:
     page.keyboard.press('Enter');page.wait_for_timeout(160)
     assert page.evaluate('RIKITU_TEST_STATE().mode')=='playing'
     a=page.evaluate('RIKITU_TEST_LEVELS()')
-    assert len(a)==2 and a[0]['coins']==90 and a[1]['coins']==90
-    assert a[0]['width']>=7900 and a[1]['width']>=8550
+    assert len(a)==4 and all(d['coins']==90 for d in a)
+    assert [d['width'] for d in a]==[7900,8550,8270,8880]
+    assert len(a[2]['mushrooms'])==3 and len(a[3]['switches'])==3
     assert len(a[0]['checkpoints'])==3 and len(a[0]['sections'])==4
     for x,y in [(1520,354),(3640,339),(6860,354)]:
         page.evaluate('(p)=>RIKITU_TEST_MOVE(...p)',[x,y]);page.wait_for_timeout(75)
@@ -33,8 +34,31 @@ with sync_playwright() as p:
     page.evaluate('RIKITU_TEST_MOVE(8390,400)');page.wait_for_timeout(90)
     assert page.evaluate('RIKITU_TEST_STATE().mode')=='shop'
     assert page.evaluate('RIKITU_TEST_SHOP(120,0,2).available')
-    page.keyboard.press('Enter');page.wait_for_timeout(70)
+    page.keyboard.press('Enter');page.wait_for_timeout(100)
+    assert page.evaluate('RIKITU_TEST_STATE().mode')=='between'
+    page.keyboard.press('Enter');page.wait_for_timeout(100)
+    assert page.evaluate('RIKITU_TEST_STATE().level')==3
+    for x,y in [(1520,350),(3960,349),(7030,350)]:
+        page.evaluate('(p)=>RIKITU_TEST_MOVE(...p)',[x,y]);page.wait_for_timeout(80)
+    assert page.evaluate('RIKITU_TEST_STATE().fragments')==3
+    page.evaluate('RIKITU_TEST_MOVE(8160,400)');page.wait_for_timeout(100)
+    assert page.evaluate('RIKITU_TEST_STATE().mode')=='between'
+    page.keyboard.press('Enter');page.wait_for_timeout(100)
+    assert page.evaluate('RIKITU_TEST_STATE().level')==4
+    for x,y in [(1570,349),(4580,348),(7410,350)]:
+        page.evaluate('(p)=>RIKITU_TEST_MOVE(...p)',[x,y]);page.wait_for_timeout(80)
+    assert page.evaluate('RIKITU_TEST_STATE().fragments')==3
+    page.evaluate('RIKITU_TEST_MOVE(8750,400)');page.wait_for_timeout(120)
+    assert page.evaluate('RIKITU_TEST_STATE().mode')=='playing'
+    for expected in [2,1,0]:
+        page.wait_for_timeout(920)
+        state=page.evaluate('RIKITU_TEST_STATE()')
+        page.evaluate('(p)=>RIKITU_TEST_MOVE(p[0]+14,p[1]-58)',[state['bossX'],state['bossY']]);page.wait_for_timeout(350)
+        assert page.evaluate('RIKITU_TEST_STATE().bossHP')==expected
+    page.evaluate('RIKITU_TEST_MOVE(8750,400)');page.wait_for_timeout(100)
+    assert page.evaluate('RIKITU_TEST_STATE().mode')=='shop'
+    page.keyboard.press('Enter');page.wait_for_timeout(80)
     assert page.evaluate('RIKITU_TEST_STATE().mode')=='victory'
     assert not errors,errors
-    print('PASS browser route, fragment gate, mini boss, hamster shop')
+    print('PASS browser route, fragment gate, mini boss, Moki shop, four levels')
     browser.close()
