@@ -138,6 +138,33 @@
       gate:10140,boss:{x:9650,hp:3,name:'Ветряной автомат'},
       startText:'Облачная пристань: используй безопасные восходящие потоки, чтобы найти детали.',
       endText:'Капитан Буря сообщил: часовое оборудование везли по закрытому маршруту.',decor:'skyport'}
+    ,{name:'Кристальные пещеры',world:'Забытые горы',width:9820,
+      ground:[[0,1850],[1930,3630],[3710,5470],[5550,7250],[7330,9820]],
+      platforms:[[540,381,185],[1100,378,195],[1560,383,205],[2350,381,190],
+        [3060,385,195],[3890,379,210],[4560,383,190],[5090,380,190],
+        [5900,380,215],[6620,383,205],[7500,380,190],[8190,383,210],[8930,380,190]],
+      crystals:[[1120,GROUND],[3980,GROUND],[7650,GROUND]],
+      fragments:[[1770,343],[4930,341],[8440,343]],checkpoints:[2370,5050,7470],
+      enemies:[{x:850,a:710,b:1020},{x:2690,a:2510,b:2870},{x:4060,a:3920,b:4250},
+        {x:5800,a:5650,b:5950},{x:6990,a:6810,b:7190},{x:8610,a:8470,b:8800}],
+      sections:[[0,'Сверкающий вход'],[2430,'Зал кристаллов'],[4820,'Архив древних мастеров'],[7340,'Подземный ручей']],
+      gate:9620,boss:null,startText:'Кристальные пещеры: светящиеся кристаллы мягко подбрасывают вверх.',
+      endText:'Леди Морин показала старинный чертёж: Сердце дорог специально разъединяет шестерни при аварии.',decor:'crystal'},
+    {name:'Шахта молчания',world:'Забытые горы',width:10700,
+      ground:[[0,1910],[1990,3860],[3940,5900],[5980,7970],[8050,10700]],
+      platforms:[[540,380,195],[1260,383,190],[1810,378,200],[2510,380,200],
+        [3260,385,195],[4150,380,205],[4800,383,210],[5450,381,190],
+        [6300,381,210],[7100,380,200],[8200,380,190],[8870,383,195],[9470,381,200]],
+      conveyors:[[730,430,290,43],[4610,430,300,-44],[8290,430,330,46]],
+      vents:[[1480,GROUND],[5140,GROUND],[7580,GROUND]],
+      switches:[[2590,GROUND],[6030,GROUND],[8260,GROUND]],
+      fragments:[[1810,343],[5600,342],[9130,344]],checkpoints:[2520,5490,8200],
+      enemies:[{x:840,a:730,b:1040},{x:2800,a:2680,b:3020},{x:4300,a:4150,b:4500},
+        {x:6660,a:6530,b:6850},{x:7850,a:7740,b:7970},{x:9110,a:8970,b:9270}],
+      sections:[[0,'Шахтные ворота'],[2740,'Сортировка руды'],[5440,'Термальный архив'],[8180,'Площадка буровых машин']],
+      gate:10530,boss:{x:9930,hp:3,name:'Буровой караул'},
+      startText:'Шахта молчания: используй пар и конвейеры, затем останови Буровой караул.',
+      endText:'Шахтный регистратор подтвердил опасное ускорение Сердца дорог. Нужно найти способ безопасного ремонта.',decor:'mine'}
   ].map(d=>{
     const coins=[...coinsAlong(d.ground),...platformCoins(d.platforms)];
     let i=0;
@@ -172,6 +199,7 @@
       if(s.mode==='victory'&&s.levelIndex===3&&chapterInfo.length>4)s.mode='between';
       if(s.mode==='victory'&&s.levelIndex===5&&chapterInfo.length>6)s.mode='between';
       if(s.mode==='victory'&&s.levelIndex===7&&chapterInfo.length>8)s.mode='between';
+      if(s.mode==='victory'&&s.levelIndex===9&&chapterInfo.length>10)s.mode='between';
       if(!int(s.wallet)||s.wallet<0||s.wallet>chapterInfo.length*C.SETTINGS.coinsPerStage)return null;
       if(!int(s.purchased)||s.purchased<0||s.purchased>4||s.purchased>C.unlockedUpgrades(s.levelIndex+1))return null;
       if(!Array.isArray(s.fragments)||!Array.isArray(s.coins)||!Array.isArray(s.switches))return null;
@@ -246,6 +274,7 @@
       vents:(d.vents||[]).map(([x,y])=>({x,y})),
       clockPads:(d.clockPads||[]).map(([x,y])=>({x,y})),
       gusts:(d.gusts||[]).map(([x,y])=>({x,y})),
+      crystals:(d.crystals||[]).map(([x,y])=>({x,y})),
       switches:(d.switches||[]).map(([x,y])=>({x,y,on:false})),
       enemies:d.enemies.map((e,i)=>({id:i,x:e.x,y:GROUND-28,w:33,h:28,a:e.a,b:e.b,dir:i%2?1:-1,dead:false})),
       boss:d.boss?{x:d.boss.x,y:GROUND-57,w:72,h:57,center:d.boss.x,hp:d.boss.hp,name:d.boss.name,hit:0,dir:1,alive:true}:null,
@@ -342,6 +371,13 @@
       for(const gust of level.gusts){
         if(p.x+p.w>gust.x-24&&p.x<gust.x+66){
           p.vy=-690;p.grounded=false;announce('Тёплый восходящий поток!',1.3);break;
+        }
+      }
+    }
+    if(p.grounded){
+      for(const crystal of level.crystals){
+        if(p.x+p.w>crystal.x-20&&p.x<crystal.x+60){
+          p.vy=-690;p.grounded=false;announce('Кристаллическая пружина!',1.2);break;
         }
       }
     }
@@ -448,6 +484,8 @@
     else if(level?.decor==='depot'){gradient.addColorStop(0,'#a9b4c7');gradient.addColorStop(1,'#e6d2ac');}
     else if(level?.decor==='mountain'){gradient.addColorStop(0,'#89a6c1');gradient.addColorStop(1,'#dfead7');}
     else if(level?.decor==='skyport'){gradient.addColorStop(0,'#77bcdb');gradient.addColorStop(1,'#f7e4bf');}
+    else if(level?.decor==='crystal'){gradient.addColorStop(0,'#7788b0');gradient.addColorStop(1,'#d6bfdc');}
+    else if(level?.decor==='mine'){gradient.addColorStop(0,'#788a91');gradient.addColorStop(1,'#d7bca6');}
     else {gradient.addColorStop(0,'#8bdaf3');gradient.addColorStop(1,'#fbf8d5');}
     ctx.fillStyle=gradient;ctx.fillRect(0,0,W,H);
     ctx.fillStyle='#fff7ba';ctx.beginPath();ctx.arc(800-cam*.03,89,42,0,Math.PI*2);ctx.fill();
@@ -475,6 +513,16 @@
         ctx.fillStyle='#edf5ed';ctx.beginPath();ctx.moveTo(x+180,219);ctx.lineTo(x+230,155);ctx.lineTo(x+285,217);ctx.closePath();ctx.fill();
       }
       ctx.restore();
+    }
+    if(level?.decor==='crystal'||level?.decor==='mine'){
+      ctx.save();ctx.translate(-cam*.18,0);
+      for(let x=-280;x<level.width+W;x+=370){
+        ctx.fillStyle=level.decor==='crystal'?'#8d98c6':'#8d857e';
+        ctx.beginPath();ctx.moveTo(x,450);ctx.lineTo(x+170,190);ctx.lineTo(x+360,450);ctx.closePath();ctx.fill();
+        if(level.decor==='crystal'){
+          ctx.fillStyle='#cadff4';ctx.beginPath();ctx.moveTo(x+172,190);ctx.lineTo(x+125,296);ctx.lineTo(x+220,288);ctx.closePath();ctx.fill();
+        }
+      }ctx.restore();
     }
     if(['city','tunnel','clock','depot'].includes(level?.decor)){
       ctx.save();ctx.translate(-cam*.28,0);
@@ -517,6 +565,14 @@
       rounded(belt.x,belt.y,belt.w,26,5,'#5b7078');
       for(let x=belt.x+18;x<belt.x+belt.w-12;x+=55)
         text(belt.speed>0?'›':'‹',x,belt.y+20,25,'#ffe8aa','center','800');
+    }
+    for(const crystal of level.crystals){
+      rounded(crystal.x-13,GROUND-13,68,13,5,'#8193b1');
+      ctx.fillStyle='#a8e9fa';ctx.beginPath();
+      ctx.moveTo(crystal.x,GROUND-12);ctx.lineTo(crystal.x+20,GROUND-73);
+      ctx.lineTo(crystal.x+43,GROUND-12);ctx.closePath();ctx.fill();
+      ctx.fillStyle='#d8f9fd';ctx.beginPath();ctx.moveTo(crystal.x+20,GROUND-73);
+      ctx.lineTo(crystal.x+20,GROUND-12);ctx.lineTo(crystal.x+43,GROUND-12);ctx.closePath();ctx.fill();
     }
     for(const gust of level.gusts){
       rounded(gust.x-13,GROUND-14,66,14,5,'#7da7b5');
@@ -637,7 +693,7 @@
         overlay('МОКИ — ЛАВКА СЕРДЕЦ',lines,'ENTER — ПРОДОЛЖИТЬ');
         text('♥',745,180,33,'#d75f6d','center');
       }
-      else if(mode==='victory')overlay('ЗАБЫТЫЕ ГОРЫ — ПЕРВАЯ ЧАСТЬ ПРОЙДЕНА!',['Рикиту восстановил десять маршрутных шестерёнок.',`Последний уровень: ${formatClock(stageSeconds)} · попаданий: ${stageHits}`,'Теперь путь ведёт к Кристальным пещерам.',`Осталось монет: ${allCoins}`],'ENTER — СЫГРАТЬ СНОВА');
+      else if(mode==='victory')overlay('ЗАБЫТЫЕ ГОРЫ ПРОЙДЕНЫ!',['Восстановлено двенадцать маршрутных шестерёнок.',`Последний уровень: ${formatClock(stageSeconds)} · попаданий: ${stageHits}`,'Сердце дорог было опасно перегрето ещё до остановки.','Следующий маршрут — Замок механизмов.'],'ENTER — СЫГРАТЬ СНОВА');
     }
   }
   function togglePause(){if(mode==='playing'){mode='paused'}else if(mode==='paused'){mode='playing'}}
@@ -697,7 +753,7 @@
     }
     updateHud();return true;
   };
-  window.RIKITU_TEST_LEVELS=()=>chapterInfo.map(d=>({width:d.width,fragments:d.fragments,coins:d.coins.length,checkpoints:d.checkpoints,sections:d.sections,gate:d.gate,boss:d.boss,mushrooms:d.mushrooms||[],switches:d.switches||[],conveyors:d.conveyors||[],vents:d.vents||[],clockPads:d.clockPads||[],gusts:d.gusts||[]}));
+  window.RIKITU_TEST_LEVELS=()=>chapterInfo.map(d=>({width:d.width,fragments:d.fragments,coins:d.coins.length,checkpoints:d.checkpoints,sections:d.sections,gate:d.gate,boss:d.boss,mushrooms:d.mushrooms||[],switches:d.switches||[],conveyors:d.conveyors||[],vents:d.vents||[],clockPads:d.clockPads||[],gusts:d.gusts||[],crystals:d.crystals||[]}));
   window.RIKITU_TEST_MOVE=(x,y)=>{if(p&&level){p.x=clamp(x,0,level.width-p.w);p.y=y;p.vy=0;p.inv=2;}};
   updateHud();requestAnimationFrame(loop);
 })();
