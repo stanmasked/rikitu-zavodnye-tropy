@@ -1,5 +1,5 @@
-/* QA-only libnx app: verify MAP01 through MAP05 inside NeXium.
- * Green=PASS, red=FAIL; five rows of four checks from guest execution.
+/* QA-only libnx app: verify MAP01 through MAP06 inside NeXium.
+ * Green=PASS, red=FAIL; six rows of four checks from guest execution.
  * This is a separate NRO and cannot change the ordinary game build.
  */
 #include <stdint.h>
@@ -10,6 +10,7 @@
 #include "rikitu_grove_guest_qa.h"
 #include "rikitu_bridge_guest_qa.h"
 #include "rikitu_workshop_guest_qa.h"
+#include "rikitu_delivery_guest_qa.h"
 
 static void overlay_result(uint32_t *frame,int stride_pixels,unsigned bits,int top) {
   int i,y,x;
@@ -30,6 +31,7 @@ int main(void) {
   const unsigned grove_bits=rikitu_guest_grove_checks();
   const unsigned bridge_bits=rikitu_guest_bridge_checks();
   const unsigned workshop_bits=rikitu_guest_workshop_checks();
+  const unsigned delivery_bits=rikitu_guest_delivery_checks();
   int error=0;
   rikitu_flower_init(&scene);
   framebufferCreate(&fb,nwindowGetDefault(),RIKITU_SCENE_WIDTH,
@@ -54,6 +56,8 @@ int main(void) {
     overlay_result(frame,(int)(stride/4u),grove_bits,358);
     overlay_result(frame,(int)(stride/4u),bridge_bits,478);
     overlay_result(frame,(int)(stride/4u),workshop_bits,598);
+    /* Final 56px row ends at y=712, inside the 720px framebuffer. */
+    overlay_result(frame,(int)(stride/4u),delivery_bits,656);
     framebufferEnd(&fb);
     svcSleepThread(16000000LL);
   }
@@ -62,5 +66,6 @@ int main(void) {
                        mill_bits==RIKITU_MILL_QA_ALL &&
                        grove_bits==RIKITU_GROVE_QA_ALL &&
                        bridge_bits==RIKITU_BRIDGE_QA_ALL &&
-                       workshop_bits==RIKITU_WORKSHOP_QA_ALL?0:1);
+                       workshop_bits==RIKITU_WORKSHOP_QA_ALL &&
+                       delivery_bits==RIKITU_DELIVERY_QA_ALL?0:1);
 }

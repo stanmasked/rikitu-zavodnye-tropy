@@ -326,3 +326,19 @@ portable game rules. This is a C99 geometry/logic port; not a complete
 normal-controller playthrough and not verified MAP06 persistent storage.
 The graphical NRO continues to render neutral debug rectangles and
 does not redraw or reinterpret approved mascot and enemy designs.
+
+## MAP06 — NeXium guest audit of steam and three-hit Guardian (Stage 43)
+
+The separate guest-only Switch NRO has 24 independent green/red checks
+(six rows, four per map). The final MAP06 row sits at framebuffer
+y=656..711, within 1280x720. The Python auditor verifies all 24
+signals in two actual NeXium screenshots, and earlier rows stay
+mandatory. MAP06 checks include full map/boss structure, all three belt
+speeds and input composition, steam launch at three x coordinates with
+-705 impulses and airborne isolation, plus the boss-gated completion
+condition (all fragments AND the three-hit mini-boss defeated).
+
+Host GCC/Clang execute the same C99 QA function. These are controlled
+real engine checks *inside* the guest, not a complete ordinary-controller
+playthrough. Final character art and persistent MAP06 saves remain
+unverified and unchanged.
