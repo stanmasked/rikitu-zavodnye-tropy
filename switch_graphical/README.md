@@ -509,3 +509,23 @@ normal directional control, levers, checkpoints and fragment exit.
 This remains a neutral geometry/debug NRO, not new or modified
 approved character art. Complete controller-input playthrough,
 real Switch hardware and final audio/assets are not verified.
+
+## MAP16 — Heart Chamber final technical stage (Stage 56)
+
+Sixteenth original browser level, selectable via Y after MAP15;
+X restarts it. MAP01 persistence is isolated. Source-authentic 11750
+world units, 18 solids, 90 coins, six patrols, three fragments,
+checkpoints 2930/6260/9260 and exit x11560, gated by defeating the
+three-hit Keeper of Minutes boss at x10950.
+
+This finale combines five grounded-only launchers: three steam
+(1700/5640/8580) at -705 upward velocity and two clock pads
+(3310/7410) at -675. Three conveyor belts at x880/5070/9200
+apply +44/-44/+45. The static scene capacity has increased from
+four to five launchers with the same bounds checks; 6 is rejected.
+No art/sprite redesign or change to serialized MAP01 save version.
+Browser source-data parity and strict GCC/Clang C99 tests are included.
+
+The stage is a neutral geometry-first technical preview, not a
+verified normal-controller full campaign playthrough, final audio/
+approved-character sprite integration or real Switch hardware save.
