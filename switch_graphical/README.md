@@ -417,3 +417,21 @@ both belt directions, checkpoints, boss gating and invalid sizes.
 These are neutral technical graphics; existing approved character
 art is not redrawn. This is not a complete ordinary-input
 playthrough, finished sprite/audio integration or hardware-save test.
+
+## MAP11 — Crystal Caves source-first C99 (Stage 50)
+
+Technical MAP11 is available by cycling Y after MAP10 (X restarts
+current map). The original 9820-unit world includes 18 solids, 90 coins,
+six patrols, three fragments, checkpoints 2370/5050/7470, and exit
+at x9620. There is no boss or conveyor on this level.
+
+Three grounded crystal springs (x1120,3980,7650) give browser-accurate
+-690 vertical impulse without forcing horizontal drift, and may not
+relaunch a player in midair. An automated Node.js source-data audit
+verifies every platform, coin and patrol, and GCC/Clang fixed-step
+tests verify all three springs, checkpoint progression and the
+fragment-only exit.
+
+The stage uses neutral graphical diagnostics, not remade approved
+sprites; ordinary controller-only completion, finished audio and
+hardware save testing remain separate unfinished tasks.
