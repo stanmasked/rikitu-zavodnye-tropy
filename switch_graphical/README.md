@@ -31,3 +31,20 @@ Controller behavior and graphics require emulator/device validation.
 Build using devkitPro devkitA64/libnx: make -C switch_graphical
 The Makefile derives from the official switchbrew application template.
 No game ROMs or user-owned originals are published.
+
+## Measured frame-time integration
+
+The libnx graphical loop uses armGetSystemTick() / armTicksToNs() to
+measure elapsed time. A portable routine rikitu_demo_advance() accumulates
+the delta and advances gameplay at fixed 60 Hz, capped at 100 ms or six
+ticks to prevent excessive catch-up after a stall.
+
+Each simulation tick now applies movement, landing, conveyor velocity,
+steam/clock launch, item pickups and the exit condition in browser order.
+Pause and stage completion do not accumulate backlog. A short 1 ms sleep
+only yields CPU time; it does not define gameplay speed.
+
+GCC/Clang regression checks compare movement at simulated 30/60/120
+render frames per second, stalled frames, jumps, pause, coin collection,
+belt motion and one-shot completion. This is simulation-time stability,
+not yet proof of stable 60 FPS in a physical Switch or NeXium.

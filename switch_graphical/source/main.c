@@ -23,6 +23,7 @@ int main(void) {
   Framebuffer fb;
   RikituScene scene;
   RikituLoop game;
+  u64 last_tick;
   int error=0;
   rikitu_demo_init(&scene);
   memset(&game,0,sizeof(game));
@@ -32,11 +33,14 @@ int main(void) {
   framebufferMakeLinear(&fb);
   padConfigureInput(1,HidNpadStyleSet_NpadStandard);
   padInitializeDefault(&pad);
+  last_tick=armGetSystemTick();
   while(appletMainLoop()) {
-    int ticks;
+    const u64 tick=armGetSystemTick();
+    const float wall_seconds=(float)((double)armTicksToNs(tick-last_tick)*1e-9);
     u64 held,pressed;
     u32 stride=0;
     uint32_t *frame;
+    last_tick=tick;
     padUpdate(&pad);
     held=padGetButtons(&pad);
     pressed=padGetButtonsDown(&pad);
@@ -47,39 +51,21 @@ int main(void) {
       game.player=scene.player;
     }
     if(pressed & HidNpadButton_Minus)game.paused=!game.paused;
-    scene.paused=game.paused;
-    /* A fixed nominal 60-Hz step: display-time calibration remains pending. */
-    ticks=rikitu_loop_advance(&game,RIKITU_FIXED_DT,input_mask(held),
-             scene.world_width,scene.solids,RIKITU_DEMO_SOLIDS);
-    if(ticks<0){error=1;break;}
-    if(ticks>0&&!game.paused&&!scene.stage.completed) {
-      /* This diagnostic normally executes one simulation tick per frame.
-       * Proper per-tick integration of surfaces will follow later. */
-      if(rikitu_apply_surfaces(&game.player,RIKITU_FIXED_DT,
-            scene.world_width,scene.belts,RIKITU_DEMO_BELTS,
-            scene.launchers,RIKITU_DEMO_LAUNCHERS)<0) {
-        error=2;break;
-      }
-      scene.player=game.player;
-      if(rikitu_stage_pickups(&scene.stage,(RikituRect){
-             game.player.x,game.player.y,game.player.w,game.player.h},
-             scene.fragments,scene.coins,RIKITU_DEMO_COINS)<0) {
-        error=3;break;
-      }
-      (void)rikitu_stage_touch_gate(&scene.stage,(RikituRect){
-              game.player.x,game.player.y,game.player.w,game.player.h},
-              scene.gate_x);
-    } else {
-      scene.player=game.player;
+    /* The accumulator caps catch-up at 100ms/six ticks, pauses do not
+     * accumulate time, and conveyors/pickups now run on EVERY tick. */
+    if(rikitu_demo_advance(&scene,&game,wall_seconds,input_mask(held))<0){
+      error=1;break;
     }
     frame=(uint32_t*)framebufferBegin(&fb,&stride);
     if(!frame || stride%sizeof(uint32_t)!=0 ||
        !rikitu_draw_scene(frame,RIKITU_SCENE_WIDTH,RIKITU_SCENE_HEIGHT,
-                          (int)(stride/sizeof(uint32_t)),&scene)) {
-      error=4;break;
+                          (int)(stride/sizeof(uint32_t)),&scene)){
+      error=2;break;
     }
     framebufferEnd(&fb);
-    svcSleepThread(16666667LL);
+    /* A short yielding sleep reduces a busy-loop, but it does not define
+     * simulation speed: measured clock deltas do. */
+    svcSleepThread(1000000LL);
   }
   framebufferClose(&fb);
   return error;

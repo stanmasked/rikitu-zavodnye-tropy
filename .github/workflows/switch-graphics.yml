@@ -4,6 +4,7 @@ on:
     paths:
       - 'native/rikitu_draw.*'
       - 'native/rikitu_demo.*'
+      - 'native/test_demo_step.c'
       - 'native/test_draw.c'
       - 'native/rikitu_loop.*'
       - 'native/rikitu_stage.*'
@@ -15,6 +16,7 @@ on:
     paths:
       - 'native/rikitu_draw.*'
       - 'native/rikitu_demo.*'
+      - 'native/test_demo_step.c'
       - 'native/test_draw.c'
       - 'native/rikitu_loop.*'
       - 'native/rikitu_stage.*'
@@ -38,6 +40,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_draw.c native/rikitu_demo.c native/test_draw.c -lm -o /tmp/rikitu-draw-clang
           /tmp/rikitu-draw-clang
+      - name: GCC measured time and per-tick gameplay regression
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/test_demo_step.c -lm -o /tmp/rikitu-measured-step-gcc
+          /tmp/rikitu-measured-step-gcc
+      - name: Clang measured time and per-tick gameplay regression
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/test_demo_step.c -lm -o /tmp/rikitu-measured-step-clang
+          /tmp/rikitu-measured-step-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
