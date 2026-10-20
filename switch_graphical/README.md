@@ -208,3 +208,22 @@ regression must all pass before merging the map.
 
 This is not an end-to-end playthrough. MAP03 sound, story screens, original
 character sprites and persistent MAP03 saves are not implemented.
+
+## MAP03 NeXium guest-side mushroom spring audit
+
+The standalone QA-only NRO now carries **three rows of four** independent
+indicators (twelve total), for MAP01, MAP02 and MAP03. It uses the real
+C99 game simulation in each scenario, and checks the results by observing
+the NeXium guest framebuffer in two independent captured PNG frames.
+
+The new MAP03 row validates map/source shape and all three launcher
+coordinates; a real 60-Hz physics tick on the first mushroom at x=940;
+independent launch ticks for the mushrooms at x=2670 and x=5660; and the
+fact that airborne players cannot activate mushrooms, while the exit
+becomes available after all three fragments with no boss to defeat.
+All three spring impulses are -730 and retain the player's health.
+
+The same native guest suite also compiles and runs under strict GCC/Clang.
+Its passing status is evidence of execution **inside NeXium** but not a
+player-controlled start-to-finish completion of MAP03. Original approved
+sprites, sounds and persistent saves for MAP03 remain future work.

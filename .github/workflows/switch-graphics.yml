@@ -13,6 +13,8 @@ on:
       - 'native/rikitu_grove.*'
       - 'native/rikitu_grove_data.h'
       - 'native/test_grove.c'
+      - 'native/rikitu_grove_guest_qa.*'
+      - 'native/test_grove_guest_qa.c'
       - 'tests/test-grove-source.cjs'
       - 'native/test_mill_guest_qa.c'
       - 'native/rikitu_mill_data.h'
@@ -48,6 +50,8 @@ on:
       - 'native/rikitu_grove.*'
       - 'native/rikitu_grove_data.h'
       - 'native/test_grove.c'
+      - 'native/rikitu_grove_guest_qa.*'
+      - 'native/test_grove_guest_qa.c'
       - 'tests/test-grove-source.cjs'
       - 'native/test_mill_guest_qa.c'
       - 'native/rikitu_mill_data.h'
@@ -158,6 +162,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_grove.c native/test_grove.c -lm -o /tmp/rikitu-grove-clang
           /tmp/rikitu-grove-clang
+      - name: GCC execute MAP03 4 guest checks on host
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_enemies.c native/rikitu_grove.c native/rikitu_grove_guest_qa.c native/test_grove_guest_qa.c -lm -o /tmp/rikitu-grove-guest-gcc
+          /tmp/rikitu-grove-guest-gcc
+      - name: Clang execute MAP03 4 guest checks on host
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_enemies.c native/rikitu_grove.c native/rikitu_grove_guest_qa.c native/test_grove_guest_qa.c -lm -o /tmp/rikitu-grove-guest-clang
+          /tmp/rikitu-grove-guest-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:

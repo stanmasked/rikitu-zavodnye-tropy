@@ -1,5 +1,5 @@
-/* QA-only libnx app: verify actual portable MAP01 battle code in NeXium.
- * Green=PASS, red=FAIL; four pixel bars read from real emulated screen.
+/* QA-only libnx app: verify MAP01, MAP02 and MAP03 inside NeXium.
+ * Green=PASS, red=FAIL; three rows of four checks from guest execution.
  * This is a separate NRO and cannot change the ordinary game build.
  */
 #include <stdint.h>
@@ -7,6 +7,7 @@
 #include "rikitu_flower.h"
 #include "rikitu_combat_guest_qa.h"
 #include "rikitu_mill_guest_qa.h"
+#include "rikitu_grove_guest_qa.h"
 
 static void overlay_result(uint32_t *frame,int stride_pixels,unsigned bits,int top) {
   int i,y,x;
@@ -24,6 +25,7 @@ int main(void) {
   RikituScene scene;
   const unsigned bits=rikitu_guest_combat_checks();
   const unsigned mill_bits=rikitu_guest_mill_checks();
+  const unsigned grove_bits=rikitu_guest_grove_checks();
   int error=0;
   rikitu_flower_init(&scene);
   framebufferCreate(&fb,nwindowGetDefault(),RIKITU_SCENE_WIDTH,
@@ -45,10 +47,12 @@ int main(void) {
     }
     overlay_result(frame,(int)(stride/4u),bits,118);
     overlay_result(frame,(int)(stride/4u),mill_bits,238);
+    overlay_result(frame,(int)(stride/4u),grove_bits,358);
     framebufferEnd(&fb);
     svcSleepThread(16000000LL);
   }
   framebufferClose(&fb);
   return error?error:(bits==RIKITU_QA_ALL &&
-                       mill_bits==RIKITU_MILL_QA_ALL?0:1);
+                       mill_bits==RIKITU_MILL_QA_ALL &&
+                       grove_bits==RIKITU_GROVE_QA_ALL?0:1);
 }
