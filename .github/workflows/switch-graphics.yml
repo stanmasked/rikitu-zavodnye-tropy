@@ -13,6 +13,10 @@ on:
       - 'native/rikitu_grove.*'
       - 'native/rikitu_bridge.*'
       - 'native/rikitu_workshop.*'
+      - 'native/rikitu_delivery.*'
+      - 'native/rikitu_delivery_data.h'
+      - 'native/test_delivery.c'
+      - 'tests/test-delivery-source.cjs'
       - 'native/rikitu_workshop_data.h'
       - 'native/test_workshop.c'
       - 'tests/test-workshop-source.cjs'
@@ -60,6 +64,10 @@ on:
       - 'native/rikitu_grove.*'
       - 'native/rikitu_bridge.*'
       - 'native/rikitu_workshop.*'
+      - 'native/rikitu_delivery.*'
+      - 'native/rikitu_delivery_data.h'
+      - 'native/test_delivery.c'
+      - 'tests/test-delivery-source.cjs'
       - 'native/rikitu_workshop_data.h'
       - 'native/test_workshop.c'
       - 'tests/test-workshop-source.cjs'
@@ -218,6 +226,16 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_workshop.c native/test_workshop.c -lm -o /tmp/rikitu-workshop-clang
           /tmp/rikitu-workshop-clang
+      - name: Verify MAP06 delivery browser parity
+        run: node tests/test-delivery-source.cjs
+      - name: GCC MAP06 steam, conveyors and boss exit
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_delivery.c native/test_delivery.c -lm -o /tmp/rikitu-delivery-gcc
+          /tmp/rikitu-delivery-gcc
+      - name: Clang MAP06 steam, conveyors and boss exit
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_delivery.c native/test_delivery.c -lm -o /tmp/rikitu-delivery-clang
+          /tmp/rikitu-delivery-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:

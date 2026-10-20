@@ -290,3 +290,22 @@ speeds, player input composition, jumping immunity to belts, checkpoint
 activation, bounds checks and fragment-gated completion. Full ordinary
 controller playthrough, authentic sprites/audio and MAP05 hardware-save
 validation remain *unverified* and are outside this Stage 39 change.
+
+## MAP06 — Underground Delivery (Stage 41)
+
+Sixth native C99 technical level, selectable with Y after MAP05 (MAP01 →
+MAP02 → MAP03 → MAP04 → MAP05 → MAP06 → MAP01). X resets MAP06. Existing
+MAP01 alternating save slots remain untouched by MAP06.
+
+All level data are reproduced from `game.js`: 9910-unit world,
+five ground spans, 13 platforms, 90 coins, three fragments, checkpoints at
+2300/5060/7360, six patrols and exit x=9730. Environment hazards contain
+three conveyors with speeds +42/-48/+50 and three upward steam vents
+at x=1350/4740/7910 (browser impulse -705). The three-hit mini-boss
+at x=9210 must be defeated in addition to collecting all fragments.
+
+Browser-source parity, GCC and Clang use the *actual* level data and
+portable game rules. This is a C99 geometry/logic port; not a complete
+normal-controller playthrough and not verified MAP06 persistent storage.
+The graphical NRO continues to render neutral debug rectangles and
+does not redraw or reinterpret approved mascot and enemy designs.
