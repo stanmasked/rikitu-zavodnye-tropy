@@ -142,3 +142,28 @@ alternation, a corrupted newest slot and partially written slot.
 
 Filesystem mounting and persistence *across two independent NeXium
 sessions or on real hardware* still require runtime validation.
+
+## Native MAP02 — Mill by the Creek (experimental)
+
+The second browser route is available in the **normal graphical Switch NRO**
+with the Y button. Press Y again to return to MAP01. X resets the currently
+selected map. Only MAP01 is persisted to SDMC; switching or resetting MAP02
+does not delete MAP01 save files.
+
+MAP02 matches game.js: width 8550; 5 ground spans and 13 elevated platforms;
+90 coins; 3 fragments; checkpoints at 2200, 4930 and 6980;
+6 patrols and gate x=8370.
+
+The level contains the game's first three-hit mini-boss (Clockwork Beetle):
+native C99 boss movement at 48 units/sec between x=7830..7990,
+three downward stomps, 0.85-second hit protection, -490 jump rebound.
+The gate remains blocked until all three parts are collected and the
+boss is defeated. Placeholder violet geometry is NOT the approved design.
+No artwork was changed or replaced.
+
+Tests/test-mill-source.cjs compares every MAP02 map coordinate and patrol
+against the live game.js source. Native/test_mill.c verifies boss HP,
+stomp/recovery, movement and the exit. GCC, Clang, Switch NRO build and
+NeXium guest frame checks run through the existing graphical workflows.
+The Y-button map switch and complete boss playthrough are not yet
+independently confirmed inside NeXium; this is still a technical port.
