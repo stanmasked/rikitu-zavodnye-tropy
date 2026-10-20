@@ -99,9 +99,11 @@
   let mode='title',levelIndex=0,level=null,p=null,cam=0,frame=0,lastTime=0,acc=0,toast='',toastTime=0,storyText='',bossHint=false;
   const fixed=1/60;
   let stageCoins=0,allCoins=0,purchasedHearts=0,shopStage=0;
+  let stageSeconds=0,stageHits=0;
   const lifeCapacity=()=>C.SETTINGS.startingHearts+purchasedHearts;
   const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
   const coinBox=(x,y)=>({x:x-12,y:y-12,w:24,h:24});
+  const formatClock=seconds=>`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(Math.floor(seconds%60)).padStart(2,'0')}`;
 
   const SAVE_KEY='rikitu-zavodnye-tropy-checkpoint-v1';
   const allowedSaveModes=new Set(['playing','between','shop','victory']);
@@ -124,6 +126,9 @@
       if(!int(s.stageCoins)||s.stageCoins!==s.coins.length)return null; // Wallet may be lower after Moki purchases.
       if(!int(s.checkpoint)||![105,...d.checkpoints].includes(s.checkpoint))return null;
       if(!int(s.hearts)||s.hearts<1||s.hearts>3+s.purchased)return null;
+      // Optional fields: existing checkpoint saves created before the pacing update remain valid.
+      if(s.seconds!==undefined&&(!Number.isFinite(s.seconds)||s.seconds<0||s.seconds>36000))return null;
+      if(s.hits!==undefined&&(!int(s.hits)||s.hits<0||s.hits>9999))return null;
       if(typeof s.bossDown!=='boolean')return null;
       if(s.mode==='shop'&&(!C.isShopStage(s.levelIndex+1)||!s.bossDown))return null;
       if(s.mode==='between'&&s.levelIndex>=chapterInfo.length-1)return null;
@@ -139,6 +144,7 @@
       coins:level.coins.filter(x=>x.got).map(x=>x.id),
       switches:level.switches.map((x,i)=>x.on?i:-1).filter(x=>x>=0),
       checkpoint:level.activeCheckpoint,hearts:p.hearts,
+      seconds:Math.round(stageSeconds*10)/10,hits:stageHits,
       bossDown:!!level.boss&&!level.boss.alive};
     try{localStorage.setItem(SAVE_KEY,JSON.stringify(data));startupSave=data;}catch(e){}
   }
@@ -147,6 +153,7 @@
     if(!s)return false;
     newLevel(s.levelIndex,false);
     allCoins=s.wallet;purchasedHearts=s.purchased;stageCoins=s.stageCoins;
+    stageSeconds=s.seconds??0;stageHits=s.hits??0;
     for(const item of level.fragments)item.got=s.fragments.includes(item.id);
     for(const item of level.coins)item.got=s.coins.includes(item.id);
     level.switches.forEach((sw,i)=>{sw.on=s.switches.includes(i)});
@@ -175,7 +182,7 @@
       boss:d.boss?{x:d.boss.x,y:GROUND-57,w:72,h:57,center:d.boss.x,hp:d.boss.hp,name:d.boss.name,hit:0,dir:1,alive:true}:null,
       activeCheckpoint:105, checkpointCount:0,
     };
-    stageCoins=0;previousJump=false;
+    stageCoins=0;stageSeconds=0;stageHits=0;previousJump=false;
     p={x:105,y:GROUND-C.SETTINGS.playerHeight,w:C.SETTINGS.playerWidth,h:C.SETTINGS.playerHeight,
       vx:0,vy:0,grounded:false,coyote:0,jumpBuffer:0,inv:0,hearts:lifeCapacity(),
       spawnX:105, facing:1};
@@ -186,12 +193,13 @@
   function updateHud(){
     const fragmentCount=level?.fragments.filter(x=>x.got).length||0;
     const h=document.querySelector('#hud');
-    h.innerHTML=`<span>♥ ${p?p.hearts:3}/${lifeCapacity()}</span><span>🟡 ${allCoins} <small>кошелёк</small></span><span>◆ ${fragmentCount}/3 <small>фрагмента</small></span><span class="level-mark">${level ? `${levelIndex+1}/${chapterInfo.length} — ${level.name} · ${Math.min(100,Math.round((p?.x||0)/level.width*100))}%` : 'RIKITU'}</span>`;
+    h.innerHTML=`<span>♥ ${p?p.hearts:3}/${lifeCapacity()}</span><span>🟡 ${allCoins} <small>кошелёк</small></span><span>◆ ${fragmentCount}/3 <small>фрагмента</small></span><span>⏱ ${formatClock(stageSeconds)} <small>потерь здоровья: ${stageHits}</small></span><span class="level-mark">${level ? `${levelIndex+1}/${chapterInfo.length} — ${level.name} · ${Math.min(100,Math.round((p?.x||0)/level.width*100))}%` : 'RIKITU'}</span>`;
   }
   function announce(t,time=2.5){toast=t;toastTime=time;}
   function damage(){
     if(p.inv>0 || mode!=='playing')return;
     p.hearts=C.heartAfterDamage(p.hearts);p.inv=C.SETTINGS.invincibility;
+    stageHits++;
     announce(p.hearts?'Осторожнее!':'Не беда! Вернёмся к контрольной точке.',1.6);
     if(p.hearts===0){p.hearts=lifeCapacity();respawn();}
     updateHud();persist();
@@ -213,6 +221,7 @@
   function update(dt){
     frame++;readGamepad();
     if(mode!=='playing')return;
+    stageSeconds+=dt;
     const d=C.SETTINGS;
     if(toastTime>0)toastTime-=dt;
     p.inv=Math.max(0,p.inv-dt);
@@ -562,7 +571,7 @@
     paint();requestAnimationFrame(loop);
   }
   // Read-only health probe for browser integration tests.
-  window.RIKITU_TEST_STATE=()=>({mode,level:levelIndex+1,playerX:p?.x,playerY:p?.y,fragments:level?.fragments.filter(x=>x.got).length,coins:stageCoins,bossHP:level?.boss?.hp??null,bossX:level?.boss?.x??null,bossY:level?.boss?.y??null,checkpoint:level?.activeCheckpoint,checkpointCount:level?.checkpointCount,hearts:p?.hearts,maxHearts:lifeCapacity(),wallet:allCoins,bought:purchasedHearts,shopStage,hasSave:!!startupSave});
+  window.RIKITU_TEST_STATE=()=>({mode,level:levelIndex+1,playerX:p?.x,playerY:p?.y,fragments:level?.fragments.filter(x=>x.got).length,coins:stageCoins,bossHP:level?.boss?.hp??null,bossX:level?.boss?.x??null,bossY:level?.boss?.y??null,checkpoint:level?.activeCheckpoint,checkpointCount:level?.checkpointCount,hearts:p?.hearts,maxHearts:lifeCapacity(),wallet:allCoins,bought:purchasedHearts,shopStage,hasSave:!!startupSave,elapsedSeconds:Math.round(stageSeconds*100)/100,hitCount:stageHits});
   window.RIKITU_TEST_SHOP=(coins=0,bought=purchasedHearts,stage=shopStage)=>C.nextHeartPurchase(stage,bought,coins);
   window.RIKITU_TEST_COLLECT_COINS=(count=90)=>{
     if(!level||!Number.isInteger(count)||count<0)return false;
