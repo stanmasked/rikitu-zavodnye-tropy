@@ -24,3 +24,18 @@ Pro Controller, отображение 1280×720 и режимов экрана,
 в открытом репозитории без отдельного разрешения.
 
 Не объявлять игру портированной на Switch до сборки и проверки NRO.
+
+## Сравнение C99 и JavaScript без ручной интерпретации
+
+`native/parity_probe.c` печатает результаты нативных функций для
+комбинаций этапов 0–18, количества купленных сердец от −1 до 4 и
+монет 0, 119, 120, 159, 160, 199, 200, 239, 240, 720.
+`tests/test-native-parity.cjs` сравнивает их с актуальным `game-core.js`.
+
+```sh
+gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/parity_probe.c -o /tmp/rikitu-parity
+node tests/test-native-parity.cjs /tmp/rikitu-parity
+```
+
+Такой тест обнаруживает несовпадения **базовых правил**, но не проверяет
+работу реальной физики и графики на Nintendo Switch.
