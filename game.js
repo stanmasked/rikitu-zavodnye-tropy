@@ -113,6 +113,8 @@
       const int=x=>Number.isInteger(x);
       if(!s||s.version!==1||!allowedSaveModes.has(s.mode))return null;
       if(!int(s.levelIndex)||s.levelIndex<0||s.levelIndex>=chapterInfo.length)return null;
+      // v0.5 ended after level 4; migrate its victory screen into the level-5 transition.
+      if(s.mode==='victory'&&s.levelIndex===3&&chapterInfo.length>4)s.mode='between';
       if(!int(s.wallet)||s.wallet<0||s.wallet>chapterInfo.length*C.SETTINGS.coinsPerStage)return null;
       if(!int(s.purchased)||s.purchased<0||s.purchased>4||s.purchased>C.unlockedUpgrades(s.levelIndex+1))return null;
       if(!Array.isArray(s.fragments)||!Array.isArray(s.coins)||!Array.isArray(s.switches))return null;

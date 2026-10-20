@@ -73,6 +73,20 @@ with sync_playwright() as pw:
     assert state(page)['wallet']==260 and state(page)['bought']==2,state(page)
     saved=page.evaluate('(key)=>localStorage.getItem(key)',KEY)
     assert saved and '"purchased":2' in saved,saved
+    # A player who completed the old four-level demo keeps their progress.
+    page.close()
+    old={'version':1,'levelIndex':3,'mode':'victory','wallet':200,'purchased':1,
+         'stageCoins':0,'fragments':[0,1,2],'coins':[],'switches':[],
+         'checkpoint':6900,'hearts':4,'bossDown':True}
+    page=browser.new_page(viewport={'width':1200,'height':760})
+    page.on('pageerror',lambda err:errors.append(str(err)))
+    page.evaluate(SHIM,{KEY:json.dumps(old,ensure_ascii=False)})
+    page.set_content(HTML,wait_until='load')
+    page.keyboard.press('Enter')
+    page.wait_for_function("()=>RIKITU_TEST_STATE().mode==='between'",timeout=5000)
+    page.keyboard.press('Enter')
+    page.wait_for_function("()=>RIKITU_TEST_STATE().level===5",timeout=5000)
+    assert state(page)['wallet']==200 and state(page)['maxHearts']==4,state(page)
     assert not errors,errors
-    print('PASS World II: 5–6, conveyors, vents, boss, 2 Moki hearts, autosave')
+    print('PASS World II: stages 5-6, boss, two Moki purchases, migration of old victory save')
     browser.close()
