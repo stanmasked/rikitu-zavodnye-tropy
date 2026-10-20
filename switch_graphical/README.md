@@ -87,6 +87,31 @@ enemy coordinates and the matching damage/bounce constants.
 Remaining: approved sprites, audio, full boss mechanics, actual complete
 campaign maps, persistent saves/loads and end-to-end manual playtesting.
 
+## Real NeXium guest-side MAP01 combat audit
+
+A **separate** executable named `rikitu_combat_qa_probe.nro` is built
+with `make -C switch_graphical QA_MODE=1`. The default, regular
+`rikitu_scene_probe.nro` still uses `main.c` and does not run QA.
+
+The diagnostic executable calls `rikitu_guest_combat_checks()` using the
+same portable C99 game functions the normal Switch scene runs:
+patrol advancement at 43 units/sec, side-hit damage followed by 30
+invulnerable frames, falling stomp bounce and enemy death, and a pit
+respawn at checkpoint 2050 with collected fragments, coins and defeated
+patrols preserved. These checks also run natively under GCC and Clang.
+
+Four large rectangles at positions x=280, 480, 680, 880 on the guest
+frame are green for PASS and red for FAIL, one per scenario in that order.
+The actual NeXium screenshot files are examined by
+`tests/check_combat_guest.py`; the guest run fails if a rectangle is not
+green. This is a real guest-side execution check, **not** an invented
+screenshot or an assertion that a human completed the level.
+
+This QA executable contains no user ROMs, new enemy art, approved mascot
+sprite copies or permanent save data. Normal assets and gameplay are
+unchanged. The long-term work is still to validate ordinary gameplay
+using input-only automation, manual playthroughs, persistence and audio.
+
 ## MAP01 native checkpoint persistence (experimental)
 
 The Switch NRO now attempts to mount SDMC through libnx. If available,
