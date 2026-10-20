@@ -290,3 +290,20 @@ speeds, player input composition, jumping immunity to belts, checkpoint
 activation, bounds checks and fragment-gated completion. Full ordinary
 controller playthrough, authentic sprites/audio and MAP05 hardware-save
 validation remain *unverified* and are outside this Stage 39 change.
+
+## MAP05 — fifth NeXium guest-side QA row (Stage 40)
+
+The QA-only NRO now executes four MAP05 state checks within the guest
+Nintendo Switch runtime, in addition to the existing sixteen MAP01–MAP04
+checks. Five rows of four green/red indicators are sampled in TWO real
+NeXium screenshots, including row 5 at framebuffer y=598..653.
+
+Checks use the exact portable engine: (1) source-accurate map shape and
+three belt definitions, (2) both right-moving belts and running with a
+belt, (3) the left-moving belt with neutral, left and right input, and
+(4) jumping/airborne belt safety plus the fragment-only exit condition.
+
+GCC and Clang execute precisely the same QA cases on host. This
+guest-side test is stronger than an NRO build-only result but remains
+a controlled state audit, not an ordinary input-only stage playthrough.
+No approved mascot, antagonist, environment sprites or audio change.
