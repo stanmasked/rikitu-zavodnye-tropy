@@ -11,13 +11,14 @@ with sync_playwright() as p:
     page.keyboard.press('Enter');page.wait_for_timeout(160)
     assert page.evaluate('RIKITU_TEST_STATE().mode')=='playing'
     a=page.evaluate('RIKITU_TEST_LEVELS()')
-    assert len(a)==14 and all(d['coins']==90 for d in a)
-    assert [d['width'] for d in a]==[7900,8550,8270,8880,9140,9910,9470,10180,9520,10320,9820,10700,9950,11200]
+    assert len(a)==16 and all(d['coins']==90 for d in a)
+    assert [d['width'] for d in a]==[7900,8550,8270,8880,9140,9910,9470,10180,9520,10320,9820,10700,9950,11200,10300,11750]
     assert len(a[4]['conveyors'])==3 and len(a[5]['vents'])==3
     assert len(a[6]['clockPads'])==3 and len(a[7]['switches'])==3
     assert len(a[8]['gusts'])==3 and len(a[9]['gusts'])==4
     assert len(a[10]['crystals'])==3 and len(a[11]['vents'])==3
     assert len(a[12]['switches'])==3 and len(a[13]['conveyors'])==3
+    assert len(a[14]['clockPads'])==3 and len(a[15]['vents'])==3
     assert len(a[2]['mushrooms'])==3 and len(a[3]['switches'])==3
     assert len(a[0]['checkpoints'])==3 and len(a[0]['sections'])==4
     for x,y in [(1520,354),(3640,339),(6860,354)]:

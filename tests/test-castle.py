@@ -33,7 +33,7 @@ with sync_playwright() as p:
     page=new_page(browser,save)
     page.on('pageerror',lambda e:errs.append(str(e)))
     levels=page.evaluate('RIKITU_TEST_LEVELS()')
-    assert len(levels)==14 and all(x['coins']==90 and len(x['fragments'])==3 for x in levels)
+    assert len(levels)==16 and all(x['coins']==90 and len(x['fragments'])==3 for x in levels)
     assert len(levels[12]['switches'])==3 and len(levels[13]['vents'])==3
     page.keyboard.press('Enter')
     page.wait_for_function("()=>RIKITU_TEST_STATE().mode==='between'",timeout=5000)
