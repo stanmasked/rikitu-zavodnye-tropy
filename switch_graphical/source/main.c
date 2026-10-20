@@ -11,6 +11,7 @@
 #include "rikitu_mill.h"
 #include "rikitu_grove.h"
 #include "rikitu_bridge.h"
+#include "rikitu_workshop.h"
 #include "rikitu_save.h"
 
 #define MAP01_A "sdmc:/switch/RIKITU/map01-a.rks"
@@ -76,8 +77,8 @@ int main(void) {
         (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
       break;
     }
-    /* Y cycles the four source-parity levels; only MAP01 has
-     * persistence. MAP02/03 neither read nor delete MAP01 saves. */
+    /* Y cycles five source-parity levels; only MAP01 has
+     * persistence. MAP02-05 never read or delete MAP01 saves. */
     if(pressed & HidNpadButton_Y){
       if(scene.level_id==1){
         if(save_ready && rikitu_save_encode(now,&scene,&game,1))
@@ -87,6 +88,8 @@ int main(void) {
         rikitu_grove_init(&scene);
       }else if(scene.level_id==3){
         rikitu_bridge_init(&scene);
+      }else if(scene.level_id==4){
+        rikitu_workshop_init(&scene);
       }else{
         rikitu_flower_init(&scene);
         if(save_ready)
@@ -101,6 +104,7 @@ int main(void) {
       if(scene.level_id==2)rikitu_mill_init(&scene);
       else if(scene.level_id==3)rikitu_grove_init(&scene);
       else if(scene.level_id==4)rikitu_bridge_init(&scene);
+      else if(scene.level_id==5)rikitu_workshop_init(&scene);
       else rikitu_flower_init(&scene);
       memset(&game,0,sizeof(game));
       game.player=scene.player;

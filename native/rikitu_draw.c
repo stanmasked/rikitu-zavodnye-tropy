@@ -124,9 +124,14 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
   for(i=0;i<(int)s->belt_count;i++){
     const RikituConveyor *belt=&s->belts[i];
     x=worldx(belt->x,camera);
-    box(&c,x,529,(int)belt->width,11,rgb(181,133,61));
-    for(int col=6;col<(int)belt->width;col+=28)
-      diamond(&c,x+col,534,3,rgb(239,218,142));
+    /* MAP05 belts are drawn at the original browser y=430; the
+     * standalone synthetic debug room keeps its old floor markers. */
+    y=s->level_id==0?529:430;
+    box(&c,x,y,(int)belt->width,11,rgb(181,133,61));
+    for(int col=10;col<(int)belt->width;col+=28){
+      diamond(&c,x+col,y+5,3,rgb(239,218,142));
+      box(&c,x+col+(belt->speed>=0.0f?-5:2),y+4,4,2,rgb(247,232,175));
+    }
   }
   for(i=0;i<(int)s->launcher_count;i++){
     const RikituLauncher *l=&s->launchers[i];
@@ -198,10 +203,11 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
   /* Fixed-screen HUD: title, counters and controller instructions. */
   box(&c,0,0,width,84,rgb(16,30,49));
   box(&c,0,80,width,4,rgb(76,176,187));
-  label(&c,25,15,s->level_id==4?"RIKITU 04 GEAR BRIDGE":
+  label(&c,25,15,s->level_id==5?"RIKITU 05 WORKSHOP STREET":
+                   (s->level_id==4?"RIKITU 04 GEAR BRIDGE":
                    (s->level_id==3?"RIKITU 03 MUSHROOM GROVE":
                    (s->level_id==2?"RIKITU 02 MILL CREEK":
-                   (s->level_id==1?"RIKITU 01 FLOWER TRAIL":"RIKITU TECH DEMO"))),3,ink);
+                   (s->level_id==1?"RIKITU 01 FLOWER TRAIL":"RIKITU TECH DEMO")))),3,ink);
   (void)snprintf(status,sizeof(status),"FRAGMENTS %d/3  COINS %d",
        s->stage.fragment_count,s->stage.coin_count);
   label(&c,26,56,status,2,rgb(250,220,124));

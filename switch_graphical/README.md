@@ -267,3 +267,26 @@ Two real NeXium framebuffer captures must show all 16 green squares;
 the same MAP04 checks run with GCC and Clang. This is guest-side state
 evidence, not a full normal-controller level playthrough and not a
 substitute for final approved character/boss sprites.
+
+## MAP05 — Workshop Street (Stage 39, source-first port)
+
+The fifth real browser level is now selectable in the *normal* graphical
+Switch NRO via Y: MAP01 → MAP02 → MAP03 → MAP04 → MAP05 → MAP01. X
+restarts MAP05 without altering MAP01's dual-slot save files. MAP05 has
+9140 world units, five ground spans and 13 platforms, three fragments,
+90 coins, six patrols, checkpoints at 2200/4760/6920, and an exit at 8950.
+There is no boss on this stage; three fragments unlock the exit.
+
+Conveyors use the exact browser positions, widths, order and speeds:
+x=1070 (width 300, +48 units/s), x=3890 (width 300, -42), and x=6960
+(width 300, +52). The existing 60-Hz grounded-only surface code moves
+players on these belts after the collision step and before pickups.
+Airborne players get no belt movement. Simple debug arrows at y=430
+indicate conveyor direction; they are not approved environment art.
+
+A new JS source-parity test checks all source-generated coordinates and
+coins; strict GCC and Clang tests cover both movement directions, three
+speeds, player input composition, jumping immunity to belts, checkpoint
+activation, bounds checks and fragment-gated completion. Full ordinary
+controller playthrough, authentic sprites/audio and MAP05 hardware-save
+validation remain *unverified* and are outside this Stage 39 change.
