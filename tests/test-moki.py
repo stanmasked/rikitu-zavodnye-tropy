@@ -70,7 +70,10 @@ with sync_playwright() as p:
     page.keyboard.press('b')
     page.wait_for_timeout(100)
     assert state(page)['wallet']==60 and state(page)['bought']==1
-    assert 'МОКИ' in page.locator('body').inner_text() or 'МОКИ' in html
+    # A fresh page avoids duplicate event handlers and animation loops across scenarios.
+    page.close()
+    page=browser.new_page(viewport={'width':1200,'height':760})
+    page.on('pageerror',lambda e:errors.append(str(e)))
 
     # Scenario B: skip first shop, then buy its carried-over upgrade after stage 4.
     page.set_content(html,wait_until='load')
