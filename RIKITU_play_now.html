@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>RIKITU: Заводные тропы — игровой прототип v0.11</title>
+<title>RIKITU: Заводные тропы — игровой прототип v1.0</title>
 <style>
 :root{color-scheme:light;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#e8f4ec;color:#254653}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 15% 0%,#f8f7d9,transparent 50%),linear-gradient(155deg,#e0f8ef,#def1fb 70%,#f8edca)}
@@ -14,17 +14,17 @@
 <body>
 <main class="shell">
   <header class="top">
-    <div><div class="eyebrow">RIKITU / ИГРОВОЙ ПРОТОТИП v0.11</div><h1>Заводные тропы</h1></div>
+    <div><div class="eyebrow">RIKITU / ИГРОВОЙ ПРОТОТИП v1.0</div><h1>Заводные тропы</h1></div>
     <div class="topactions"><button id="start">Начать / далее</button><button id="pause">Пауза</button><button id="restart">Заново</button><button id="buy-heart">♥ Купить у Моки (B)</button></div>
   </header>
   <div id="hud" class="hud" aria-live="polite"><span>♥ 3</span><span>🟡 0</span><span>◆ 0/3</span><span>RIKITU</span></div>
-  <div class="stage"><canvas id="game" width="960" height="540" aria-label="Игровой прототип четырнадцати уровней RIKITU"></canvas></div>
+  <div class="stage"><canvas id="game" width="960" height="540" aria-label="Игровой прототип шестнадцати уровней RIKITU"></canvas></div>
   <div class="touchbar" aria-label="Экранное управление"><button data-touch="left">◀</button><button data-touch="right">▶</button><button data-touch="jump">ПРЫЖОК</button></div>
   <div class="help">
     <div><b>Управление:</b> ← → или A/D — движение · Пробел / ↑ / W — прыжок · Shift — быстрее</div>
     <div><b>Дополнительно:</b> Enter — начать/следующий уровень · P — пауза · R — заново · Gamepad — поддержка</div>
     <div><b>Статистика:</b> секундомер считает только активное игровое время и фиксирует потери здоровья. Данные сохраняются на контрольных точках.</div>
-    <div><b>Задача:</b> найти 3 бирюзовых фрагмента, собрать монетки по желанию и добраться до выхода. Мини-боссы после каждого чётного уровня, включая 14-й: три прыжка сверху. Затем лавка Моки: B — купить, Enter — продолжить.</div>
+    <div><b>Задача:</b> найти 3 бирюзовых фрагмента, собрать монетки по желанию и добраться до выхода. Мини-боссы после каждого чётного уровня, включая 16-й: три прыжка сверху. Затем лавка Моки: B — купить, Enter — продолжить.</div>
     <div class="note">Внешность лисёнка Рикиту не перерисовывается: бирюзовый маркер «Р» — временный технический символ до интеграции оригинальных утверждённых спрайтов. Эта версия предназначена для ПК/браузера, не для Switch.</div>
   </div>
 </main>
@@ -285,6 +285,34 @@
       gate:11020,boss:{x:10470,hp:3,name:'Сборочный исполин'},
       startText:'Литейная Сердца: поднимайся на пару, обходи машины и останови Сборочного исполина.',
       endText:'Моториус показал ограничитель скорости. Теперь Сердце дорог можно восстановить безопасно.',decor:'foundry'}
+    ,{name:'Галерея часов',world:'Замок механизмов',width:10300,
+      ground:[[0,1970],[2050,4070],[4150,6120],[6200,8160],[8240,10300]],
+      platforms:[[520,381,205],[1160,380,205],[1750,382,195],[2590,380,210],
+        [3350,383,205],[4480,380,200],[5090,382,205],[5680,380,195],
+        [6620,381,210],[7320,384,190],[8490,380,205],[9090,382,195],[9640,381,205]],
+      clockPads:[[1150,GROUND],[4500,GROUND],[8470,GROUND]],
+      switches:[[2320,GROUND],[6360,GROUND],[8550,GROUND]],
+      fragments:[[1800,345],[5490,343],[9290,343]],checkpoints:[2500,5430,8210],
+      enemies:[{x:870,a:730,b:1050},{x:2810,a:2690,b:3000},{x:4550,a:4420,b:4770},
+        {x:6660,a:6540,b:6900},{x:7960,a:7810,b:8130},{x:9390,a:9260,b:9550}],
+      sections:[[0,'Коридор маятников'],[2580,'Башня циферблатов'],[5250,'Архив времени'],[8220,'Последняя запись']],
+      gate:10120,boss:null,startText:'Галерея часов: циферблаты помогают добраться до записей без таймера.',
+      endText:'Запись 07:12 доказывает: Хроном сам запустил аварийную остановку Сердца дорог.',decor:'gallery'},
+    {name:'Зал Сердца',world:'Замок механизмов',width:11750,
+      ground:[[0,2160],[2240,4490],[4570,6830],[6910,9110],[9190,11750]],
+      platforms:[[520,380,195],[1230,381,200],[1820,383,195],[2860,380,210],
+        [3590,381,205],[4760,382,210],[5550,380,190],[6150,382,195],
+        [7390,381,210],[8120,380,200],[9160,382,195],[9930,380,195],[10740,380,210]],
+      conveyors:[[880,430,330,44],[5070,430,300,-44],[9200,430,310,45]],
+      vents:[[1700,GROUND],[5640,GROUND],[8580,GROUND]],
+      clockPads:[[3310,GROUND],[7410,GROUND]],
+      fragments:[[2020,342],[6200,342],[9950,342]],checkpoints:[2930,6260,9260],
+      enemies:[{x:920,a:780,b:1130},{x:3090,a:2920,b:3310},{x:4850,a:4680,b:5000},
+        {x:6990,a:6870,b:7200},{x:9030,a:8890,b:9120},{x:10120,a:9990,b:10370}],
+      sections:[[0,'Подход к Сердцу'],[3030,'Каналы энергии'],[6000,'Защитный контур'],[9160,'Центральный механизм']],
+      gate:11560,boss:{x:10950,hp:3,name:'Хранитель минут'},
+      startText:'Зал Сердца: собери последнюю шестерёнку и отключи Хранителя минут.',
+      endText:'Рикиту и Хроном запускают безопасное Сердце дорог. Часы идут: 07:13.',decor:'heart'}
   ].map(d=>{
     const coins=[...coinsAlong(d.ground),...platformCoins(d.platforms)];
     let i=0;
@@ -321,6 +349,7 @@
       if(s.mode==='victory'&&s.levelIndex===7&&chapterInfo.length>8)s.mode='between';
       if(s.mode==='victory'&&s.levelIndex===9&&chapterInfo.length>10)s.mode='between';
       if(s.mode==='victory'&&s.levelIndex===11&&chapterInfo.length>12)s.mode='between';
+      if(s.mode==='victory'&&s.levelIndex===13&&chapterInfo.length>14)s.mode='between';
       if(!int(s.wallet)||s.wallet<0||s.wallet>chapterInfo.length*C.SETTINGS.coinsPerStage)return null;
       if(!int(s.purchased)||s.purchased<0||s.purchased>4||s.purchased>C.unlockedUpgrades(s.levelIndex+1))return null;
       if(!Array.isArray(s.fragments)||!Array.isArray(s.coins)||!Array.isArray(s.switches))return null;
@@ -609,6 +638,8 @@
     else if(level?.decor==='mine'){gradient.addColorStop(0,'#788a91');gradient.addColorStop(1,'#d7bca6');}
     else if(level?.decor==='gardens'){gradient.addColorStop(0,'#a5bccc');gradient.addColorStop(1,'#e9e8bf');}
     else if(level?.decor==='foundry'){gradient.addColorStop(0,'#758296');gradient.addColorStop(1,'#e7b997');}
+    else if(level?.decor==='gallery'){gradient.addColorStop(0,'#878cbe');gradient.addColorStop(1,'#f5dfbb');}
+    else if(level?.decor==='heart'){gradient.addColorStop(0,'#576e9b');gradient.addColorStop(1,'#d8abc3');}
     else {gradient.addColorStop(0,'#8bdaf3');gradient.addColorStop(1,'#fbf8d5');}
     ctx.fillStyle=gradient;ctx.fillRect(0,0,W,H);
     ctx.fillStyle='#fff7ba';ctx.beginPath();ctx.arc(800-cam*.03,89,42,0,Math.PI*2);ctx.fill();
@@ -637,7 +668,7 @@
       }
       ctx.restore();
     }
-    if(level?.decor==='gardens'||level?.decor==='foundry'){
+    if(['gardens','foundry','gallery','heart'].includes(level?.decor)){
       ctx.save();ctx.translate(-cam*.24,0);
       for(let x=-350;x<level.width+W;x+=410){
         rounded(x+60,240,205,230,12,level.decor==='gardens'?'#8496a8':'#8f7c7f');
@@ -826,7 +857,7 @@
         overlay('МОКИ — ЛАВКА СЕРДЕЦ',lines,'ENTER — ПРОДОЛЖИТЬ');
         text('♥',745,180,33,'#d75f6d','center');
       }
-      else if(mode==='victory')overlay('ЗАМОК МЕХАНИЗМОВ — ПЕРВАЯ ЧАСТЬ ПРОЙДЕНА!',['Восстановлено четырнадцать маршрутных шестерёнок.',`Последний уровень: ${formatClock(stageSeconds)} · попаданий: ${stageHits}`,'Регулятор Моториуса готов. Осталась Галерея часов.'],'ENTER — СЫГРАТЬ СНОВА');
+      else if(mode==='victory')overlay('СЕРДЦЕ ДОРОГ СПАСЕНО!',['Хроном остановил механизм, чтобы не допустить катастрофы.','Рикиту собрал 48 фрагментов и установил регулятор Моториуса.','Часы снова идут: 07:13. Королевство объединено!',`Последний уровень: ${formatClock(stageSeconds)} · попаданий: ${stageHits}`],'ENTER — НАЧАТЬ НОВУЮ ИГРУ');
     }
   }
   function togglePause(){if(mode==='playing'){mode='paused'}else if(mode==='paused'){mode='playing'}}

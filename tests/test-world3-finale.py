@@ -30,7 +30,7 @@ with sync_playwright() as pw:
     page.evaluate(SHIM,{KEY:json.dumps(save,ensure_ascii=False)})
     page.set_content(HTML,wait_until='load')
     levels=page.evaluate('RIKITU_TEST_LEVELS()')
-    assert len(levels)==14 and all(x['coins']==90 and len(x['fragments'])==3 for x in levels)
+    assert len(levels)==16 and all(x['coins']==90 and len(x['fragments'])==3 for x in levels)
     assert len(levels[10]['crystals'])==3 and len(levels[11]['vents'])==3
     page.keyboard.press('Enter')
     page.wait_for_function("()=>RIKITU_TEST_STATE().mode==='between'",timeout=5000)
