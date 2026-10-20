@@ -91,11 +91,13 @@ with sync_playwright() as p:
     press_next(page)
     assert state(page)['level']==4
     finish_level(page,3)
-    assert state(page)['mode']=='shop' and state(page)['wallet']==180
+    before=state(page)
+    assert before['mode']=='shop' and before['wallet']>=180, before
+    # Optional coins collected while reaching fragments are legitimate income.
     page.keyboard.press('b')
     page.wait_for_timeout(130)
     final=state(page)
-    assert final['maxHearts']==4 and final['bought']==1 and final['wallet']==60, final
+    assert final['maxHearts']==4 and final['bought']==1 and final['wallet']==before['wallet']-120, final
     page.keyboard.press('b')
     page.wait_for_timeout(90)
     assert state(page)['bought']==1
