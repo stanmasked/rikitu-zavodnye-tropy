@@ -38,11 +38,20 @@ include $(DEVKITPRO)/libnx/switch_rules
 #   of a homebrew executable (.nro). This is intended to be used for sysmodules.
 #   NACP building is skipped as well.
 #---------------------------------------------------------------------------------
+# QA_MODE=1 builds a separate, asset-free NeXium combat test binary.
+ifeq ($(QA_MODE),1)
+TARGET       := rikitu_combat_qa_probe
+else
 TARGET       := rikitu_scene_probe
+endif
 APP_TITLE := RIKITU 2D Scene Probe
 APP_AUTHOR := RIKITU LAB
 APP_VERSION := 0.1.0
+ifeq ($(QA_MODE),1)
+BUILD        := build_combat_qa
+else
 BUILD		:=	build
+endif
 SOURCES      := source ../native
 DATA         :=
 INCLUDES     := ../native
@@ -87,7 +96,11 @@ export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
 
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
+ifeq ($(QA_MODE),1)
+CFILES := combat_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_draw.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c rikitu_combat_guest_qa.c
+else
 CFILES := main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_draw.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c
+endif
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))

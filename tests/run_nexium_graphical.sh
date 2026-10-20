@@ -39,5 +39,10 @@ sleep 0.8
 timeout 3s xdotool keyup --window "$window" Right
 sleep 0.4
 timeout 12s import -window "$window" "$OUTPUT_DIR/scene-after-right.png"
-python3 tests/check_emulator_scene.py \
+if [[ "${RIKITU_QA_MODE:-0}" == "1" ]]; then
+  python3 tests/check_combat_guest.py \
+    "$OUTPUT_DIR/scene-before.png" "$OUTPUT_DIR/scene-after-right.png"
+else
+  python3 tests/check_emulator_scene.py \
   "$OUTPUT_DIR/scene-before.png" "$OUTPUT_DIR/scene-after-right.png"
+fi
