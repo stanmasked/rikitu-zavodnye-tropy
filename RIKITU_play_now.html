@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>RIKITU: Заводные тропы — игровой прототип v0.6</title>
+<title>RIKITU: Заводные тропы — игровой прототип v0.7</title>
 <style>
 :root{color-scheme:light;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#e8f4ec;color:#254653}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 15% 0%,#f8f7d9,transparent 50%),linear-gradient(155deg,#e0f8ef,#def1fb 70%,#f8edca)}
-.shell{margin:auto;max-width:1060px;padding:19px 24px 30px}.top{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}.eyebrow{font-size:12px;font-weight:900;letter-spacing:2px;color:#448b70}h1{margin:3px 0;font-size:32px;line-height:1.14;letter-spacing:-1px}.topactions{display:flex;gap:8px;flex-wrap:wrap}button{border:none;cursor:pointer;border-radius:12px;background:#367e75;color:#fff;font-size:14px;font-weight:800;padding:11px 14px;box-shadow:0 2px 0 #1e5b56}button:hover{background:#2c695f}button:active{transform:translateY(1px);box-shadow:0 1px 0 #1e5b56}.hud{display:flex;justify-content:space-between;gap:12px;padding:13px 18px;align-items:center;background:#fff;box-shadow:0 4px 20px #56756622;border:1px solid #bdddcf;border-radius:15px 15px 0 0;font-weight:900}.hud span{white-space:nowrap}.hud span small{color:#708783;font-size:12px;font-weight:600}.hud .level-mark{color:#458171;font-size:13px}.stage{overflow:hidden;background:#76c4df;border-radius:0 0 15px 15px;box-shadow:0 10px 24px #2e58552b}canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;image-rendering:auto}.help{margin-top:14px;background:#ffffffd9;padding:15px 17px;border:1px solid #bbd9cf;border-radius:15px;font-size:13px;line-height:1.8}.note{margin-top:8px;border-top:1px solid #d7e7dc;padding-top:8px;color:#63837d;font-size:12px}.touchbar{display:flex;gap:10px;justify-content:center;margin:12px 0 0;touch-action:none}.touchbar button{font-size:17px;min-width:88px;padding:15px}.touchbar button:last-child{min-width:165px;background:#c68043}@media(min-width:1024px){.touchbar{display:none}}@media(max-width:600px){.shell{padding:8px 8px 30px}h1{font-size:27px}.topactions button{font-size:11px;padding:9px}.hud{gap:5px;padding:10px 8px;font-size:13px}.hud .level-mark{font-size:10px}.help{font-size:12px}.note{font-size:11px}}
+.shell{margin:auto;max-width:1060px;padding:19px 24px 30px}.top{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-bottom:14px}.eyebrow{font-size:12px;font-weight:900;letter-spacing:2px;color:#448b70}h1{margin:3px 0;font-size:32px;line-height:1.14;letter-spacing:-1px}.topactions{display:flex;gap:8px;flex-wrap:wrap}button{border:none;cursor:pointer;border-radius:12px;background:#367e75;color:#fff;font-size:14px;font-weight:800;padding:11px 14px;box-shadow:0 2px 0 #1e5b56}button:hover{background:#2c695f}button:active{transform:translateY(1px);box-shadow:0 1px 0 #1e5b56}.hud{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;padding:13px 18px;align-items:center;background:#fff;box-shadow:0 4px 20px #56756622;border:1px solid #bdddcf;border-radius:15px 15px 0 0;font-weight:900}.hud span{white-space:nowrap}.hud span small{color:#708783;font-size:12px;font-weight:600}.hud .level-mark{color:#458171;font-size:13px}.stage{overflow:hidden;background:#76c4df;border-radius:0 0 15px 15px;box-shadow:0 10px 24px #2e58552b}canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;image-rendering:auto}.help{margin-top:14px;background:#ffffffd9;padding:15px 17px;border:1px solid #bbd9cf;border-radius:15px;font-size:13px;line-height:1.8}.note{margin-top:8px;border-top:1px solid #d7e7dc;padding-top:8px;color:#63837d;font-size:12px}.touchbar{display:flex;gap:10px;justify-content:center;margin:12px 0 0;touch-action:none}.touchbar button{font-size:17px;min-width:88px;padding:15px}.touchbar button:last-child{min-width:165px;background:#c68043}@media(min-width:1024px){.touchbar{display:none}}@media(max-width:600px){.shell{padding:8px 8px 30px}h1{font-size:27px}.topactions button{font-size:11px;padding:9px}.hud{gap:5px;padding:10px 8px;font-size:13px}.hud .level-mark{font-size:10px}.help{font-size:12px}.note{font-size:11px}}
 
 </style>
 </head>
 <body>
 <main class="shell">
   <header class="top">
-    <div><div class="eyebrow">RIKITU / ИГРОВОЙ ПРОТОТИП v0.6</div><h1>Заводные тропы</h1></div>
+    <div><div class="eyebrow">RIKITU / ИГРОВОЙ ПРОТОТИП v0.7</div><h1>Заводные тропы</h1></div>
     <div class="topactions"><button id="start">Начать / далее</button><button id="pause">Пауза</button><button id="restart">Заново</button><button id="buy-heart">♥ Купить у Моки (B)</button></div>
   </header>
   <div id="hud" class="hud" aria-live="polite"><span>♥ 3</span><span>🟡 0</span><span>◆ 0/3</span><span>RIKITU</span></div>
@@ -23,6 +23,7 @@
   <div class="help">
     <div><b>Управление:</b> ← → или A/D — движение · Пробел / ↑ / W — прыжок · Shift — быстрее</div>
     <div><b>Дополнительно:</b> Enter — начать/следующий уровень · P — пауза · R — заново · Gamepad — поддержка</div>
+    <div><b>Статистика:</b> секундомер считает только активное игровое время и фиксирует потери здоровья. Данные сохраняются на контрольных точках.</div>
     <div><b>Задача:</b> найти 3 бирюзовых фрагмента, собрать монетки по желанию и добраться до выхода. Мини-боссы после 2-го, 4-го и 6-го уровней: трижды прыгни сверху. Затем лавка Моки: B — купить, Enter — продолжить.</div>
     <div class="note">Внешность лисёнка Рикиту не перерисовывается: бирюзовый маркер «Р» — временный технический символ до интеграции оригинальных утверждённых спрайтов. Эта версия предназначена для ПК/браузера, не для Switch.</div>
   </div>
@@ -190,9 +191,11 @@
   let mode='title',levelIndex=0,level=null,p=null,cam=0,frame=0,lastTime=0,acc=0,toast='',toastTime=0,storyText='',bossHint=false;
   const fixed=1/60;
   let stageCoins=0,allCoins=0,purchasedHearts=0,shopStage=0;
+  let stageSeconds=0,stageHits=0;
   const lifeCapacity=()=>C.SETTINGS.startingHearts+purchasedHearts;
   const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
   const coinBox=(x,y)=>({x:x-12,y:y-12,w:24,h:24});
+  const formatClock=seconds=>`${String(Math.floor(seconds/60)).padStart(2,'0')}:${String(Math.floor(seconds%60)).padStart(2,'0')}`;
 
   const SAVE_KEY='rikitu-zavodnye-tropy-checkpoint-v1';
   const allowedSaveModes=new Set(['playing','between','shop','victory']);
@@ -215,6 +218,9 @@
       if(!int(s.stageCoins)||s.stageCoins!==s.coins.length)return null; // Wallet may be lower after Moki purchases.
       if(!int(s.checkpoint)||![105,...d.checkpoints].includes(s.checkpoint))return null;
       if(!int(s.hearts)||s.hearts<1||s.hearts>3+s.purchased)return null;
+      // Optional fields: existing checkpoint saves created before the pacing update remain valid.
+      if(s.seconds!==undefined&&(!Number.isFinite(s.seconds)||s.seconds<0||s.seconds>36000))return null;
+      if(s.hits!==undefined&&(!int(s.hits)||s.hits<0||s.hits>9999))return null;
       if(typeof s.bossDown!=='boolean')return null;
       if(s.mode==='shop'&&(!C.isShopStage(s.levelIndex+1)||!s.bossDown))return null;
       if(s.mode==='between'&&s.levelIndex>=chapterInfo.length-1)return null;
@@ -230,6 +236,7 @@
       coins:level.coins.filter(x=>x.got).map(x=>x.id),
       switches:level.switches.map((x,i)=>x.on?i:-1).filter(x=>x>=0),
       checkpoint:level.activeCheckpoint,hearts:p.hearts,
+      seconds:Math.round(stageSeconds*10)/10,hits:stageHits,
       bossDown:!!level.boss&&!level.boss.alive};
     try{localStorage.setItem(SAVE_KEY,JSON.stringify(data));startupSave=data;}catch(e){}
   }
@@ -238,6 +245,7 @@
     if(!s)return false;
     newLevel(s.levelIndex,false);
     allCoins=s.wallet;purchasedHearts=s.purchased;stageCoins=s.stageCoins;
+    stageSeconds=s.seconds??0;stageHits=s.hits??0;
     for(const item of level.fragments)item.got=s.fragments.includes(item.id);
     for(const item of level.coins)item.got=s.coins.includes(item.id);
     level.switches.forEach((sw,i)=>{sw.on=s.switches.includes(i)});
@@ -266,7 +274,7 @@
       boss:d.boss?{x:d.boss.x,y:GROUND-57,w:72,h:57,center:d.boss.x,hp:d.boss.hp,name:d.boss.name,hit:0,dir:1,alive:true}:null,
       activeCheckpoint:105, checkpointCount:0,
     };
-    stageCoins=0;previousJump=false;
+    stageCoins=0;stageSeconds=0;stageHits=0;previousJump=false;
     p={x:105,y:GROUND-C.SETTINGS.playerHeight,w:C.SETTINGS.playerWidth,h:C.SETTINGS.playerHeight,
       vx:0,vy:0,grounded:false,coyote:0,jumpBuffer:0,inv:0,hearts:lifeCapacity(),
       spawnX:105, facing:1};
@@ -277,12 +285,13 @@
   function updateHud(){
     const fragmentCount=level?.fragments.filter(x=>x.got).length||0;
     const h=document.querySelector('#hud');
-    h.innerHTML=`<span>♥ ${p?p.hearts:3}/${lifeCapacity()}</span><span>🟡 ${allCoins} <small>кошелёк</small></span><span>◆ ${fragmentCount}/3 <small>фрагмента</small></span><span class="level-mark">${level ? `${levelIndex+1}/${chapterInfo.length} — ${level.name} · ${Math.min(100,Math.round((p?.x||0)/level.width*100))}%` : 'RIKITU'}</span>`;
+    h.innerHTML=`<span>♥ ${p?p.hearts:3}/${lifeCapacity()}</span><span>🟡 ${allCoins} <small>кошелёк</small></span><span>◆ ${fragmentCount}/3 <small>фрагмента</small></span><span>⏱ ${formatClock(stageSeconds)} <small>потерь здоровья: ${stageHits}</small></span><span class="level-mark">${level ? `${levelIndex+1}/${chapterInfo.length} — ${level.name} · ${Math.min(100,Math.round((p?.x||0)/level.width*100))}%` : 'RIKITU'}</span>`;
   }
   function announce(t,time=2.5){toast=t;toastTime=time;}
   function damage(){
     if(p.inv>0 || mode!=='playing')return;
     p.hearts=C.heartAfterDamage(p.hearts);p.inv=C.SETTINGS.invincibility;
+    stageHits++;
     announce(p.hearts?'Осторожнее!':'Не беда! Вернёмся к контрольной точке.',1.6);
     if(p.hearts===0){p.hearts=lifeCapacity();respawn();}
     updateHud();persist();
@@ -304,6 +313,7 @@
   function update(dt){
     frame++;readGamepad();
     if(mode!=='playing')return;
+    stageSeconds+=dt;
     const d=C.SETTINGS;
     if(toastTime>0)toastTime-=dt;
     p.inv=Math.max(0,p.inv-dt);
@@ -653,7 +663,7 @@
     paint();requestAnimationFrame(loop);
   }
   // Read-only health probe for browser integration tests.
-  window.RIKITU_TEST_STATE=()=>({mode,level:levelIndex+1,playerX:p?.x,playerY:p?.y,fragments:level?.fragments.filter(x=>x.got).length,coins:stageCoins,bossHP:level?.boss?.hp??null,bossX:level?.boss?.x??null,bossY:level?.boss?.y??null,checkpoint:level?.activeCheckpoint,checkpointCount:level?.checkpointCount,hearts:p?.hearts,maxHearts:lifeCapacity(),wallet:allCoins,bought:purchasedHearts,shopStage,hasSave:!!startupSave});
+  window.RIKITU_TEST_STATE=()=>({mode,level:levelIndex+1,playerX:p?.x,playerY:p?.y,fragments:level?.fragments.filter(x=>x.got).length,coins:stageCoins,bossHP:level?.boss?.hp??null,bossX:level?.boss?.x??null,bossY:level?.boss?.y??null,checkpoint:level?.activeCheckpoint,checkpointCount:level?.checkpointCount,hearts:p?.hearts,maxHearts:lifeCapacity(),wallet:allCoins,bought:purchasedHearts,shopStage,hasSave:!!startupSave,elapsedSeconds:Math.round(stageSeconds*100)/100,hitCount:stageHits});
   window.RIKITU_TEST_SHOP=(coins=0,bought=purchasedHearts,stage=shopStage)=>C.nextHeartPurchase(stage,bought,coins);
   window.RIKITU_TEST_COLLECT_COINS=(count=90)=>{
     if(!level||!Number.isInteger(count)||count<0)return false;

@@ -31,6 +31,18 @@ with sync_playwright() as p:
     page.on('pageerror',lambda e:errors.append(str(e)))
     page.keyboard.press('Enter');page.wait_for_timeout(130)
     assert page.evaluate('RIKITU_TEST_STATE().mode')=='playing'
+    page.wait_for_timeout(230)
+    elapsed=page.evaluate('RIKITU_TEST_STATE().elapsedSeconds')
+    assert elapsed>0.10,elapsed
+    page.keyboard.press('p')
+    page.wait_for_timeout(80)
+    assert page.evaluate('RIKITU_TEST_STATE().mode')=='paused'
+    paused=page.evaluate('RIKITU_TEST_STATE().elapsedSeconds')
+    page.wait_for_timeout(220)
+    assert abs(page.evaluate('RIKITU_TEST_STATE().elapsedSeconds')-paused)<0.03
+    page.keyboard.press('p')
+    page.wait_for_timeout(90)
+    assert page.evaluate('RIKITU_TEST_STATE().mode')=='playing'
     page.evaluate('RIKITU_TEST_MOVE(1520,354)');page.wait_for_timeout(110)
     assert page.evaluate('RIKITU_TEST_STATE().fragments')==1
     page.evaluate('RIKITU_TEST_MOVE(2100,410)');page.wait_for_timeout(170)
@@ -38,6 +50,8 @@ with sync_playwright() as p:
     assert state['checkpoint']==2050,state
     saved=page.evaluate('(key)=>localStorage.getItem(key)',KEY)
     assert saved and '"fragments":[0]' in saved,saved
+    saved_json=json.loads(saved)
+    assert saved_json['seconds']>0 and saved_json['hits']==0,saved_json
     page.close()
     
     page=make_page(browser,saved)
@@ -46,6 +60,8 @@ with sync_playwright() as p:
     page.keyboard.press('Enter');page.wait_for_timeout(140)
     restored=page.evaluate('RIKITU_TEST_STATE()')
     assert restored['checkpoint']==2050 and restored['fragments']==1 and restored['playerX']==2050,restored
+    assert restored['elapsedSeconds']>=saved_json['seconds']-0.02,restored
+    assert restored['hitCount']==0,restored
     page.keyboard.press('r');page.wait_for_timeout(130)
     reset=page.evaluate('RIKITU_TEST_STATE()')
     assert reset['fragments']==0 and reset['checkpoint']==105,reset
@@ -64,6 +80,7 @@ with sync_playwright() as p:
     page.keyboard.press('Enter');page.wait_for_timeout(130)
     shop=page.evaluate('RIKITU_TEST_STATE()')
     assert shop['mode']=='shop' and shop['maxHearts']==4 and shop['wallet']==60 and shop['bought']==1,shop
+    assert shop['elapsedSeconds']==0 and shop['hitCount']==0,shop
     page.keyboard.press('b');page.wait_for_timeout(110)
     shop_again=page.evaluate('RIKITU_TEST_STATE()')
     assert shop_again['wallet']==60 and shop_again['bought']==1,shop_again
