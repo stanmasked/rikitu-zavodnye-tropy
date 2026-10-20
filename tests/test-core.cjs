@@ -1,0 +1,25 @@
+const assert=require('node:assert/strict');
+const C=require('../game-core.js');
+assert.equal(C.SETTINGS.startingHearts,3);
+assert.equal(C.SETTINGS.maxHearts,7);
+assert.deepEqual(C.SETTINGS.heartUpgradePrices,[120,160,200,240]);
+assert.equal(C.SETTINGS.heartUpgradePrices.reduce((a,b)=>a+b,0),720);
+assert.equal(C.SETTINGS.coinsPerStage*16,1440);
+assert.equal(C.unlockedUpgrades(2),1);
+assert.equal(C.unlockedUpgrades(4),1);
+assert.equal(C.unlockedUpgrades(6),2);
+assert.equal(C.unlockedUpgrades(12),3);
+assert.equal(C.unlockedUpgrades(16),4);
+assert.equal(C.isShopStage(2),true);
+assert.equal(C.isShopStage(16),true);
+assert.equal(C.isShopStage(15),false);
+assert.equal(C.buyHeart(2,0,119).success,false);
+assert.equal(C.buyHeart(4,1,999).success,false);
+assert.equal(C.canExit(2,false,true),false);
+assert.equal(C.canExit(3,true,false),false);
+assert.equal(C.canExit(3,true,true),true);
+let hearts=0,coins=720;
+for(let i=0;i<4;i++){const p=C.buyHeart(16,hearts,coins);assert.equal(p.success,true);hearts=p.purchasedCount;coins=p.coins;}
+assert.equal(coins,0);assert.equal(3+hearts,7);
+assert.equal(C.buyHeart(16,4,1000).success,false);
+console.log('PASS RIKITU core economy, unlocks, boss gate and carryover');

@@ -1,0 +1,386 @@
+(function () {
+  'use strict';
+  const C=window.RikituCore;
+  if(!C) throw new Error('game-core.js must load before game.js');
+  const canvas=document.querySelector('#game'),ctx=canvas.getContext('2d');
+  const W=960,H=540,GROUND=456;
+  const sfx=()=>{}; // Sound will come from original RIKITU sound-design later.
+  // v0.2: four sections, three checkpoints and exactly 90 optional coins per route.
+  const coinsAlong=(spans,step=145)=>spans.flatMap(([a,b])=>{
+    const out=[];for(let x=Math.max(160,a+135);x<b-80;x+=step)out.push([x,393]);return out;
+  });
+  const platformCoins=platforms=>platforms.flatMap(([x,y,w])=>
+    [0.25,0.50,0.75].map(t=>[Math.round(x+w*t),y-46]));
+  const chapterInfo=[
+    {name:'Цветочная тропа',world:'Солнечная долина',width:7900,
+      ground:[[0,1660],[1735,3020],[3095,4310],[4385,5790],[5865,7900]],
+      platforms:[[490,390,185],[1030,383,175],[1450,386,165],[2080,385,200],[2630,388,185],
+        [3380,386,195],[3560,374,165],[4040,391,195],[4740,389,190],[5230,378,190],
+        [5600,394,145],[6280,382,180],[6770,388,210],[7330,388,180]],
+      fragments:[[1530,345],[3650,332],[6870,347]],checkpoints:[2050,4490,6150],
+      enemies:[{x:820,a:745,b:1030},{x:2450,a:2310,b:2700},{x:3270,a:3150,b:3470},
+        {x:4840,a:4660,b:5070},{x:5480,a:5350,b:5640},{x:7130,a:7030,b:7320}],
+      sections:[[0,'Цветущие луга'],[2000,'Лесная опушка'],[4200,'Старый ручей'],[6100,'Дорога к мосту']],
+      gate:7770,boss:null,startText:'Длинная Цветочная тропа: найди три фрагмента по пути!',
+      endText:'Мост восстановлен! Но у мельницы клубится странный пар. Надо проверить.',decor:'meadow'},
+    {name:'Мельница у ручья',world:'Солнечная долина',width:8550,
+      ground:[[0,1810],[1880,3250],[3330,4690],[4770,6050],[6130,8550]],
+      platforms:[[545,385,180],[1190,388,200],[1590,379,190],[2320,381,180],
+        [2850,386,185],[3590,390,180],[4210,379,210],[4470,394,180],
+        [5140,383,210],[5780,384,155],[6540,386,185],[6980,382,195],[7450,382,185]],
+      fragments:[[1650,340],[4275,340],[7030,343]],checkpoints:[2200,4930,6980],
+      enemies:[{x:840,a:735,b:1050},{x:2520,a:2440,b:2750},{x:3710,a:3550,b:3900},
+        {x:5330,a:5200,b:5520},{x:6320,a:6200,b:6530},{x:7260,a:7160,b:7440}],
+      sections:[[0,'Речной берег'],[2100,'Деревянные настилы'],[4300,'Водяные колёса'],[6700,'Мельничный двор']],
+      gate:8370,boss:{x:7910,hp:3},startText:'Собери три фрагмента и победи мини-босса!',
+      endText:'Рикиту находит пластину с клеймом мастерской. Это точно не простая авария…',decor:'mill'}
+  ].map(d=>{
+    const coins=[...coinsAlong(d.ground),...platformCoins(d.platforms)];
+    let i=0;
+    while(coins.length<C.SETTINGS.coinsPerStage){
+      const [a,b]=d.ground[i%d.ground.length],x=a+65+Math.floor(i/d.ground.length)*47;
+      if(x<b-30&&!coins.some(c=>Math.abs(c[0]-x)<20&&Math.abs(c[1]-425)<20))coins.push([x,425]);
+      i++;if(i>5000)throw new Error('Could not place target coins');
+    }
+    return {...d,coins:coins.slice(0,C.SETTINGS.coinsPerStage)};
+  });
+  const keys=new Set(); const touch={left:false,right:false,jump:false};
+  let mode='title',levelIndex=0,level=null,p=null,cam=0,frame=0,lastTime=0,acc=0,toast='',toastTime=0,storyText='',bossHint=false;
+  const fixed=1/60;
+  let stageCoins=0,allCoins=0,purchasedHearts=0,shopStage=0;
+  const lifeCapacity=()=>C.SETTINGS.startingHearts+purchasedHearts;
+  const clamp=(v,a,b)=>Math.min(b,Math.max(a,v));
+  const coinBox=(x,y)=>({x:x-12,y:y-12,w:24,h:24});
+  function newLevel(index) {
+    levelIndex=index;
+    const d=chapterInfo[index];
+    level={...d,
+      platforms:d.platforms.map(a=>({x:a[0],y:a[1],w:a[2],h:16})),
+      ground:d.ground.map(a=>({x:a[0],y:GROUND,w:a[1]-a[0],h:H-GROUND+180})),
+      fragments:d.fragments.map((a,i)=>({id:i,x:a[0],y:a[1],w:25,h:25,got:false})),
+      coins:d.coins.map((a,i)=>({id:i,x:a[0],y:a[1],got:false})),
+      enemies:d.enemies.map((e,i)=>({id:i,x:e.x,y:GROUND-28,w:33,h:28,a:e.a,b:e.b,dir:i%2?1:-1,dead:false})),
+      boss:d.boss?{x:d.boss.x,y:GROUND-57,w:72,h:57,center:d.boss.x,hp:d.boss.hp,hit:0,dir:1,alive:true}:null,
+      activeCheckpoint:105, checkpointCount:0,
+    };
+    stageCoins=0;previousJump=false;
+    p={x:105,y:GROUND-C.SETTINGS.playerHeight,w:C.SETTINGS.playerWidth,h:C.SETTINGS.playerHeight,
+      vx:0,vy:0,grounded:false,coyote:0,jumpBuffer:0,inv:0,hearts:lifeCapacity(),
+      spawnX:105, facing:1};
+    cam=0;bossHint=false;toast=d.startText;toastTime=4.8;
+    mode='playing';
+    updateHud();
+  }
+  function updateHud(){
+    const fragmentCount=level?.fragments.filter(x=>x.got).length||0;
+    const h=document.querySelector('#hud');
+    h.innerHTML=`<span>♥ ${p?p.hearts:3}/${lifeCapacity()}</span><span>🟡 ${allCoins} <small>кошелёк</small></span><span>◆ ${fragmentCount}/3 <small>фрагмента</small></span><span class="level-mark">${level ? `${levelIndex+1}/2 — ${level.name} · ${Math.min(100,Math.round((p?.x||0)/level.width*100))}%` : 'RIKITU'}</span>`;
+  }
+  function announce(t,time=2.5){toast=t;toastTime=time;}
+  function damage(){
+    if(p.inv>0 || mode!=='playing')return;
+    p.hearts=C.heartAfterDamage(p.hearts);p.inv=C.SETTINGS.invincibility;
+    announce(p.hearts?'Осторожнее!':'Не беда! Вернёмся к контрольной точке.',1.6);
+    if(p.hearts===0){p.hearts=lifeCapacity();respawn();}
+    updateHud();
+  }
+  function respawn(){
+    p.x=p.spawnX;p.y=GROUND-p.h;p.vx=0;p.vy=0;p.inv=1.4;p.grounded=false;
+    // Collected parts and coins persist, to keep the game accessible.
+  }
+  function jumpPressed(){return keys.has('Space')||keys.has('ArrowUp')||keys.has('KeyW')||touch.jump||gamepadJump;}
+  let gamepadJump=false,gamepadX=0,gamepadPause=false,previousJump=false;
+  function readGamepad(){
+    let pads=[];try{pads=navigator.getGamepads?navigator.getGamepads():[];}catch(e){}
+    const gp=Array.from(pads).find(g=>g&&g.connected);
+    gamepadX=gp?gp.axes[0]||0:0;
+    gamepadJump=!!(gp&&(gp.buttons[0]?.pressed||gp.buttons[1]?.pressed));
+    const pause=!!(gp&&gp.buttons[9]?.pressed);
+    if(pause&&!gamepadPause)togglePause(); gamepadPause=pause;
+  }
+  function update(dt){
+    frame++;readGamepad();
+    if(mode!=='playing')return;
+    const d=C.SETTINGS;
+    if(toastTime>0)toastTime-=dt;
+    p.inv=Math.max(0,p.inv-dt);
+    const left=keys.has('ArrowLeft')||keys.has('KeyA')||touch.left||gamepadX<-.30;
+    const right=keys.has('ArrowRight')||keys.has('KeyD')||touch.right||gamepadX>.30;
+    p.vx=((right?1:0)-(left?1:0))*(keys.has('ShiftLeft')?d.runSpeed:d.walkSpeed);
+    if(p.vx)p.facing=Math.sign(p.vx);
+    const jumpNow=jumpPressed();
+    p.jumpBuffer=(jumpNow&&!previousJump)?d.jumpBuffer:Math.max(0,p.jumpBuffer-dt);
+    previousJump=jumpNow;
+    p.coyote=p.grounded?d.coyoteTime:Math.max(0,p.coyote-dt);
+    if(p.jumpBuffer>0&&C.playerCanJump(p)) {
+      p.vy=-d.jumpSpeed;p.grounded=false;p.coyote=0;p.jumpBuffer=0;sfx();
+    }
+    const oldBottom=p.y+p.h;
+    p.x=clamp(p.x+p.vx*dt,0,level.width-p.w);
+    p.vy=Math.min(1050,p.vy+d.gravity*dt);
+    p.y+=p.vy*dt;p.grounded=false;
+    const solids=[...level.ground,...level.platforms];
+    for(const b of solids){
+      if(p.x+p.w <= b.x+3||p.x>=b.x+b.w-3)continue;
+      if(p.vy>=0 && oldBottom<=b.y+10 && p.y+p.h>=b.y && p.y<=b.y){
+        p.y=b.y-p.h;p.vy=0;p.grounded=true;
+      }
+    }
+    if(p.y>H+150){damage();respawn();}
+    for(const cp of level.checkpoints){
+      if(p.x>=cp && level.activeCheckpoint<cp){
+        level.activeCheckpoint=cp;level.checkpointCount++;p.spawnX=cp;
+        announce(`✓ Контрольная точка ${level.checkpointCount}/3. Находки сохраняются!`,2.9);
+      }
+    }
+    let hudChanged=false;
+    for(const part of level.fragments){
+      if(part.got)continue;
+      if(C.boxHit(p,{x:part.x-20,y:part.y-30,w:65,h:72})){
+        part.got=true;hudChanged=true;
+        const count=level.fragments.filter(q=>q.got).length;
+        announce(count===3?'◆ Деталь собрана! Путь к выходу открыт.':`◆ Найден фрагмент ${count} из 3!`,3.0);
+      }
+    }
+    for(const coin of level.coins){
+      if(coin.got)continue;
+      if(C.boxHit(p,coinBox(coin.x,coin.y))){coin.got=true;stageCoins++;allCoins++;hudChanged=true;}
+    }
+    for(const e of level.enemies){
+      if(e.dead)continue;
+      e.x+=e.dir*43*dt;
+      if(e.x<e.a||e.x>e.b){e.x=clamp(e.x,e.a,e.b);e.dir*=-1;}
+      if(C.boxHit(p,e)){
+        if(C.stompFromAbove(oldBottom,p.y+p.h,e.y,p.vy>=0)){
+          e.dead=true;p.vy=-360;announce('Отличный прыжок!',1.1);
+        }else damage();
+      }
+    }
+    if(level.boss&&level.boss.alive){
+      let boss=level.boss;
+      boss.hit=Math.max(0,boss.hit-dt);
+      boss.x+=boss.dir*48*dt;
+      if(boss.x<boss.center-80||boss.x>boss.center+80)boss.dir*=-1;
+      if(p.x>boss.center-380&&!bossHint){bossHint=true;announce('Мини-босс: прыгай на Заводного Жука сверху! 3 попадания.',4.5);}
+      if(C.boxHit(p,boss)){
+        if(boss.hit<=0&&C.stompFromAbove(oldBottom,p.y+p.h,boss.y,p.vy>=0)){
+          boss.hp--;boss.hit=0.85;p.vy=-490;p.y=boss.y-p.h-1;
+          announce(boss.hp?`Заводной Жук: осталось ${boss.hp} попаданий!`:'Заводной Жук остановлен! Иди к выходу.',2.3);
+          if(boss.hp===0)boss.alive=false;
+        }else if(boss.hit<=0) damage();
+      }
+    }
+    if(hudChanged)updateHud();
+    if(p.x+p.w >level.gate-30){
+      if(C.canExit(level.fragments.filter(x=>x.got).length,!!level.boss,!level.boss||!level.boss.alive)){
+        storyText=level.endText; if(C.isShopStage(levelIndex+1)){mode='shop';shopStage=levelIndex+1;} else mode=levelIndex===0?'between':'victory';
+      } else if(toastTime<=0){
+        announce(level.fragments.filter(x=>x.got).length<3?'Для выхода нужно собрать все три фрагмента!':'Сначала победи Заводного Жука!',2.6);
+      }
+    }
+    const target=clamp(p.x-W*.37,0,Math.max(0,level.width-W));
+    if(frame%15===0)updateHud();
+    cam+=(target-cam)*clamp(8*dt,0,1);
+  }
+  function rounded(x,y,w,h,r,color){ctx.fillStyle=color;ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.fill();}
+  function text(t,x,y,size=22,color='#fff',align='left',weight='700'){
+    ctx.textAlign=align;ctx.font=`${weight} ${size}px system-ui, Arial, sans-serif`;ctx.fillStyle=color;ctx.fillText(t,x,y);
+  }
+  function clouds(offset){
+    ctx.save();ctx.translate(-offset*.15,0);
+    for(let i=0;i<18;i++){
+      let x=40+i*235,y=75+(i*31)%95;
+      ctx.fillStyle='rgba(255,255,255,.88)';
+      ctx.beginPath();ctx.ellipse(x,y,51,18,0,0,Math.PI*2);ctx.fill();
+      ctx.beginPath();ctx.arc(x-20,y-8,20,0,Math.PI*2);ctx.arc(x+9,y-16,27,0,Math.PI*2);ctx.fill();
+    }
+    ctx.restore();
+  }
+  function background(){
+    const gradient=ctx.createLinearGradient(0,0,0,H);
+    if(level?.decor==='mill'){gradient.addColorStop(0,'#81d6ec');gradient.addColorStop(1,'#f3fbba');}
+    else {gradient.addColorStop(0,'#8bdaf3');gradient.addColorStop(1,'#fbf8d5');}
+    ctx.fillStyle=gradient;ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#fff7ba';ctx.beginPath();ctx.arc(800-cam*.03,89,42,0,Math.PI*2);ctx.fill();
+    clouds(cam);
+    ctx.save();ctx.translate(-cam*.18,0);
+    for(let x=-300;x<level.width+W;x+=210){
+      ctx.fillStyle=x%420?'#a3e8a5':'#84d6a2';
+      ctx.beginPath();ctx.ellipse(x,485,160,170,0,Math.PI,0);ctx.fill();
+    }
+    ctx.restore();
+    ctx.save();ctx.translate(-cam*.5,0);
+    for(let x=-100;x<level.width+W;x+=340){
+      const y=380+(Math.abs(x/340)%2)*20;
+      ctx.fillStyle='#569b75';ctx.fillRect(x+45,y-60,15,82);
+      for(const a of [[40,-78,40],[79,-68,30],[62,-97,34]]){
+        ctx.fillStyle='#45b984';ctx.beginPath();ctx.arc(x+a[0],y+a[1],a[2],0,Math.PI*2);ctx.fill();
+      }
+    }
+    ctx.restore();
+  }
+  function windmill(){
+    const x=750-cam*.65,y=273;
+    if(x<-160||x>W+160)return;
+    ctx.save();ctx.translate(x,y);
+    ctx.fillStyle='#f5e2a2';ctx.beginPath();ctx.moveTo(-40,130);ctx.lineTo(-26,-20);ctx.lineTo(31,-20);ctx.lineTo(44,130);ctx.fill();
+    ctx.fillStyle='#a85a42';ctx.beginPath();ctx.moveTo(-43,-16);ctx.lineTo(0,-57);ctx.lineTo(39,-16);ctx.fill();
+    rounded(-12,70,24,60,8,'#815846');
+    ctx.translate(0,-13);ctx.rotate(Math.sin(frame/65)*0.05+frame*.002);
+    for(let i=0;i<4;i++){ctx.save();ctx.rotate(i*Math.PI/2);ctx.fillStyle='#f4ebd2';ctx.fillRect(-9,-106,18,92);ctx.strokeStyle='#9b765c';ctx.lineWidth=3;ctx.strokeRect(-9,-106,18,92);ctx.restore();}
+    ctx.fillStyle='#bc6f49';ctx.beginPath();ctx.arc(0,0,11,0,Math.PI*2);ctx.fill();ctx.restore();
+  }
+  function drawWorld(){
+    background();if(level.decor==='mill')windmill();
+    ctx.save();ctx.translate(-cam,0);
+    for(const [i,g] of level.ground.entries()){
+      rounded(g.x,g.y,g.w,H+90,0,'#b77b49');
+      ctx.fillStyle='#76cf65';ctx.fillRect(g.x,g.y-9,g.w,14);
+      ctx.fillStyle='#55ad51';ctx.fillRect(g.x,g.y,g.w,5);
+      for(let x=g.x+17;x<g.x+g.w;x+=72){
+        ctx.fillStyle='#d99f67';ctx.beginPath();ctx.arc(x,497+((x/70|0)%2)*24,6,0,Math.PI*2);ctx.fill();
+        if(x%3<2){ctx.strokeStyle='#418a3d';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,g.y-10);ctx.lineTo(x,g.y-22);ctx.stroke();ctx.fillStyle=['#ffb9d5','#fff8b7','#e4b3fe'][((x/70)|0)%3];ctx.beginPath();ctx.arc(x,g.y-23,4,0,Math.PI*2);ctx.fill();}
+      }
+    }
+    for(const b of level.platforms){rounded(b.x,b.y,b.w,b.h,7,'#b77a4d');rounded(b.x,b.y-5,b.w,11,6,'#72c760');}
+    for(const [x,label] of level.sections) text(label,x+85,GROUND-175,16,'#315a6c','center','750');
+    for(const cp of level.checkpoints){
+      ctx.strokeStyle='#a9714b';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(cp,GROUND);ctx.lineTo(cp,GROUND-92);ctx.stroke();
+      ctx.fillStyle=level.activeCheckpoint>=cp?'#69dfb1':'#fff1a7';
+      ctx.beginPath();ctx.moveTo(cp,GROUND-91);ctx.lineTo(cp+55,GROUND-77);ctx.lineTo(cp,GROUND-61);ctx.fill();
+    }
+    for(const coin of level.coins){if(coin.got)continue;
+      ctx.save();ctx.translate(coin.x,coin.y);ctx.scale(Math.max(.35,Math.abs(Math.cos(frame*.045+coin.id))),1);
+      ctx.fillStyle='#f8bc32';ctx.beginPath();ctx.arc(0,0,13,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#fff0a6';ctx.lineWidth=3;ctx.beginPath();ctx.arc(0,0,9,0,Math.PI*2);ctx.stroke();ctx.restore();
+    }
+    for(const f of level.fragments){if(f.got)continue;
+      ctx.save();ctx.translate(f.x+12, f.y+4+Math.sin(frame*.06+f.id)*6);
+      ctx.rotate(Math.PI/4);rounded(-13,-13,26,26,5,'#7afbe8');ctx.strokeStyle='#fff';ctx.lineWidth=3;ctx.strokeRect(-8,-8,16,16);ctx.restore();
+    }
+    for(const e of level.enemies){if(e.dead)continue;
+      rounded(e.x,e.y,e.w,e.h,11,'#84588f');
+      ctx.fillStyle='#fff';ctx.fillRect(e.x+6,e.y+8,7,7);ctx.fillRect(e.x+21,e.y+8,7,7);
+      ctx.fillStyle='#2d254d';ctx.fillRect(e.x+9,e.y+10,3,3);ctx.fillRect(e.x+24,e.y+10,3,3);
+    }
+    if(level.boss&&level.boss.alive){
+      const b=level.boss;
+      rounded(b.x,b.y,b.w,b.h,19,b.hit>0?'#fba9a5':'#d5855e');
+      ctx.strokeStyle='#703f38';ctx.lineWidth=5;
+      for(let i=0;i<3;i++){ctx.beginPath();ctx.moveTo(b.x+11+i*26,b.y+48);ctx.lineTo(b.x+5+i*28,b.y+60);ctx.stroke();}
+      ctx.fillStyle='#fff';ctx.fillRect(b.x+16,b.y+16,12,11);ctx.fillRect(b.x+45,b.y+16,12,11);
+      ctx.fillStyle='#332e42';ctx.fillRect(b.x+20,b.y+19,5,5);ctx.fillRect(b.x+49,b.y+19,5,5);
+      text('ЗАВОДНОЙ ЖУК',b.x+36,b.y-35,13,'#733e2c','center');
+      for(let i=0;i<b.hp;i++)text('♥',b.x+14+i*20,b.y-16,16,'#ec5f5f');
+    }
+    // Exit remains visible, but needs the three parts and a defeated boss.
+    const open=C.canExit(level.fragments.filter(f=>f.got).length,!!level.boss,!level.boss||!level.boss.alive);
+    ctx.fillStyle=open?'#a8e7ba':'#bfc9c9';ctx.fillRect(level.gate,GROUND-93,54,93);
+    rounded(level.gate+8,GROUND-81,38,78,7,open?'#61be88':'#84929c');
+    text(open?'ВЫХОД':'ЗАМОК',level.gate+27,GROUND-106,15,'#374d56','center');
+    for(let i=0;i<3;i++)text(i<level.fragments.filter(f=>f.got).length?'◆':'◇',level.gate+i*15+7,GROUND-54,14,'#f9efc1');
+    if(p.inv<=0||Math.floor(frame/5)%2===0){
+      // NEUTRAL TECHNICAL MARKER. Official fox artwork must be inserted unchanged later.
+      rounded(p.x,p.y,p.w,p.h,10,'#315d90');
+      rounded(p.x+5,p.y+6,p.w-10,p.h-14,6,'#75c2df');
+      text('Р',p.x+p.w/2,p.y+30,24,'#193852','center','800');
+    }
+    ctx.restore();
+    if(toastTime>0){
+      rounded(165,H-92,W-330,54,15,'rgba(33,64,78,.83)');
+      text(toast,W/2,H-58,Math.min(17,Math.floor(740/Math.max(toast.length,1))), '#fff','center','650');
+    }
+  }
+  function overlay(title,lines,action){
+    ctx.fillStyle='rgba(17,49,65,.72)';ctx.fillRect(0,0,W,H);
+    rounded(180,107,600,320,26,'rgba(249,253,232,.98)');
+    ctx.fillStyle='#4da782';ctx.fillRect(180,107,600,11);
+    text(title,480,183,33,'#234c5a','center','800');
+    let y=232;
+    for(const line of lines){text(line,480,y,18,'#345b5a','center','600');y+=34;}
+    rounded(285,355,390,51,14,'#3a9a77');
+    text(action,480,387,20,'#fff','center');
+  }
+  function paint(){
+    ctx.clearRect(0,0,W,H);
+    if(mode==='title'){
+      const gradient=ctx.createLinearGradient(0,0,0,H);gradient.addColorStop(0,'#7ed4ec');gradient.addColorStop(1,'#d7ef9d');ctx.fillStyle=gradient;ctx.fillRect(0,0,W,H);
+      clouds(frame*2);ctx.fillStyle='#86bf6b';ctx.beginPath();ctx.ellipse(480,555,740,230,0,Math.PI,0);ctx.fill();
+      rounded(115,105,730,345,26,'rgba(252,255,238,.91)');
+      text('RIKITU',480,190,69,'#318168','center','900');
+      text('ЗАВОДНЫЕ ТРОПЫ',480,250,35,'#284b5f','center','850');
+      text('Игровой прототип • Солнечная долина',480,293,20,'#5d7d79','center','600');
+      rounded(268,341,424,55,15,'#338f70');text('ENTER / ПРОБЕЛ — НАЧАТЬ',480,378,20,'#fff','center');
+      text('Герой временно обозначен маркером «Р» — дизайн Рикиту не изменяется.',480,486,15,'#345e65','center','500');
+    } else {
+      drawWorld();
+      if(mode==='paused')overlay('ПАУЗА',['Игра остановлена.','P — продолжить • R — начать заново'],'P — ПРОДОЛЖИТЬ');
+      else if(mode==='between')overlay('УРОВЕНЬ ПРОЙДЕН!',['Мост восстановлен! Рикиту отправляется к мельнице.','На следующем уровне ждёт первый мини-босс.'],'ENTER — УРОВЕНЬ 2');
+      else if(mode==='shop'){
+        const offer=C.nextHeartPurchase(shopStage,purchasedHearts,allCoins);
+        const n=C.unlockedUpgrades(shopStage);
+        const lines=[`Монеты: ${allCoins} · Сердца: ${lifeCapacity()}/7`,
+          `Открыто улучшений: ${n} из 4 · Куплено: ${purchasedHearts}`];
+        if(offer.price){
+          lines.push(`Следующее сердечко: ${offer.price} монет`);
+          lines.push(offer.available?'B — КУПИТЬ СЕРДЕЧКО':'Монет пока не хватает — покупку можно отложить!');
+        }else if(lifeCapacity()===7)lines.push('Получены все семь сердечек!');
+        else lines.push('Следующее сердечко станет доступно в следующем мире.');
+        overlay('ХОМЯК — ЛАВКА СЕРДЕЦ',lines,'ENTER — ПРОДОЛЖИТЬ');
+        text('♥',745,180,33,'#d75f6d','center');
+      }
+      else if(mode==='victory')overlay('ПЕРВЫЕ ДВА УРОВНЯ ПРОЙДЕНЫ!',['Рикиту собрал шесть фрагментов и восстановил две детали.','Найдена пластина с клеймом неизвестной мастерской.',`Собрано монет за два уровня: ${allCoins}`],'ENTER — СЫГРАТЬ СНОВА');
+    }
+  }
+  function togglePause(){if(mode==='playing'){mode='paused'}else if(mode==='paused'){mode='playing'}}
+  function buyUpgrade(){
+    if(mode!=='shop')return false;
+    const purchase=C.buyHeart(shopStage,purchasedHearts,allCoins);
+    if(!purchase.success)return false;
+    purchasedHearts=purchase.purchasedCount;allCoins=purchase.coins;
+    if(p)p.hearts=Math.min(lifeCapacity(),p.hearts+1);
+    updateHud();return true;
+  }
+  function resetCampaign(){allCoins=0;purchasedHearts=0;shopStage=0;newLevel(0);}
+  function act(){
+    if(mode==='title')resetCampaign();
+    else if(mode==='between')newLevel(1);
+    else if(mode==='shop')mode=levelIndex===1?'victory':'between';
+    else if(mode==='victory')resetCampaign();
+    else if(mode==='paused')togglePause();
+  }
+  const eventButtons=new Set(['ArrowLeft','ArrowRight','ArrowUp','Space','ShiftLeft','KeyA','KeyD','KeyW','Enter','KeyP','Escape','KeyR','KeyB']);
+  addEventListener('keydown',e=>{
+    if(eventButtons.has(e.code))e.preventDefault();
+    if(!keys.has(e.code)){
+      if(e.code==='Enter'||(e.code==='Space'&&mode!=='playing'))act();
+      if(e.code==='KeyP'||e.code==='Escape')togglePause();
+      if(e.code==='KeyB'&&mode==='shop')buyUpgrade();
+      if(e.code==='KeyR')resetCampaign();
+    }
+    keys.add(e.code);
+  });
+  addEventListener('keyup',e=>keys.delete(e.code));
+  addEventListener('blur',()=>{keys.clear();touch.left=false;touch.right=false;touch.jump=false;if(mode==='playing')mode='paused';});
+  document.querySelector('#start').addEventListener('click',act);
+  document.querySelector('#pause').addEventListener('click',togglePause);
+  document.querySelector('#restart').addEventListener('click',resetCampaign);
+  document.querySelector('#buy-heart').addEventListener('click',buyUpgrade);
+  document.querySelectorAll('[data-touch]').forEach(btn=>{
+    const dir=btn.getAttribute('data-touch');
+    btn.addEventListener('pointerdown',e=>{e.preventDefault();touch[dir]=true;btn.setPointerCapture(e.pointerId)});
+    const off=e=>{e.preventDefault();touch[dir]=false};
+    btn.addEventListener('pointerup',off);btn.addEventListener('pointercancel',off);
+  });
+  function loop(ts){
+    const dt=Math.min(.10,(ts-lastTime)/1000||fixed);lastTime=ts;acc+=dt;
+    let count=0;while(acc>=fixed&&count<6){update(fixed);acc-=fixed;count++;}
+    paint();requestAnimationFrame(loop);
+  }
+  // Read-only health probe for browser integration tests.
+  window.RIKITU_TEST_STATE=()=>({mode,level:levelIndex+1,playerX:p?.x,playerY:p?.y,fragments:level?.fragments.filter(x=>x.got).length,coins:stageCoins,bossHP:level?.boss?.hp??null,bossX:level?.boss?.x??null,bossY:level?.boss?.y??null,checkpoint:level?.activeCheckpoint,checkpointCount:level?.checkpointCount,hearts:p?.hearts,maxHearts:lifeCapacity(),wallet:allCoins,bought:purchasedHearts,shopStage});
+  window.RIKITU_TEST_SHOP=(coins=0,bought=purchasedHearts,stage=shopStage)=>C.nextHeartPurchase(stage,bought,coins);
+  window.RIKITU_TEST_LEVELS=()=>chapterInfo.map(d=>({width:d.width,fragments:d.fragments,coins:d.coins.length,checkpoints:d.checkpoints,sections:d.sections,gate:d.gate,boss:d.boss}));
+  window.RIKITU_TEST_MOVE=(x,y)=>{if(p&&level){p.x=clamp(x,0,level.width-p.w);p.y=y;p.vy=0;p.inv=2;}};
+  updateHud();requestAnimationFrame(loop);
+})();
