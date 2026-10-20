@@ -350,6 +350,7 @@
     const fragmentCount=level?.fragments.filter(x=>x.got).length||0;
     const h=document.querySelector('#hud');
     h.innerHTML=`<span>♥ ${p?p.hearts:3}/${lifeCapacity()}</span><span>🟡 ${allCoins} <small>кошелёк</small></span><span>◆ ${fragmentCount}/3 <small>фрагмента</small></span><span>⏱ ${formatClock(stageSeconds)} <small>потерь здоровья: ${stageHits}</small></span><span class="level-mark">${level ? `${levelIndex+1}/${chapterInfo.length} — ${level.name} · ${Math.min(100,Math.round((p?.x||0)/level.width*100))}%` : 'RIKITU'}</span>`;
+    document.querySelector('#export-results').disabled=stageRecords.length===0;
   }
   function announce(t,time=2.5){toast=t;toastTime=time;}
   function damage(){
@@ -505,7 +506,7 @@
         if(!stageRecords.some(r=>r.stage===levelIndex+1))
           stageRecords.push({stage:levelIndex+1,seconds:Math.round(stageSeconds*10)/10,hits:stageHits,coins:stageCoins});
         storyText=level.endText; if(C.isShopStage(levelIndex+1)){mode='shop';shopStage=levelIndex+1;} else mode=levelIndex===chapterInfo.length-1?'victory':'between';
-        persist();
+        updateHud();persist();
       } else if(toastTime<=0){
         const missing=level.fragments.filter(x=>!x.got);
         if(missing.length){
@@ -778,6 +779,24 @@
     announce(`Спасибо, Моки! Теперь ${lifeCapacity()} сердечка здоровья!`,2.3);
     updateHud();persist();return true;
   }
+  function exportStageResults(){
+    if(!stageRecords.length)return false;
+    const rows=[['Уровень','Название','Тип','Секунды','Попадания','Монеты из 90','Цель от, с','Цель до, с','Сравнение']];
+    for(const r of [...stageRecords].sort((a,b)=>a.stage-b.stage)){
+      const bossStage=r.stage%2===0;
+      const min=bossStage?480:360,max=bossStage?600:480;
+      const verdict=r.seconds<min?'Ниже цели':r.seconds>max?'Выше цели':'В пределах цели';
+      rows.push([r.stage,chapterInfo[r.stage-1].name,bossStage?'С мини-боссом':'Обычный',
+        r.seconds,r.hits,r.coins,min,max,verdict]);
+    }
+    const quote=v=>'"'+String(v).replace(/"/g,'""')+'"';
+    const csv='\uFEFF'+rows.map(row=>row.map(quote).join(';')).join('\r\n')+'\r\n';
+    const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
+    const a=document.createElement('a');a.href=url;a.download='RIKITU_stage_results.csv';
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    return true;
+  }
   function resetCampaign(){try{localStorage.removeItem(SAVE_KEY)}catch(e){}startupSave=null;allCoins=0;purchasedHearts=0;shopStage=0;stageRecords=[];newLevel(0);}
   function act(){
     if(mode==='title'){if(!resume())resetCampaign();}
@@ -802,6 +821,7 @@
   document.querySelector('#start').addEventListener('click',act);
   document.querySelector('#pause').addEventListener('click',togglePause);
   document.querySelector('#restart').addEventListener('click',resetCampaign);
+  document.querySelector('#export-results').addEventListener('click',exportStageResults);
   document.querySelector('#buy-heart').addEventListener('click',buyUpgrade);
   document.querySelectorAll('[data-touch]').forEach(btn=>{
     const dir=btn.getAttribute('data-touch');
