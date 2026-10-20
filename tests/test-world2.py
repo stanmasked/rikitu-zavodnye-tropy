@@ -42,7 +42,7 @@ with sync_playwright() as pw:
     page.keyboard.press('Enter')
     page.wait_for_function("()=>RIKITU_TEST_STATE().level===5",timeout=5000)
     levels=page.evaluate('RIKITU_TEST_LEVELS()')
-    assert len(levels)==6 and all(x['coins']==90 and len(x['fragments'])==3 for x in levels)
+    assert len(levels)==8 and all(x['coins']==90 and len(x['fragments'])==3 for x in levels)
     assert len(levels[4]['conveyors'])==3 and len(levels[5]['vents'])==3
     move(page,1190,413);page.wait_for_timeout(280)
     assert state(page)['playerX']>1190,state(page)

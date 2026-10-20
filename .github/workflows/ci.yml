@@ -19,3 +19,4 @@ jobs:
       - run: python tests/test-moki.py
       - run: python tests/test-autosave.py
       - run: python tests/test-world2.py
+      - run: python tests/test-world2-finale.py
