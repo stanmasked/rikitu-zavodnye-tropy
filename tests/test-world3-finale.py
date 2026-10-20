@@ -66,7 +66,7 @@ with sync_playwright() as pw:
     page.keyboard.press('b');page.wait_for_timeout(150)
     after=state(page)
     assert after['bought']==3 and after['wallet']==before['wallet'],after
-    assert page.evaluate('RIKITU_TEST_SHOP(500,3,12).unlocked')==3
+    assert page.evaluate('RIKITU_TEST_SHOP(500,3,12).reason')=='not-unlocked'
     stored=page.evaluate('(key)=>JSON.parse(localStorage.getItem(key))',KEY)
     assert stored['levelIndex']==11 and stored['mode']=='shop' and stored['purchased']==3,stored
     assert len(stored.get('records',[]))>=2,stored
