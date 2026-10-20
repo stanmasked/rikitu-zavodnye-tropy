@@ -64,7 +64,7 @@ int main(void){
   rikitu_mill_init(&s);
   memset(&l,0,sizeof(l));
   l.player=s.player;
-  l.player.x=7911.0f;l.player.y=350.0f;l.player.vy=330.0f;
+  l.player.x=7911.0f;l.player.y=352.0f;l.player.vy=330.0f;
   l.player.grounded=0;
   assert(rikitu_demo_advance(&s,&l,RIKITU_FIXED_DT,0)==1);
   assert(s.boss.hp==2 && l.player.vy==-490.0f && s.hearts==3);
