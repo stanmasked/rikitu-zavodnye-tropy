@@ -435,3 +435,23 @@ fragment-only exit.
 The stage uses neutral graphical diagnostics, not remade approved
 sprites; ordinary controller-only completion, finished audio and
 hardware save testing remain separate unfinished tasks.
+
+## MAP12 — Silent Mine native C99 (Stage 52)
+
+The twelfth browser level is selectable after MAP11 using Y;
+X resets it without touching the MAP01 persistent saves.
+Original world width 10700, 18 solids, 90 optional coins,
+six patrols, three fragments, checkpoints 2520/5490/8200
+and exit x10530 gated by defeating the 3-hit Drill Guard at x9930.
+
+Three grounded-only steam jets (x1480/5140/7580) impart
+vy=-705; three conveyors (+43/-44/+46) and three touch levers
+(x2590/6030/8260) match the original browser data. As in game.js,
+the levers are optional and do not themselves unlock the exit.
+Node.js source-parity plus GCC/Clang strict C99 integration tests
+cover the springs, belts, lever state, airborne protection,
+fragment-and-boss exit and malformed scene capacities.
+
+Graphics in this NRO are technical placeholders rather than
+approved character art. No final controller-only playthrough,
+real hardware save or audio/visual certification is claimed.
