@@ -8,6 +8,7 @@
 #include "rikitu_combat_guest_qa.h"
 #include "rikitu_mill_guest_qa.h"
 #include "rikitu_grove_guest_qa.h"
+#include "rikitu_bridge_guest_qa.h"
 
 static void overlay_result(uint32_t *frame,int stride_pixels,unsigned bits,int top) {
   int i,y,x;
@@ -26,6 +27,7 @@ int main(void) {
   const unsigned bits=rikitu_guest_combat_checks();
   const unsigned mill_bits=rikitu_guest_mill_checks();
   const unsigned grove_bits=rikitu_guest_grove_checks();
+  const unsigned bridge_bits=rikitu_guest_bridge_checks();
   int error=0;
   rikitu_flower_init(&scene);
   framebufferCreate(&fb,nwindowGetDefault(),RIKITU_SCENE_WIDTH,
@@ -48,11 +50,13 @@ int main(void) {
     overlay_result(frame,(int)(stride/4u),bits,118);
     overlay_result(frame,(int)(stride/4u),mill_bits,238);
     overlay_result(frame,(int)(stride/4u),grove_bits,358);
+    overlay_result(frame,(int)(stride/4u),bridge_bits,478);
     framebufferEnd(&fb);
     svcSleepThread(16000000LL);
   }
   framebufferClose(&fb);
   return error?error:(bits==RIKITU_QA_ALL &&
                        mill_bits==RIKITU_MILL_QA_ALL &&
-                       grove_bits==RIKITU_GROVE_QA_ALL?0:1);
+                       grove_bits==RIKITU_GROVE_QA_ALL &&
+                       bridge_bits==RIKITU_BRIDGE_QA_ALL?0:1);
 }
