@@ -20,15 +20,17 @@ def check(path: Path) -> None:
         raise AssertionError(f"Expected 1280x720 NeXium capture, got {screen.size}")
     for index, name in enumerate(NAMES):
         left = 280 + 200 * index
-        # NeXium captures the window, not just the guest framebuffer.
-        # Depending on window decorations, the guest is displaced ~0..24 px.
-        # Sample an interior search rectangle safely clear of the FPS HUD.
+        # NeXium screenshot includes window borders and arbitrary
+        # offsets. Scan the square's full projected neighborhood, rather
+        # than assuming the guest framebuffer starts at (0,0).
         samples = [screen.getpixel((x, y))
-                   for x in range(left + 26, left + 74, 8)
-                   for y in range(137, 180, 8)]
+                   for x in range(left - 24, left + 100, 8)
+                   for y in range(108, 200, 8)]
         green = sum(g >= 170 and r < 100 and b < 100
                     for r, g, b in samples)
-        if green < 20:
+        # A real 64x56 filled guest square gives ~56 sampled green
+        # pixels in the current NeXium viewport; require >=32.
+        if green < 32:
             raise AssertionError(
                 f"NeXium guest {name} did not report success: "
                 f"green={green}/{len(samples)}; pixels={samples[:6]}"
