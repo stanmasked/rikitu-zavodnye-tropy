@@ -6,14 +6,16 @@ finished game and does not contain approved RIKITU mascot/character art.
 ## Screen
 - Direct 1280x720 RGBA framebuffer rendered through libnx Framebuffer.
 - Neutral cyan player hitbox placeholder; no re-creation of approved fox art.
-- Deterministic 3000-pixel test route: sky, platforms, two conveyors,
-  two launchers, three fragments, eighteen collectible coins and an exit.
+- First real browser MAP01 geometry: Flower Trail (7900 game units),
+  five ground spans, fourteen platforms, three fragments, three checkpoints,
+  90 coins and exit at 7770. The 3000-unit synthetic demo is still used
+  by isolated renderer and timing regression tests.
 - Scrolling camera, status HUD, pause overlay and finish overlay.
 - Uses existing portable C99 movement, surface interactions and stage rules.
 
 ## Controls
 D-pad / left stick: movement. A/B: jump. R/ZR: run.
-Minus: pause. X: restart the synthetic route. Plus: exit.
+Minus: pause. X: restart Flower Trail. Plus: exit.
 
 ## Verification
 - Rasterizer: native/rikitu_draw.c
@@ -48,3 +50,18 @@ GCC/Clang regression checks compare movement at simulated 30/60/120
 render frames per second, stalled frames, jumps, pause, coin collection,
 belt motion and one-shot completion. This is simulation-time stability,
 not yet proof of stable 60 FPS in a physical Switch or NeXium.
+
+## Browser MAP01: Flower Trail source parity
+
+The running graphical NRO now loads the first browser campaign map from
+native/rikitu_flower_data.h. Every solid, platform, fragment, checkpoint,
+coin and the gate/world width are checked directly against game.js by
+node tests/test-flower-source.cjs. C99 GCC/Clang integration tests also
+exercise checkpoint crossing, real gaps, coin coordinates, and the gate.
+
+The currently ported terrain and collectibles DO NOT yet implement the
+original six moving enemies, health/damage, enemy collisions, hazards,
+respawn/checkpoint persistence, decorative sprites, music or real character
+art. The first native level is therefore not yet a fully playable or
+finishable reproduction of its browser counterpart. The original browser
+level remains the source of truth and is not modified.

@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <switch.h>
-#include "rikitu_demo.h"
+#include "rikitu_flower.h"
 
 static unsigned input_mask(u64 held) {
   unsigned mask=0;
@@ -25,7 +25,7 @@ int main(void) {
   RikituLoop game;
   u64 last_tick;
   int error=0;
-  rikitu_demo_init(&scene);
+  rikitu_flower_init(&scene);
   memset(&game,0,sizeof(game));
   game.player=scene.player;
   framebufferCreate(&fb,nwindowGetDefault(),RIKITU_SCENE_WIDTH,
@@ -46,7 +46,7 @@ int main(void) {
     pressed=padGetButtonsDown(&pad);
     if(pressed & HidNpadButton_Plus)break;
     if(pressed & HidNpadButton_X){
-      rikitu_demo_init(&scene);
+      rikitu_flower_init(&scene);
       memset(&game,0,sizeof(game));
       game.player=scene.player;
     }
