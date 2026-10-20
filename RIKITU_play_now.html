@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>RIKITU: Заводные тропы — игровой прототип v0.7</title>
+<title>RIKITU: Заводные тропы — игровой прототип v0.9</title>
 <style>
 :root{color-scheme:light;font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#e8f4ec;color:#254653}
 *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(ellipse at 15% 0%,#f8f7d9,transparent 50%),linear-gradient(155deg,#e0f8ef,#def1fb 70%,#f8edca)}
@@ -14,17 +14,17 @@
 <body>
 <main class="shell">
   <header class="top">
-    <div><div class="eyebrow">RIKITU / ИГРОВОЙ ПРОТОТИП v0.7</div><h1>Заводные тропы</h1></div>
+    <div><div class="eyebrow">RIKITU / ИГРОВОЙ ПРОТОТИП v0.9</div><h1>Заводные тропы</h1></div>
     <div class="topactions"><button id="start">Начать / далее</button><button id="pause">Пауза</button><button id="restart">Заново</button><button id="buy-heart">♥ Купить у Моки (B)</button></div>
   </header>
   <div id="hud" class="hud" aria-live="polite"><span>♥ 3</span><span>🟡 0</span><span>◆ 0/3</span><span>RIKITU</span></div>
-  <div class="stage"><canvas id="game" width="960" height="540" aria-label="Игровой прототип восьми уровней RIKITU"></canvas></div>
+  <div class="stage"><canvas id="game" width="960" height="540" aria-label="Игровой прототип десяти уровней RIKITU"></canvas></div>
   <div class="touchbar" aria-label="Экранное управление"><button data-touch="left">◀</button><button data-touch="right">▶</button><button data-touch="jump">ПРЫЖОК</button></div>
   <div class="help">
     <div><b>Управление:</b> ← → или A/D — движение · Пробел / ↑ / W — прыжок · Shift — быстрее</div>
     <div><b>Дополнительно:</b> Enter — начать/следующий уровень · P — пауза · R — заново · Gamepad — поддержка</div>
     <div><b>Статистика:</b> секундомер считает только активное игровое время и фиксирует потери здоровья. Данные сохраняются на контрольных точках.</div>
-    <div><b>Задача:</b> найти 3 бирюзовых фрагмента, собрать монетки по желанию и добраться до выхода. Мини-боссы после 2-го, 4-го, 6-го и 8-го уровней: трижды прыгни сверху. Затем лавка Моки: B — купить, Enter — продолжить.</div>
+    <div><b>Задача:</b> найти 3 бирюзовых фрагмента, собрать монетки по желанию и добраться до выхода. Мини-боссы после каждого чётного уровня, включая 10-й: три прыжка сверху. Затем лавка Моки: B — купить, Enter — продолжить.</div>
     <div class="note">Внешность лисёнка Рикиту не перерисовывается: бирюзовый маркер «Р» — временный технический символ до интеграции оригинальных утверждённых спрайтов. Эта версия предназначена для ПК/браузера, не для Switch.</div>
   </div>
 </main>
@@ -204,6 +204,32 @@
       gate:9990,boss:{x:9470,hp:3,name:'Патрульный автомат'},
       startText:'Склад приказов: активируй печати и найди три детали до выхода.',
       endText:'Рэтчет предъявил приказ центральной службы. Нить расследования ведёт в Забытые горы.',decor:'depot'}
+    ,{name:'Туманный перевал',world:'Забытые горы',width:9520,
+      ground:[[0,1830],[1910,3510],[3590,5260],[5340,7030],[7110,9520]],
+      platforms:[[560,384,190],[1240,381,210],[1680,385,180],[2410,379,195],
+        [3020,382,200],[3850,383,210],[4480,379,200],[5030,382,185],
+        [5720,380,205],[6460,384,210],[7430,381,185],[8060,379,195],[8650,384,200]],
+      gusts:[[1240,GROUND],[3880,GROUND],[7520,GROUND]],
+      fragments:[[1740,344],[4730,344],[8170,345]],checkpoints:[2280,4880,7290],
+      enemies:[{x:840,a:730,b:1040},{x:2610,a:2510,b:2880},{x:4170,a:4060,b:4370},
+        {x:5660,a:5510,b:5820},{x:6870,a:6710,b:6980},{x:8460,a:8330,b:8680}],
+      sections:[[0,'Туманная дорога'],[2310,'Скальный уступ'],[4810,'Старая метеостанция'],[7210,'Перевалочный пункт']],
+      gate:9330,boss:null,startText:'Туманный перевал: восходящие потоки помогают перепрыгивать скалы.',
+      endText:'В горной накладной указан необычный груз, направленный на Облачную пристань.',decor:'mountain'},
+    {name:'Облачная пристань',world:'Забытые горы',width:10320,
+      ground:[[0,1940],[2010,3820],[3900,5660],[5740,7670],[7750,10320]],
+      platforms:[[580,383,205],[1180,379,190],[1710,382,210],[2480,382,205],
+        [3180,378,195],[4260,382,195],[4850,381,205],[5470,384,185],
+        [6350,380,210],[7050,383,195],[8040,381,190],[8680,379,210],[9260,384,200]],
+      gusts:[[980,GROUND],[4300,GROUND],[7120,GROUND],[8620,GROUND]],
+      conveyors:[[2860,430,300,38],[6520,430,300,-38]],
+      fragments:[[1900,345],[5210,342],[8740,343]],checkpoints:[2470,5420,8020],
+      enemies:[{x:870,a:760,b:1010},{x:2700,a:2550,b:2850},{x:4420,a:4300,b:4650},
+        {x:6130,a:6000,b:6340},{x:7380,a:7210,b:7550},{x:9030,a:8900,b:9240}],
+      sections:[[0,'Подъём к причалу'],[2560,'Облачные платформы'],[5120,'Зал погрузки'],[7920,'Лётная площадка']],
+      gate:10140,boss:{x:9650,hp:3,name:'Ветряной автомат'},
+      startText:'Облачная пристань: используй безопасные восходящие потоки, чтобы найти детали.',
+      endText:'Капитан Буря сообщил: часовое оборудование везли по закрытому маршруту.',decor:'skyport'}
   ].map(d=>{
     const coins=[...coinsAlong(d.ground),...platformCoins(d.platforms)];
     let i=0;
@@ -237,6 +263,7 @@
       // v0.5 ended after level 4; migrate its victory screen into the level-5 transition.
       if(s.mode==='victory'&&s.levelIndex===3&&chapterInfo.length>4)s.mode='between';
       if(s.mode==='victory'&&s.levelIndex===5&&chapterInfo.length>6)s.mode='between';
+      if(s.mode==='victory'&&s.levelIndex===7&&chapterInfo.length>8)s.mode='between';
       if(!int(s.wallet)||s.wallet<0||s.wallet>chapterInfo.length*C.SETTINGS.coinsPerStage)return null;
       if(!int(s.purchased)||s.purchased<0||s.purchased>4||s.purchased>C.unlockedUpgrades(s.levelIndex+1))return null;
       if(!Array.isArray(s.fragments)||!Array.isArray(s.coins)||!Array.isArray(s.switches))return null;
@@ -310,6 +337,7 @@
       conveyors:(d.conveyors||[]).map(([x,y,w,speed])=>({x,y,w,speed})),
       vents:(d.vents||[]).map(([x,y])=>({x,y})),
       clockPads:(d.clockPads||[]).map(([x,y])=>({x,y})),
+      gusts:(d.gusts||[]).map(([x,y])=>({x,y})),
       switches:(d.switches||[]).map(([x,y])=>({x,y,on:false})),
       enemies:d.enemies.map((e,i)=>({id:i,x:e.x,y:GROUND-28,w:33,h:28,a:e.a,b:e.b,dir:i%2?1:-1,dead:false})),
       boss:d.boss?{x:d.boss.x,y:GROUND-57,w:72,h:57,center:d.boss.x,hp:d.boss.hp,name:d.boss.name,hit:0,dir:1,alive:true}:null,
@@ -398,6 +426,14 @@
         if(p.x+p.w>dial.x-16&&p.x<dial.x+54){
           p.vy=-675;p.grounded=false;
           announce('Часовая пружина! Никакого таймера.',1.4);break;
+        }
+      }
+    }
+    // Gust vents are forgiving lifts: never force horizontal drift towards a pit.
+    if(p.grounded){
+      for(const gust of level.gusts){
+        if(p.x+p.w>gust.x-24&&p.x<gust.x+66){
+          p.vy=-690;p.grounded=false;announce('Тёплый восходящий поток!',1.3);break;
         }
       }
     }
@@ -502,6 +538,8 @@
     else if(level?.decor==='tunnel'){gradient.addColorStop(0,'#637e9a');gradient.addColorStop(1,'#cad1ba');}
     else if(level?.decor==='clock'){gradient.addColorStop(0,'#c4c9ea');gradient.addColorStop(1,'#f8edbf');}
     else if(level?.decor==='depot'){gradient.addColorStop(0,'#a9b4c7');gradient.addColorStop(1,'#e6d2ac');}
+    else if(level?.decor==='mountain'){gradient.addColorStop(0,'#89a6c1');gradient.addColorStop(1,'#dfead7');}
+    else if(level?.decor==='skyport'){gradient.addColorStop(0,'#77bcdb');gradient.addColorStop(1,'#f7e4bf');}
     else {gradient.addColorStop(0,'#8bdaf3');gradient.addColorStop(1,'#fbf8d5');}
     ctx.fillStyle=gradient;ctx.fillRect(0,0,W,H);
     ctx.fillStyle='#fff7ba';ctx.beginPath();ctx.arc(800-cam*.03,89,42,0,Math.PI*2);ctx.fill();
@@ -521,6 +559,15 @@
       }
     }
     ctx.restore();
+    if(level?.decor==='mountain'||level?.decor==='skyport'){
+      ctx.save();ctx.translate(-cam*.16,0);
+      for(let x=-380;x<level.width+W;x+=430){
+        ctx.fillStyle=level.decor==='skyport'?'#a8cdd3':'#7f9aab';
+        ctx.beginPath();ctx.moveTo(x,440);ctx.lineTo(x+230,155);ctx.lineTo(x+475,440);ctx.closePath();ctx.fill();
+        ctx.fillStyle='#edf5ed';ctx.beginPath();ctx.moveTo(x+180,219);ctx.lineTo(x+230,155);ctx.lineTo(x+285,217);ctx.closePath();ctx.fill();
+      }
+      ctx.restore();
+    }
     if(['city','tunnel','clock','depot'].includes(level?.decor)){
       ctx.save();ctx.translate(-cam*.28,0);
       for(let x=-300;x<level.width+W;x+=310){
@@ -562,6 +609,14 @@
       rounded(belt.x,belt.y,belt.w,26,5,'#5b7078');
       for(let x=belt.x+18;x<belt.x+belt.w-12;x+=55)
         text(belt.speed>0?'›':'‹',x,belt.y+20,25,'#ffe8aa','center','800');
+    }
+    for(const gust of level.gusts){
+      rounded(gust.x-13,GROUND-14,66,14,5,'#7da7b5');
+      for(let i=0;i<3;i++){
+        const yy=GROUND-24-((frame*1.2+i*31)%80);
+        ctx.strokeStyle='rgba(220,247,252,.76)';ctx.lineWidth=3;
+        ctx.beginPath();ctx.arc(gust.x+i*17,yy,9,Math.PI*.2,Math.PI*1.4);ctx.stroke();
+      }
     }
     for(const dial of level.clockPads){
       rounded(dial.x-9,GROUND-15,59,13,5,'#708aa8');
@@ -674,7 +729,7 @@
         overlay('МОКИ — ЛАВКА СЕРДЕЦ',lines,'ENTER — ПРОДОЛЖИТЬ');
         text('♥',745,180,33,'#d75f6d','center');
       }
-      else if(mode==='victory')overlay('ЗАВОДНОЙ ГОРОД ПРОЙДЕН!',['Рикиту восстановил 8 маршрутных шестерёнок и раскрыл новые улики.',`Последний уровень: ${formatClock(stageSeconds)} · попаданий: ${stageHits}`,'Следующий пункт расследования — Забытые горы.',`Осталось монет: ${allCoins}`],'ENTER — СЫГРАТЬ СНОВА');
+      else if(mode==='victory')overlay('ЗАБЫТЫЕ ГОРЫ — ПЕРВАЯ ЧАСТЬ ПРОЙДЕНА!',['Рикиту восстановил десять маршрутных шестерёнок.',`Последний уровень: ${formatClock(stageSeconds)} · попаданий: ${stageHits}`,'Теперь путь ведёт к Кристальным пещерам.',`Осталось монет: ${allCoins}`],'ENTER — СЫГРАТЬ СНОВА');
     }
   }
   function togglePause(){if(mode==='playing'){mode='paused'}else if(mode==='paused'){mode='playing'}}
@@ -734,7 +789,7 @@
     }
     updateHud();return true;
   };
-  window.RIKITU_TEST_LEVELS=()=>chapterInfo.map(d=>({width:d.width,fragments:d.fragments,coins:d.coins.length,checkpoints:d.checkpoints,sections:d.sections,gate:d.gate,boss:d.boss,mushrooms:d.mushrooms||[],switches:d.switches||[],conveyors:d.conveyors||[],vents:d.vents||[],clockPads:d.clockPads||[]}));
+  window.RIKITU_TEST_LEVELS=()=>chapterInfo.map(d=>({width:d.width,fragments:d.fragments,coins:d.coins.length,checkpoints:d.checkpoints,sections:d.sections,gate:d.gate,boss:d.boss,mushrooms:d.mushrooms||[],switches:d.switches||[],conveyors:d.conveyors||[],vents:d.vents||[],clockPads:d.clockPads||[],gusts:d.gusts||[]}));
   window.RIKITU_TEST_MOVE=(x,y)=>{if(p&&level){p.x=clamp(x,0,level.width-p.w);p.y=y;p.vy=0;p.inv=2;}};
   updateHud();requestAnimationFrame(loop);
 })();

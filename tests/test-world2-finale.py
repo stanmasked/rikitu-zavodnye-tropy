@@ -29,7 +29,7 @@ def clear_city(page):
     page.keyboard.press('Enter')
     page.wait_for_function("()=>RIKITU_TEST_STATE().level===7",timeout=5000)
     levels=page.evaluate('RIKITU_TEST_LEVELS()')
-    assert len(levels)==8 and all(d['coins']==90 and len(d['fragments'])==3 for d in levels)
+    assert len(levels)==10 and all(d['coins']==90 and len(d['fragments'])==3 for d in levels)
     assert len(levels[6]['clockPads'])==3 and len(levels[7]['switches'])==3
     move(page,1355,413)
     page.wait_for_function('()=>RIKITU_TEST_STATE().playerY<400',timeout=5000)
@@ -71,7 +71,7 @@ with sync_playwright() as pw:
     page.wait_for_timeout(120)
     assert state(page)['wallet']==before['wallet'] and state(page)['bought']==2
     page.keyboard.press('Enter')
-    page.wait_for_function("()=>RIKITU_TEST_STATE().mode==='victory'",timeout=5000)
+    page.wait_for_function("()=>RIKITU_TEST_STATE().mode==='between'",timeout=5000)
     page.close()
     # Player delayed both prior hearts; can buy them now, but not a third.
     skipped={'version':1,'levelIndex':5,'mode':'victory','wallet':280,'purchased':0,
