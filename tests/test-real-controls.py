@@ -1,6 +1,7 @@
 """Test actual keyboard controls, without teleport helpers or artificial state."""
 from pathlib import Path
 import os
+import struct
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,6 +36,13 @@ with sync_playwright() as pw:
     assert moved["playerX"] > start["playerX"] + 65, moved
     assert moved["level"] == 1
 
+    # Save a real rendered frame (not a simulated UI) for visual inspection.
+    images = ROOT / "artifacts" / "real-controls"
+    images.mkdir(parents=True, exist_ok=True)
+    moving_png = page.locator("#game").screenshot(path=str(images / "after-move.png"))
+    assert moving_png.startswith(b"\x89PNG\r\n\x1a\n")
+    width, height = struct.unpack(">II", moving_png[16:24])
+    assert width >= 400 and height >= 220 and len(moving_png) > 3000
     # Jump from the ground using the real Space key.
     page.wait_for_timeout(130)
     ground_y = state()["playerY"]
@@ -51,6 +59,9 @@ with sync_playwright() as pw:
     page.keyboard.press("p")
     page.wait_for_function("()=>RIKITU_TEST_STATE().mode==='paused'", timeout=5000)
     paused_at = state()["elapsedSeconds"]
+    paused_png = page.locator("#game").screenshot(path=str(images / "paused.png"))
+    assert paused_png.startswith(b"\x89PNG\r\n\x1a\n")
+    assert paused_png != moving_png, "Pause overlay did not change the canvas image"
     page.wait_for_timeout(330)
     assert abs(state()["elapsedSeconds"] - paused_at) < 0.05, state()
     page.keyboard.press("p")
@@ -73,5 +84,5 @@ with sync_playwright() as pw:
     assert restarted["stageRecords"] == []
     assert not errors, errors
 
-    print("PASS real keyboard: move, jump, pause timer, resume, restart")
+    print("PASS real keyboard: move, jump, pause timer, resume, restart and 2 actual frame screenshots")
     browser.close()

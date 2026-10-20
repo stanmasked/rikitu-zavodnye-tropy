@@ -31,3 +31,10 @@ jobs:
       - run: python tests/test-finale.py
       - run: python tests/test-real-controls.py
       - run: python tests/test-export-results.py
+      - name: Save real-control frames for visual QA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rikitu-real-controls-frames
+          path: artifacts/real-controls/*.png
+          if-no-files-found: warn
