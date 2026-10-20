@@ -6,7 +6,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-enum { RIKITU_STAGE_FRAGMENTS=3, RIKITU_STAGE_COINS=90 };
+/* RIKITU_STAGE_COINS is declared by rikitu_rules.h. */
+enum { RIKITU_STAGE_FRAGMENTS=3 };
 typedef struct RikituPoint { float x, y; } RikituPoint;
 typedef struct RikituStage {
   unsigned char fragments[RIKITU_STAGE_FRAGMENTS];
