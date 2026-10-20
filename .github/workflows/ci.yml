@@ -16,3 +16,4 @@ jobs:
       - run: python scripts/build_singlefile.py --check
       - run: node tests/test-core.cjs
       - run: python tests/test-browser.py
+      - run: python tests/test-moki.py

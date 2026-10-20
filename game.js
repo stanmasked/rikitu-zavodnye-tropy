@@ -216,7 +216,12 @@
       if(C.canExit(level.fragments.filter(x=>x.got).length,!!level.boss,!level.boss||!level.boss.alive)){
         storyText=level.endText; if(C.isShopStage(levelIndex+1)){mode='shop';shopStage=levelIndex+1;} else mode=levelIndex===chapterInfo.length-1?'victory':'between';
       } else if(toastTime<=0){
-        announce(level.fragments.filter(x=>x.got).length<3?'Для выхода нужно собрать все три фрагмента!':'Сначала победи мини-босса!',2.6);
+        const missing=level.fragments.filter(x=>!x.got);
+        if(missing.length){
+          const first=missing[0];
+          const section=level.sections.reduce((found,s)=>s[0]<=first.x?s[1]:found,level.sections[0][1]);
+          announce(`Фрагмент остался позади — участок «${section}». Вернись!`,3.3);
+        }else announce('Сначала победи мини-босса!',2.6);
       }
     }
     const target=clamp(p.x-W*.37,0,Math.max(0,level.width-W));
@@ -389,6 +394,7 @@
     if(!purchase.success)return false;
     purchasedHearts=purchase.purchasedCount;allCoins=purchase.coins;
     if(p)p.hearts=Math.min(lifeCapacity(),p.hearts+1);
+    announce(`Спасибо, Моки! Теперь ${lifeCapacity()} сердечка здоровья!`,2.3);
     updateHud();return true;
   }
   function resetCampaign(){allCoins=0;purchasedHearts=0;shopStage=0;newLevel(0);}
@@ -430,6 +436,14 @@
   // Read-only health probe for browser integration tests.
   window.RIKITU_TEST_STATE=()=>({mode,level:levelIndex+1,playerX:p?.x,playerY:p?.y,fragments:level?.fragments.filter(x=>x.got).length,coins:stageCoins,bossHP:level?.boss?.hp??null,bossX:level?.boss?.x??null,bossY:level?.boss?.y??null,checkpoint:level?.activeCheckpoint,checkpointCount:level?.checkpointCount,hearts:p?.hearts,maxHearts:lifeCapacity(),wallet:allCoins,bought:purchasedHearts,shopStage});
   window.RIKITU_TEST_SHOP=(coins=0,bought=purchasedHearts,stage=shopStage)=>C.nextHeartPurchase(stage,bought,coins);
+  window.RIKITU_TEST_COLLECT_COINS=(count=90)=>{
+    if(!level||!Number.isInteger(count)||count<0)return false;
+    for(const coin of level.coins){
+      if(count===0)break;
+      if(!coin.got){coin.got=true;stageCoins++;allCoins++;count--;}
+    }
+    updateHud();return true;
+  };
   window.RIKITU_TEST_LEVELS=()=>chapterInfo.map(d=>({width:d.width,fragments:d.fragments,coins:d.coins.length,checkpoints:d.checkpoints,sections:d.sections,gate:d.gate,boss:d.boss,mushrooms:d.mushrooms||[],switches:d.switches||[]}));
   window.RIKITU_TEST_MOVE=(x,y)=>{if(p&&level){p.x=clamp(x,0,level.width-p.w);p.y=y;p.vy=0;p.inv=2;}};
   updateHud();requestAnimationFrame(loop);
