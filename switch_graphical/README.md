@@ -167,3 +167,19 @@ stomp/recovery, movement and the exit. GCC, Clang, Switch NRO build and
 NeXium guest frame checks run through the existing graphical workflows.
 The Y-button map switch and complete boss playthrough are not yet
 independently confirmed inside NeXium; this is still a technical port.
+
+## MAP02 real guest mini-boss audit
+
+The diagnostic combat NRO (`make -C switch_graphical QA_MODE=1`)
+now executes the portable MAP01 and MAP02 game rules as **eight**
+separate checks inside NeXium's emulated Nintendo Switch environment.
+Two rows of four green/red squares appear in its framebuffer.
+
+MAP02 guest checks: source-parity map and boss spawn; first 60-Hz stomp
+and 0.85s cooldown; sideways collision and 1.6s player immunity;
+the third successful stomp unlocking the gate after three fragments.
+The same C99 function is tested natively under GCC and Clang.
+
+This is a guest-side gameplay-state test. It does not yet certify an
+unassisted start-to-finish playthrough of the second level or rendering
+of the approved original mascot/boss sprites.
