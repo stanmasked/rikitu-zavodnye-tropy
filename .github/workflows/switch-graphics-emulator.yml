@@ -16,6 +16,7 @@ on:
       - 'native/rikitu_delivery_guest_qa.*'
       - 'native/test_delivery_guest_qa.c'
   push:
+    branches: [main]
     paths:
       - '.github/workflows/switch-graphics-emulator.yml'
       - 'tests/run_nexium_graphical.sh'
@@ -31,6 +32,11 @@ on:
       - 'native/rikitu_delivery_guest_qa.*'
       - 'native/test_delivery_guest_qa.c'
   workflow_dispatch:
+# Keep only the most recent revision of each PR; push builds apply to main.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 jobs:

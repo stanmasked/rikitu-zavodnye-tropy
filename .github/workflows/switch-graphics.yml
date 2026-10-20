@@ -60,6 +60,7 @@ on:
       - 'tests/check_nro.py'
       - '.github/workflows/switch-graphics.yml'
   push:
+    branches: [main]
     paths:
       - 'native/rikitu_draw.*'
       - 'native/rikitu_demo.*'
@@ -118,6 +119,11 @@ on:
       - 'switch_graphical/**'
       - '.github/workflows/switch-graphics.yml'
   workflow_dispatch:
+# Keep only the most recent revision of each PR; push builds apply to main.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 jobs:
