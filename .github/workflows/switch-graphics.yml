@@ -18,6 +18,10 @@ on:
       - 'native/rikitu_clock.*'
       - 'native/rikitu_orders.*'
       - 'native/rikitu_mist.*'
+      - 'native/rikitu_cloud.*'
+      - 'native/rikitu_cloud_data.h'
+      - 'native/test_cloud.c'
+      - 'tests/test-cloud-source.cjs'
       - 'native/rikitu_mist_data.h'
       - 'native/test_mist.c'
       - 'tests/test-mist-source.cjs'
@@ -85,6 +89,10 @@ on:
       - 'native/rikitu_clock.*'
       - 'native/rikitu_orders.*'
       - 'native/rikitu_mist.*'
+      - 'native/rikitu_cloud.*'
+      - 'native/rikitu_cloud_data.h'
+      - 'native/test_cloud.c'
+      - 'tests/test-cloud-source.cjs'
       - 'native/rikitu_mist_data.h'
       - 'native/test_mist.c'
       - 'tests/test-mist-source.cjs'
@@ -314,6 +322,16 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_mist.c native/test_mist.c -lm -o /tmp/rikitu-mist-clang
           /tmp/rikitu-mist-clang
+      - name: Verify MAP10 Cloud Dock exact browser parity
+        run: node tests/test-cloud-source.cjs
+      - name: GCC MAP10 four gusts, belts and boss gate
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_cloud.c native/test_cloud.c -lm -o /tmp/rikitu-cloud-gcc
+          /tmp/rikitu-cloud-gcc
+      - name: Clang MAP10 four gusts, belts and boss gate
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_cloud.c native/test_cloud.c -lm -o /tmp/rikitu-cloud-clang
+          /tmp/rikitu-cloud-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
