@@ -22,3 +22,4 @@ jobs:
       - run: python tests/test-world2-finale.py
       - run: python tests/test-completion-results.py
       - run: python tests/test-mountains.py
+      - run: python tests/test-world3-finale.py
