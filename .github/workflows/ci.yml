@@ -25,3 +25,4 @@ jobs:
       - run: python tests/test-world3-finale.py
       - run: python tests/test-castle.py
       - run: python tests/test-finale.py
+      - run: python tests/test-real-controls.py
