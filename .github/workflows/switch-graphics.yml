@@ -32,6 +32,7 @@ on:
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
       - 'tests/test-gallery-source.cjs'
+      - 'tests/test-debug-save-isolation.cjs'
       - 'native/rikitu_foundry_data.h'
       - 'native/test_foundry.c'
       - 'tests/test-foundry-source.cjs'
@@ -129,6 +130,7 @@ on:
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
       - 'tests/test-gallery-source.cjs'
+      - 'tests/test-debug-save-isolation.cjs'
       - 'native/rikitu_foundry_data.h'
       - 'native/test_foundry.c'
       - 'tests/test-foundry-source.cjs'
@@ -480,6 +482,8 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/test_campaign_save.c -lm -o /tmp/rikitu-rkc2-clang
           /tmp/rikitu-rkc2-clang
+      - name: Protect campaign and MAP01 saves during Y/X debug
+        run: node tests/test-debug-save-isolation.cjs
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
