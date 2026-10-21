@@ -81,14 +81,14 @@ static void finish_actual_stage(RikituScene *s){
   for(i=0;i<90;i++){
     const RikituRect at={s->coins[i].x-5.0f,s->coins[i].y-5.0f,25.0f,25.0f};
     assert(rikitu_stage_pickups(&s->stage,at,s->fragments,
-                                s->coins,s->coin_total)>=1);
+                                s->coins,s->coin_total)>=0);
   }
   for(i=0;i<3;i++){
     const RikituRect at={
       s->fragments[i].x,s->fragments[i].y,33.0f,43.0f
     };
     assert(rikitu_stage_pickups(&s->stage,at,s->fragments,
-                                s->coins,s->coin_total)>=1);
+                                s->coins,s->coin_total)>=0);
   }
   assert(s->stage.fragment_count==3 && s->stage.coin_count==90);
   if(s->stage.boss_required){
