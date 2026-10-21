@@ -147,3 +147,5 @@ jobs:
           /tmp/rikitu-stage95-clang seed /tmp/rikitu-stage95-clang-a.rks /tmp/rikitu-stage95-clang-b.rks
           /tmp/rikitu-stage95-clang resume /tmp/rikitu-stage95-clang-a.rks /tmp/rikitu-stage95-clang-b.rks
           /tmp/rikitu-stage95-clang verify /tmp/rikitu-stage95-clang-a.rks /tmp/rikitu-stage95-clang-b.rks
+      - name: Stage95 check Switch SDMC reuse before save startup
+        run: node tests/test-switch-sdmc-mount.cjs
