@@ -779,3 +779,26 @@ B must roll back to the older pre-lever A state with pickups intact.
 These are native C99 host button-mask tests, not full MAP08 boss
 completion or tests of physical Joy-Con hardware and Switch SD
 power-loss resilience.
+
+
+## Stage80 — MAP09 gust, neutral input and pre/post-checkpoint recovery
+
+`native/test_mist_controller_resume.c` replays the actual MAP09
+Misty Pass spawn using 60Hz RIGHT/RUN/JUMP input rather than changing
+player coordinates. It checks the first -690 units/sec wind gust and
+then sends a full neutral input frame while airborne to assert
+zero involuntary horizontal drift. The path receives genuine patrol
+contact damage, collects the opening coin and fragment, crosses the
+first gap and reaches the first checkpoint.
+
+RKL3 generation A is written before checkpoint 1 at spawn checkpoint
+105; generation B is written after reaching checkpoint 1 at X=2280.
+The regression restores the latest generation into a freshly
+initialized scene, validates pickups, hearts, damage, timer and
+controller motion, rejects a foreign campaign wallet, then corrupts
+B to prove rollback to the *older pre-checkpoint* A state with
+collected items intact.
+
+The test runs under host GCC and Clang. It does not establish full
+MAP09 completion, actual Joy-Con HID compatibility or physical
+Switch SD crash/power-cut durability.
