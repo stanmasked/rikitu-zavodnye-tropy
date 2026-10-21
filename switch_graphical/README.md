@@ -971,3 +971,22 @@ No test code edits player coordinates, flags pickups, unlocks the gate or
 changes boss HP. Both GCC and Clang run this deterministic host route in
 ordinary and graphical CI. This is *not* verification on actual Nintendo
 Switch hardware, a human playthrough, or an SD power-cut durability test.
+ 
+## Stage92 — real finale gameplay to campaign victory and CRC-checked save
+
+Compile `native/test_heart_full_route.c` with
+`-DRIKITU_STAGE92_REAL_VICTORY`, including `rikitu_campaign.c` and
+`rikitu_campaign_save.c`. Stage91's regular full-route executable remains
+unchanged. The Stage92 variant starts from the real MAP16 spawn, obtains
+all three actual fragments, stomps the final boss three times and enters
+the gate before invoking `rikitu_campaign_finish` on the game's earned
+`RikituStage`. It then checks mandatory final Moki shop mode, transitions
+to campaign victory, roundtrips the RKC2 serialized final-state record
+with generation and CRC, and confirms a corrupt copy is rejected without
+mutating the decoded state. The campaign cannot advance before the boss
+and fragments are complete.
+
+Both GCC and Clang replay the full ending plus serialization assertions
+in normal and graphical host CI. A valid in-memory RKC2 roundtrip is
+not evidence of actual Switch SD filesystem durability or real-console
+end-to-end UI testing.
