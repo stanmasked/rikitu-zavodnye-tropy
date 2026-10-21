@@ -133,7 +133,7 @@ int main(void){
       rearm_after_respawn(armed,loop.player.x);
     assert(scene.hearts>=1 && scene.hearts<=scene.max_hearts);
     assert(scene.reached_checkpoints>=0 &&
-           scene.reached_checkpoints<=scene.checkpoint_total);
+           scene.reached_checkpoints<=(int)scene.checkpoint_total);
   }
 
   if(!scene.stage.completed){
