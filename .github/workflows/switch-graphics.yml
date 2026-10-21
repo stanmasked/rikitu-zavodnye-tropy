@@ -40,6 +40,7 @@ on:
       - 'native/test_delivery_controller_resume.c'
       - 'native/test_clock_controller_resume.c'
       - 'native/test_orders_controller_resume.c'
+      - 'native/test_mist_controller_resume.c'
       - 'tests/test-level-save-wiring.cjs'
       - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
@@ -151,6 +152,7 @@ on:
       - 'native/test_delivery_controller_resume.c'
       - 'native/test_clock_controller_resume.c'
       - 'native/test_orders_controller_resume.c'
+      - 'native/test_mist_controller_resume.c'
       - 'tests/test-level-save-wiring.cjs'
       - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
@@ -600,6 +602,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_orders.c native/test_orders_controller_resume.c -lm -o /tmp/rikitu-stage79-clang
           /tmp/rikitu-stage79-clang
+      - name: GCC MAP09 gust and RKL3 input recovery
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mist.c native/test_mist_controller_resume.c -lm -o /tmp/rikitu-stage80-gcc
+          /tmp/rikitu-stage80-gcc
+      - name: Clang MAP09 gust and RKL3 input recovery
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mist.c native/test_mist_controller_resume.c -lm -o /tmp/rikitu-stage80-clang
+          /tmp/rikitu-stage80-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
