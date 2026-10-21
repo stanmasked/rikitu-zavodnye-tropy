@@ -113,23 +113,20 @@ int main(void) {
     if(pressed & HidNpadButton_Plus){
       if(save_ready && !campaign_debug)
         (void)rikitu_campaign_save_store_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign);
-      if(save_ready && rikitu_save_encode(now,&scene,&game,1) &&
+      if(save_ready && !campaign_debug &&
+         rikitu_save_encode(now,&scene,&game,1) &&
          (!have_last || memcmp(now,last_saved,sizeof(last_saved))!=0))
         (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
       break;
     }
-    /* Y/X remain debug-only. They start a separate campaign at the selected
-     * map and do not persist a fake clear or add duplicate coin rewards. */
+    /* Y/X start a disposable diagnostic run. They NEVER write, delete,
+     * or implicitly restore the user's permanent RKS1 or RKC2 files.
+     * Closing the debug session preserves the real campaign unchanged. */
     if(pressed & HidNpadButton_Y){
       campaign_debug=1;
       const int selected=scene.level_id==16?1:scene.level_id+1;
-      if(scene.level_id==1 && save_ready &&
-         rikitu_save_encode(now,&scene,&game,1))
-        (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
       (void)rikitu_campaign_init(&campaign,selected);
       begin_stage(&scene,&game,&campaign);
-      if(selected==1 && save_ready)
-        (void)rikitu_save_load_pair(MAP01_A,MAP01_B,&scene,&game);
       save_elapsed=0.0f;have_last=0;
     }else if(pressed & HidNpadButton_X){
       campaign_debug=1;
@@ -137,9 +134,6 @@ int main(void) {
       (void)rikitu_campaign_init(&campaign,selected);
       begin_stage(&scene,&game,&campaign);
       save_elapsed=0.0f;have_last=0;
-      if(save_ready && selected==1){
-        (void)remove(MAP01_A);(void)remove(MAP01_B);
-      }
     }else if(campaign.mode==RIKITU_CAMPAIGN_SHOP){
       if(pressed & HidNpadButton_A){
         const RikituHeartPurchase bought=rikitu_campaign_buy(&campaign);
@@ -175,7 +169,7 @@ int main(void) {
         }
         if(save_ready && !campaign_debug)
           (void)rikitu_campaign_save_store_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign);
-        if(scene.level_id==1 && save_ready)
+        if(scene.level_id==1 && save_ready && !campaign_debug)
           (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
       }
     }
@@ -195,7 +189,7 @@ int main(void) {
     }
     framebufferEnd(&fb);
     if(campaign.mode==RIKITU_CAMPAIGN_PLAYING && save_ready &&
-       rikitu_save_encode(now,&scene,&game,1)){
+       !campaign_debug && rikitu_save_encode(now,&scene,&game,1)){
       /* Ignore elapsed time for change detection: save at progress events,
        * not on each 60-Hz frame. Time is recorded in the chosen snapshot. */
       const int dirty=!have_last ||
