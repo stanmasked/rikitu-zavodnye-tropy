@@ -864,3 +864,17 @@ CI and graphical Switch host-render CI. It is deterministic host simulation,
 not physical Joy-Con, real-console performance, finished art/audio or
 SD-card power-loss certification. No player coordinates, pickup flags,
 lever state or boss HP are injected by the test.
+
+## Stage85 — MAP13 Castle Gardens controller route
+
+`native/test_gardens_full_route.c` starts at the authentic spawn and attempts
+full level completion via the normal 60 Hz game loop with only RIGHT/RUN/JUMP
+input masks. It records three fragments, four physically crossed gaps, three
+mushroom launches at -730 units/sec (with a neutral-input no-horizontal-drift
+frame for each), three contact-activated levers, three checkpoints, and the
+fragment-gated exit. Real damage/respawns are allowed; historical crossing
+bits are not reopened when a previously completed gap is jumped again after
+respawning. GCC and Clang compile and run the route in both host CI jobs.
+
+A passing input replay is not a physical Joy-Con or Nintendo Switch hardware
+playtest. It does not change canonical RIKITU art or gameplay geometry.

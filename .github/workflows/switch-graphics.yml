@@ -56,6 +56,7 @@ on:
       - 'tests/test-foundry-source.cjs'
       - 'native/rikitu_gardens_data.h'
       - 'native/test_gardens.c'
+      - 'native/test_gardens_full_route.c'
       - 'tests/test-gardens-source.cjs'
       - 'native/rikitu_mine_data.h'
       - 'native/test_mine.c'
@@ -172,6 +173,7 @@ on:
       - 'tests/test-foundry-source.cjs'
       - 'native/rikitu_gardens_data.h'
       - 'native/test_gardens.c'
+      - 'native/test_gardens_full_route.c'
       - 'tests/test-gardens-source.cjs'
       - 'native/rikitu_mine_data.h'
       - 'native/test_mine.c'
@@ -650,6 +652,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_mine.c native/test_mine_full_route.c -lm -o /tmp/rikitu-stage84-graphics-clang
           /tmp/rikitu-stage84-graphics-clang
+      - name: GCC MAP13 full input route, mushrooms, levers and exit
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_gardens.c native/test_gardens_full_route.c -lm -o /tmp/rikitu-stage85-graphics-gcc
+          /tmp/rikitu-stage85-graphics-gcc
+      - name: Clang MAP13 full input route, mushrooms, levers and exit
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_gardens.c native/test_gardens_full_route.c -lm -o /tmp/rikitu-stage85-graphics-clang
+          /tmp/rikitu-stage85-graphics-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
