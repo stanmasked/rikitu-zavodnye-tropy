@@ -708,3 +708,21 @@ restore foreign data.
 This is host-side C99 button-mask replay rather than hardware HID
 testing, and it does not simulate full MAP04 boss completion or
 power-cut SD recovery.
+
+
+## Stage76 — MAP05 controller-driven conveyor, checkpoint and RKL3
+
+`native/test_workshop_controller_resume.c` drives MAP05 from its
+original spawn with 60 Hz RIGHT/RUN/JUMP input only. The test verifies
+that conveyor #1 increases horizontal travel by its actual +48 units
+per second while grounded (versus the normal +265 units/sec RUN speed),
+collects the first coin and fragment, crosses the initial floor gap
+and activates the first checkpoint. It then writes two RKL3
+generations, restores checkpoint, coins, fragments, hearts, damage
+counter and timer into a newly initialized scene, and resumes motion.
+A foreign-wallet restore is rejected. Corruption of the newer slot
+must recover the older checkpoint record.
+
+The executable is a portable C99 host input regression, not proof of
+physical Switch Joy-Con input, a full MAP05 playthrough, or SD-card
+crash/power-loss durability.
