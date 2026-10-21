@@ -24,6 +24,8 @@ on:
       - 'native/rikitu_gardens.*'
       - 'native/rikitu_foundry.*'
       - 'native/rikitu_gallery.*'
+      - 'native/rikitu_campaign.*'
+      - 'native/test_campaign_flow.c'
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
       - 'tests/test-gallery-source.cjs'
@@ -116,6 +118,8 @@ on:
       - 'native/rikitu_gardens.*'
       - 'native/rikitu_foundry.*'
       - 'native/rikitu_gallery.*'
+      - 'native/rikitu_campaign.*'
+      - 'native/test_campaign_flow.c'
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
       - 'tests/test-gallery-source.cjs'
@@ -446,6 +450,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_draw.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_mill.c native/rikitu_grove.c native/rikitu_bridge.c native/rikitu_workshop.c native/rikitu_delivery.c native/rikitu_clock.c native/rikitu_orders.c native/rikitu_mist.c native/rikitu_cloud.c native/rikitu_crystal.c native/rikitu_mine.c native/rikitu_gardens.c native/rikitu_foundry.c native/rikitu_gallery.c native/rikitu_heart.c native/test_campaign_scene.c -lm -o /tmp/rikitu-campaign-clang
           /tmp/rikitu-campaign-clang
+      - name: GCC 16-level campaign and Moki shop flow
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/test_campaign_flow.c -lm -o /tmp/rikitu-flow-gcc
+          /tmp/rikitu-flow-gcc
+      - name: Clang 16-level campaign and Moki shop flow
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/test_campaign_flow.c -lm -o /tmp/rikitu-flow-clang
+          /tmp/rikitu-flow-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:

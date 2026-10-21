@@ -529,3 +529,16 @@ Browser source-data parity and strict GCC/Clang C99 tests are included.
 The stage is a neutral geometry-first technical preview, not a
 verified normal-controller full campaign playthrough, final audio/
 approved-character sprite integration or real Switch hardware save.
+
+## Campaign progression core (Stage 61)
+
+The portable C99 state machine `native/rikitu_campaign.[ch]` implements
+all sixteen chapter transitions, eight Moki shop stops, coin-wallet
+accounting (once per completed gate), and four heart upgrades at stages
+2/6/10/14 with original prices 120/160/200/240. It rejects repeated
+exit/purchase transitions and validates stage and wallet bounds.
+
+The `native/test_campaign_flow.c` regression is compiled and executed
+with GCC and Clang in CI. This PR changes the portable core, **not**
+the Switch controller/UI yet. Existing diagnostic level selection,
+MAP01-only saves and approved visual designs are unchanged.
