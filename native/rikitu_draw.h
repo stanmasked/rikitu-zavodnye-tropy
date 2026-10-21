@@ -10,6 +10,7 @@
 #include "rikitu_surfaces.h"
 #include "rikitu_enemies.h"
 #include "rikitu_boss.h"
+#include "rikitu_campaign.h"
 
 enum { RIKITU_SCENE_WIDTH = 1280, RIKITU_SCENE_HEIGHT = 720,
        RIKITU_DEMO_COINS = 18, RIKITU_DEMO_SOLIDS = 4,
@@ -49,4 +50,8 @@ typedef struct RikituScene {
  * Returns 1 for success, 0 for invalid arguments. No memory allocations. */
 int rikitu_draw_scene(uint32_t *pixels, int width, int height,
                       int stride_pixels, const RikituScene *scene);
+/* Geometry-only chapter/shop/victory overlay, using existing debug font. */
+int rikitu_draw_campaign_overlay(uint32_t *pixels,int width,int height,
+                                 int stride_pixels,const RikituCampaign *c,
+                                 const RikituHeartOffer *offer);
 #endif

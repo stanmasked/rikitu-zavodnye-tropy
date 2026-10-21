@@ -542,3 +542,20 @@ The `native/test_campaign_flow.c` regression is compiled and executed
 with GCC and Clang in CI. This PR changes the portable core, **not**
 the Switch controller/UI yet. Existing diagnostic level selection,
 MAP01-only saves and approved visual designs are unchanged.
+
+## Campaign controller flow (Stage 62)
+
+Normal stage completion now switches to a chapter intermission (odd
+chapters) or the Moki shop (even chapters). A proceeds from intermission,
+A buys an available heart upgrade in the shop, and B leaves the shop
+for the next chapter; finishing the shop after chapter 16 opens the
+victory overlay. New levels restore the earned max-hearts capacity.
+
+Y still cycles the 16 debug stages and X restarts the selected stage;
+both begin a fresh debug campaign for that level. Completing a level
+awards stage coins only once, and overlay screens are not simulated
+during paused gameplay. MAP01 keeps its existing on-disk save format;
+later chapter wallet/upgrades remain session-only until a separately
+versioned full-campaign persistence feature is implemented. Approved
+sprites and final audio are unchanged. CI builds the real native NRO
+plus independent GCC/Clang overlay tests.

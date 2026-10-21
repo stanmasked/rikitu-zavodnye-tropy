@@ -24,9 +24,26 @@
 #include "rikitu_gallery.h"
 #include "rikitu_heart.h"
 #include "rikitu_save.h"
+#include "rikitu_campaign.h"
 
 #define MAP01_A "sdmc:/switch/RIKITU/map01-a.rks"
 #define MAP01_B "sdmc:/switch/RIKITU/map01-b.rks"
+
+/* Keep debug map selection and campaign progression on the same table. */
+static void (*const stage_init[16])(RikituScene *)={
+  rikitu_flower_init,rikitu_mill_init,rikitu_grove_init,rikitu_bridge_init,
+  rikitu_workshop_init,rikitu_delivery_init,rikitu_clock_init,rikitu_orders_init,
+  rikitu_mist_init,rikitu_cloud_init,rikitu_crystal_init,rikitu_mine_init,
+  rikitu_gardens_init,rikitu_foundry_init,rikitu_gallery_init,rikitu_heart_init
+};
+static void begin_stage(RikituScene *scene,RikituLoop *game,
+                        const RikituCampaign *campaign){
+  stage_init[campaign->level-1](scene);
+  memset(game,0,sizeof(*game));
+  game->player=scene->player;
+  scene->max_hearts=campaign->max_hearts;
+  scene->hearts=scene->max_hearts;
+}
 
 static unsigned input_mask(u64 held) {
   unsigned mask=0;
@@ -45,15 +62,15 @@ int main(void) {
   Framebuffer fb;
   RikituScene scene;
   RikituLoop game;
+  RikituCampaign campaign;
   u64 last_tick;
   int error=0;
   int sd_mounted=0,save_ready=0,have_last=0;
   float save_elapsed=0.0f;
   uint8_t last_saved[28]={0};
   uint8_t now[RIKITU_SAVE_BYTES];
-  rikitu_flower_init(&scene);
-  memset(&game,0,sizeof(game));
-  game.player=scene.player;
+  (void)rikitu_campaign_init(&campaign,1);
+  begin_stage(&scene,&game,&campaign);
   if(R_SUCCEEDED(fsdevMountSdmc())){
     sd_mounted=1;
     (void)mkdir("sdmc:/switch",0777);
@@ -88,80 +105,56 @@ int main(void) {
         (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
       break;
     }
-    /* Y cycles sixteen source-parity levels; only MAP01 has
-     * persistence. MAP02-16 never read or delete MAP01 saves. */
+    /* Y/X remain debug-only. They start a separate campaign at the selected
+     * map and do not persist a fake clear or add duplicate coin rewards. */
     if(pressed & HidNpadButton_Y){
-      if(scene.level_id==1){
-        if(save_ready && rikitu_save_encode(now,&scene,&game,1))
-          (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
-        rikitu_mill_init(&scene);
-      }else if(scene.level_id==2){
-        rikitu_grove_init(&scene);
-      }else if(scene.level_id==3){
-        rikitu_bridge_init(&scene);
-      }else if(scene.level_id==4){
-        rikitu_workshop_init(&scene);
-      }else if(scene.level_id==5){
-        rikitu_delivery_init(&scene);
-      }else if(scene.level_id==6){
-        rikitu_clock_init(&scene);
-      }else if(scene.level_id==7){
-        rikitu_orders_init(&scene);
-      }else if(scene.level_id==8){
-        rikitu_mist_init(&scene);
-      }else if(scene.level_id==9){
-        rikitu_cloud_init(&scene);
-      }else if(scene.level_id==10){
-        rikitu_crystal_init(&scene);
-      }else if(scene.level_id==11){
-        rikitu_mine_init(&scene);
-      }else if(scene.level_id==12){
-        rikitu_gardens_init(&scene);
-      }else if(scene.level_id==13){
-        rikitu_foundry_init(&scene);
-      }else if(scene.level_id==14){
-        rikitu_gallery_init(&scene);
-      }else if(scene.level_id==15){
-        rikitu_heart_init(&scene);
-      }else{
-        rikitu_flower_init(&scene);
-        if(save_ready)
-          (void)rikitu_save_load_pair(MAP01_A,MAP01_B,&scene,&game);
-      }
-      memset(&game,0,sizeof(game));
-      game.player=scene.player;
-      save_elapsed=0.0f;
-      have_last=0;
-    }
-    if(pressed & HidNpadButton_X){
-      if(scene.level_id==2)rikitu_mill_init(&scene);
-      else if(scene.level_id==3)rikitu_grove_init(&scene);
-      else if(scene.level_id==4)rikitu_bridge_init(&scene);
-      else if(scene.level_id==5)rikitu_workshop_init(&scene);
-      else if(scene.level_id==6)rikitu_delivery_init(&scene);
-      else if(scene.level_id==7)rikitu_clock_init(&scene);
-      else if(scene.level_id==8)rikitu_orders_init(&scene);
-      else if(scene.level_id==9)rikitu_mist_init(&scene);
-      else if(scene.level_id==10)rikitu_cloud_init(&scene);
-      else if(scene.level_id==11)rikitu_crystal_init(&scene);
-      else if(scene.level_id==12)rikitu_mine_init(&scene);
-      else if(scene.level_id==13)rikitu_gardens_init(&scene);
-      else if(scene.level_id==14)rikitu_foundry_init(&scene);
-      else if(scene.level_id==15)rikitu_gallery_init(&scene);
-      else if(scene.level_id==16)rikitu_heart_init(&scene);
-      else rikitu_flower_init(&scene);
-      memset(&game,0,sizeof(game));
-      game.player=scene.player;
-      have_last=0;save_elapsed=0.0f;
-      if(save_ready && scene.level_id==1){
+      const int selected=scene.level_id==16?1:scene.level_id+1;
+      if(scene.level_id==1 && save_ready &&
+         rikitu_save_encode(now,&scene,&game,1))
+        (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
+      (void)rikitu_campaign_init(&campaign,selected);
+      begin_stage(&scene,&game,&campaign);
+      if(selected==1 && save_ready)
+        (void)rikitu_save_load_pair(MAP01_A,MAP01_B,&scene,&game);
+      save_elapsed=0.0f;have_last=0;
+    }else if(pressed & HidNpadButton_X){
+      const int selected=scene.level_id;
+      (void)rikitu_campaign_init(&campaign,selected);
+      begin_stage(&scene,&game,&campaign);
+      save_elapsed=0.0f;have_last=0;
+      if(save_ready && selected==1){
         (void)remove(MAP01_A);(void)remove(MAP01_B);
       }
+    }else if(campaign.mode==RIKITU_CAMPAIGN_SHOP){
+      if(pressed & HidNpadButton_A){
+        (void)rikitu_campaign_buy(&campaign);
+        /* The upgrade remains available in the next stage. */
+      }else if(pressed & HidNpadButton_B){
+        const int transition=rikitu_campaign_continue(&campaign);
+        if(transition==1){
+          begin_stage(&scene,&game,&campaign);
+          save_elapsed=0.0f;have_last=0;
+        }
+      }
+    }else if(campaign.mode==RIKITU_CAMPAIGN_BETWEEN &&
+             (pressed & HidNpadButton_A)){
+      if(rikitu_campaign_continue(&campaign)==1){
+        begin_stage(&scene,&game,&campaign);
+        save_elapsed=0.0f;have_last=0;
+      }
     }
-    if(pressed & HidNpadButton_Minus)game.paused=!game.paused;
-    /* The accumulator caps catch-up at 100ms/six ticks, pauses do not
-     * accumulate time, and conveyors/pickups now run on EVERY tick. */
-    if(rikitu_demo_advance(&scene,&game,wall_seconds,input_mask(held))<0){
-      error=1;break;
+    if(campaign.mode==RIKITU_CAMPAIGN_PLAYING){
+      if(pressed & HidNpadButton_Minus)game.paused=!game.paused;
+      if(rikitu_demo_advance(&scene,&game,wall_seconds,input_mask(held))<0){
+        error=1;break;
+      }
+      if(scene.stage.completed){
+        if(!rikitu_campaign_finish(&campaign,&scene.stage)){
+          error=3;break;
+        }
+        if(scene.level_id==1 && save_ready)
+          (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
+      }
     }
     frame=(uint32_t*)framebufferBegin(&fb,&stride);
     if(!frame || stride%sizeof(uint32_t)!=0 ||
@@ -169,8 +162,17 @@ int main(void) {
                           (int)(stride/sizeof(uint32_t)),&scene)){
       error=2;break;
     }
+    if(campaign.mode!=RIKITU_CAMPAIGN_PLAYING){
+      const RikituHeartOffer offer=rikitu_campaign_offer(&campaign);
+      if(!rikitu_draw_campaign_overlay(frame,RIKITU_SCENE_WIDTH,
+               RIKITU_SCENE_HEIGHT,(int)(stride/sizeof(uint32_t)),
+               &campaign,&offer)){
+        error=4;break;
+      }
+    }
     framebufferEnd(&fb);
-    if(save_ready && rikitu_save_encode(now,&scene,&game,1)){
+    if(campaign.mode==RIKITU_CAMPAIGN_PLAYING && save_ready &&
+       rikitu_save_encode(now,&scene,&game,1)){
       /* Ignore elapsed time for change detection: save at progress events,
        * not on each 60-Hz frame. Time is recorded in the chosen snapshot. */
       const int dirty=!have_last ||
