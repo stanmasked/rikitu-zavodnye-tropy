@@ -760,3 +760,22 @@ first generation and its checkpoint.
 
 The C99 test is host button-mask replay, not physical Joy-Con testing,
 full MAP07 completion or Switch SD power-off recovery.
+
+
+## Stage79 — MAP08 controller, conveyor, lever and RKL3 rollback
+
+`native/test_orders_controller_resume.c` starts from MAP08's authentic
+spawn and uses only 60Hz RIGHT/RUN/JUMP input. It checks the +45
+units/sec conveyor boost during grounded running, the first patrol's
+real contact damage, a collected coin/fragment, the first floor gap,
+the touch-activated lever and the first checkpoint. It saves RKL3
+generation A *before* the lever (checkpoint 0, lever OFF), and
+generation B *after* the lever and checkpoint (checkpoint 1, lever ON).
+On a fresh scene, loading B must restore the lever, checkpoint, enemy,
+boss, pickups and hearts; revisiting the lever by LEFT/RIGHT input
+must not count it twice. A foreign wallet is rejected, and corrupting
+B must roll back to the older pre-lever A state with pickups intact.
+
+These are native C99 host button-mask tests, not full MAP08 boss
+completion or tests of physical Joy-Con hardware and Switch SD
+power-loss resilience.
