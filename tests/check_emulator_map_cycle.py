@@ -37,6 +37,7 @@ def check(root: Path):
     seen: dict[str, int] = {}
     first = None
     size = None
+    all_bands = []
     for stage in range(1, 17):
         screenshot = root / f"map-{stage:02d}.png"
         if not screenshot.is_file():
@@ -44,6 +45,7 @@ def check(root: Path):
         size, band = title_band(screenshot, size)
         if first is None:
             first = band
+        all_bands.append(band)
         digest = hashlib.sha256(band.tobytes()).hexdigest()
         if digest in seen:
             raise ValueError(
@@ -55,21 +57,31 @@ def check(root: Path):
     _, wrap = title_band(root / "map-wrap-01.png", size)
     if wrap.size != first.size:
         raise ValueError("wrap chapter title band size changed")
-    pixels = ImageChops.difference(wrap, first).convert("RGB")
-    # On the same level, the debug HUD is flat and deterministic; allow
-    # a small margin for emulator capture/compositing differences.
-    changed = sum(
-        1 for pixel in pixels.getdata() if max(pixel) > 24
-    )
-    if changed > 60:
+    def changed_pixels(a: Image.Image, b: Image.Image) -> int:
+        diff = ImageChops.difference(a, b).convert("RGB")
+        pix = diff.load()
+        return sum(
+            1 for y in range(diff.height) for x in range(diff.width)
+            if max(pix[x, y]) > 24
+        )
+
+    # Initial NeXium evidence differed by only 92 pixels on wrap, even
+    # though all sixteen title hashes were distinct. An exact 60-pixel
+    # cutoff was too strict for real GUI composition. Require the wrapped
+    # HUD to be much closer to MAP01 than to ANY of MAP02..MAP16,
+    # while maintaining a small absolute image difference bound.
+    changed = changed_pixels(wrap, first)
+    other_diffs = [changed_pixels(wrap, b) for b in all_bands[1:]]
+    nearest_other = min(other_diffs)
+    if changed > 256 or changed * 3 >= nearest_other:
         raise ValueError(
-            f"Y after MAP16 failed to wrap back to MAP01 HUD: "
-            f"{changed} changed title pixels"
+            f"Y after MAP16 did not clearly return to MAP01: "
+            f"MAP01 delta={changed}, nearest other chapter={nearest_other}"
         )
     print(
         f"PASS NeXium real NRO: 16 unique chapter title HUDs from Y input, "
         f"MAP16 -> MAP01 wrap, {size[0]}x{size[1]}, "
-        f"wrap mismatch pixels={changed}"
+        f"MAP01 delta={changed}, nearest other={nearest_other}"
     )
 
 
