@@ -1019,3 +1019,25 @@ The HUD comparison excludes NeXium's changing FPS performance panel
 at x=14..238; earlier attempts using X11 key `y` were not valid
 level-switch evidence. Evidence PNGs are uploaded by the existing NeXium
 artifact step. Stage93 adds no new character art or physics changes.
+ 
+## Stage94 — connected 16-stage campaign/shop/restart integration
+
+`native/test_campaign_transition_save_chain.c` starts with all 16 real
+native scene initializers in their campaign order. Using the production
+pickup and boss collision APIs with test-supplied overlap coordinates, it
+checks each gate's initial block, all three fragments, 90 coins, three
+real boss-hit events when a boss is required, and the earned completion.
+The real campaign state machine must then enter BETWEEN or SHOP, save an
+RKC2 campaign snapshot, successfully reload after the equivalent of an
+app restart, display its overlay, and advance to the real next scene.
+Four Moki heart upgrades (MAP02/06/10/14) are independently saved and
+reloaded while still at the shop; all 16 stage transitions end in a
+persisted VICTORY with seven hearts.
+
+This is a full-campaign **state transition and serialization fixture**,
+not 16 human/gamepad playthroughs: test coordinates isolate contact
+events to avoid spending hours crossing all stages in CI. Existing
+full-route input replays check individual levels. No external game assets,
+approved Rikitu sprites, game geometry or balance are changed. RKC2
+host-file round trips do not establish physical Switch SD power-loss
+durability, nor do these checks replace GUI input in NeXium.
