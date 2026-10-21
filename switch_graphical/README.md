@@ -396,3 +396,24 @@ Browser-to-C99 data parity and host GCC/Clang game tests are included.
 This remains a neutral debug NRO without redesigned character sprites.
 Full controller-only playthrough, hardware save tests and final audio/art
 are not yet verified.
+
+## MAP10 — Cloud Dock source-first C99 scene (Stage 49)
+
+The tenth original browser level is selectable after MAP09 with Y,
+reset with X. Original world size 10320, 18 solids, 90 coins,
+three fragments, checkpoints 2470/5420/8020, six patrol enemies
+and gate x10140. The mandatory 3-hit Wind Automaton at x9650
+must be defeated in addition to finding all three fragments.
+
+Four rising gusts at x980/4300/7120/8620 share the original
+grounded-only -690 vertical impulse, with NO forced horizontal drift.
+Two belts (+38 at x2860 and -38 at x6520) use the existing 60Hz
+engine. MAP10 combines both surface families, constrained by
+RIKITU_MAX_LAUNCHERS=4 and RIKITU_MAX_BELTS=4.
+
+Automated Node.js source-audit and GCC/Clang fixed-step tests
+cover every source coordinate, gust horizontal composition,
+both belt directions, checkpoints, boss gating and invalid sizes.
+These are neutral technical graphics; existing approved character
+art is not redrawn. This is not a complete ordinary-input
+playthrough, finished sprite/audio integration or hardware-save test.
