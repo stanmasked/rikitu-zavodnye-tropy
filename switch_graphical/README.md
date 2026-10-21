@@ -839,9 +839,10 @@ certification.
 60Hz RIGHT/RUN/JUMP input masks. It verifies all four floor-gap crossings,
 all three required fragments, the three checkpoints, and the three crystal
 springs. After each `-690 units/sec` launch, a neutral input tick must leave
-horizontal position unchanged. The route also requires actual enemy contact
-damage and the real fragment-gated exit; it does not teleport the player or
-edit enemy/pickup state.
+horizontal position unchanged. The route also requires actual enemy contact damage, uses deliberate
+jumps to pass the later patrols without repeated respawn loops, and reaches
+the real fragment-gated exit; it does not teleport the player or edit
+enemy/pickup state.
 
 Strict GCC and Clang checks run in both the browser/game-rule workflow and
 graphical Switch host-render workflow. These are deterministic host-side
