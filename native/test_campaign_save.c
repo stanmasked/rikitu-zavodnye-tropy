@@ -4,6 +4,7 @@
 #include <string.h>
 #define A "/tmp/rikitu-campaign-slot-test-a.rkc"
 #define B "/tmp/rikitu-campaign-slot-test-b.rkc"
+#define LEGACY "/tmp/rikitu-map01-save-test-a.rks"
 static void fill(RikituCampaign *c){
   assert(rikitu_campaign_init(c,2));
   c->mode=RIKITU_CAMPAIGN_SHOP;
@@ -17,6 +18,15 @@ int main(void){
   FILE *f;size_t i;
   (void)remove(A);(void)remove(B);
   fill(&c);
+  /* A misconfigured new writer cannot truncate an existing MAP01 RKS1. */
+  f=fopen(LEGACY,"wb");assert(f);
+  assert(fwrite("RKS1LEGACY",1,10,f)==10 && fclose(f)==0);
+  assert(!rikitu_campaign_save_store_pair(LEGACY,B,&c));
+  assert(!rikitu_campaign_save_load_pair(LEGACY,B,&d));
+  f=fopen(LEGACY,"rb");assert(f);
+  assert(fread(scratch,1,10,f)==10 && fclose(f)==0);
+  assert(memcmp(scratch,"RKS1LEGACY",10)==0);
+  (void)remove(LEGACY);
   assert(!rikitu_campaign_save_encode(NULL,&c,1));
   assert(!rikitu_campaign_save_encode(bytes,&c,0));
   assert(rikitu_campaign_save_encode(bytes,&c,12));
