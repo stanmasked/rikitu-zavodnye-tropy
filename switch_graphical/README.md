@@ -878,3 +878,18 @@ respawning. GCC and Clang compile and run the route in both host CI jobs.
 
 A passing input replay is not a physical Joy-Con or Nintendo Switch hardware
 playtest. It does not change canonical RIKITU art or gameplay geometry.
+
+## Stage86 — MAP14 Heart Foundry authentic opening route
+
+The `native/test_foundry_input_opening.c` regression replays real 60 Hz
+RIGHT/RUN/JUMP input from the original MAP14 spawn to checkpoint one. It
+checks the first +45 conveyor-belt displacement, steam launcher vertical
+impulse (-705) with a neutral-input/no-horizontal-drift frame, first
+fragment, airborne passage and grounded landing beyond gap one, automatic
+lever activation, and the original checkpoint at x=2600.
+
+The mandatory three-hit boss remains alive and the gate remains locked in
+this opening-stage test. Unlike isolated surface contract tests, this
+regression never assigns player coordinates or modifies pickups/enemies.
+Both GCC and Clang run it in standard and graphical-host CI. This is not
+yet the full MAP14 route or physical Nintendo Switch controller QA.
