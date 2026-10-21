@@ -848,3 +848,19 @@ Strict GCC and Clang checks run in both the browser/game-rule workflow and
 graphical Switch host-render workflow. These are deterministic host-side
 input replays, not physical Joy-Con, real-console frame-rate or SD power-loss
 tests.
+
+## Stage84 — MAP12 Silent Mine full input route
+
+`native/test_mine_full_route.c` replays the twelfth level from its
+authentic spawn using only 60Hz RIGHT/RUN/JUMP/LEFT input masks. It
+checks all four floor-gap crossings, all three fragments and checkpoints,
+the three steam vents, all three conveyor directions, all three automatic
+levers, real enemy interactions, three genuine boss stomps and the
+boss-gated exit. A neutral-input tick after each `-705 units/sec` vent
+launch must leave horizontal position unchanged.
+
+The test is compiled with strict GCC and Clang in both browser/game-rule
+CI and graphical Switch host-render CI. It is deterministic host simulation,
+not physical Joy-Con, real-console performance, finished art/audio or
+SD-card power-loss certification. No player coordinates, pickup flags,
+lever state or boss HP are injected by the test.
