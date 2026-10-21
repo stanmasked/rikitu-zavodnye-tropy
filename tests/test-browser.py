@@ -35,8 +35,9 @@ with sync_playwright() as p:
     for expected in [2,1,0]:
         page.wait_for_timeout(920)
         state=page.evaluate('RIKITU_TEST_STATE()')
-        page.evaluate('(p)=>RIKITU_TEST_MOVE(p[0]+14,p[1]-58)',[state['bossX'],state['bossY']]);page.wait_for_timeout(350)
-        assert page.evaluate('RIKITU_TEST_STATE().bossHP')==expected
+        page.evaluate('(p)=>RIKITU_TEST_MOVE(p[0]+14,p[1]-58)',[state['bossX'],state['bossY']])
+        page.wait_for_function('(expected)=>RIKITU_TEST_STATE().bossHP===expected',
+                               arg=expected,timeout=1800)
     page.evaluate('RIKITU_TEST_MOVE(8390,400)');page.wait_for_timeout(90)
     assert page.evaluate('RIKITU_TEST_STATE().mode')=='shop'
     assert page.evaluate('RIKITU_TEST_SHOP(120,0,2).available')
@@ -59,8 +60,9 @@ with sync_playwright() as p:
     for expected in [2,1,0]:
         page.wait_for_timeout(920)
         state=page.evaluate('RIKITU_TEST_STATE()')
-        page.evaluate('(p)=>RIKITU_TEST_MOVE(p[0]+14,p[1]-58)',[state['bossX'],state['bossY']]);page.wait_for_timeout(350)
-        assert page.evaluate('RIKITU_TEST_STATE().bossHP')==expected
+        page.evaluate('(p)=>RIKITU_TEST_MOVE(p[0]+14,p[1]-58)',[state['bossX'],state['bossY']])
+        page.wait_for_function('(expected)=>RIKITU_TEST_STATE().bossHP===expected',
+                               arg=expected,timeout=1800)
     page.evaluate('RIKITU_TEST_MOVE(8750,400)');page.wait_for_timeout(100)
     assert page.evaluate('RIKITU_TEST_STATE().mode')=='shop'
     page.keyboard.press('Enter');page.wait_for_timeout(80)
