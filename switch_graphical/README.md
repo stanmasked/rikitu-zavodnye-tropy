@@ -923,3 +923,20 @@ engine, not by manually setting player coordinates or pickup flags.
 Strict GCC/Clang checks are wired into both CI paths. The test does not
 claim full MAP15 completion, Switch/Joy-Con hardware certification or
 independent SD-card cold-restart durability.
+
+## Stage89 — MAP15 Clock Gallery complete controller route
+
+The initial `native/test_gallery_full_route.c` route drives the actual
+native 60 Hz game loop from the level's original spawn using controller
+masks. It verifies four far-edge airborne crossings and subsequent
+grounded landings, three elevated fragments, three real clock-pad -675
+launches with zero-input horizontal stability, three checkpoints and all
+three touch-triggered levers. At the third clock launcher, controller input carries Rikitu beyond
+the raised x8490..8695 platform, allows gravity to return him to ground,
+and walks left below the ledge to touch lever #3. The return mode is
+latched until the lever actually activates. No coordinates, pickup flags,
+enemy states or boss states are edited by the test.
+
+Host strict GCC/Clang checks run in both ordinary and graphical workflows.
+Full success still requires those checks; the test does not certify actual
+Switch controller hardware, SD durability or final approved character art.
