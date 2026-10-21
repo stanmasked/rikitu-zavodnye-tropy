@@ -940,3 +940,18 @@ enemy states or boss states are edited by the test.
 Host strict GCC/Clang checks run in both ordinary and graphical workflows.
 Full success still requires those checks; the test does not certify actual
 Switch controller hardware, SD durability or final approved character art.
+ 
+## Stage90 — MAP16 Heart Chamber first checkpoint by real controller input
+
+`native/test_heart_input_opening.c` replays the authentic MAP16 starting
+position through the normal 60Hz RIGHT/RUN/JUMP engine commands to
+checkpoint one (x=2930), collecting the first elevated fragment and
+crossing the opening 80-unit pit via an airborne far-edge crossing and
+grounded far-platform landing. It also measures the first +44 conveyor
+belt and verifies the first -705 steam launch leaves horizontal motion
+unchanged after a neutral input frame. The three-hit final boss must
+remain alive and the exit unavailable.
+
+This input regression does not teleport the player, alter enemy or
+pickup state, rebalance physics, validate physical Joy-Cons, or certify
+durability of a real Switch SD card.
