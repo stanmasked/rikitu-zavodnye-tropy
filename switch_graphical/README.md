@@ -1041,3 +1041,21 @@ full-route input replays check individual levels. No external game assets,
 approved Rikitu sprites, game geometry or balance are changed. RKC2
 host-file round trips do not establish physical Switch SD power-loss
 durability, nor do these checks replace GUI input in NeXium.
+ 
+## Stage95 — real host process RKS1 persistence (NeXium limitation isolated)
+
+`native/test_save_cold_process.c` uses the production RKS1
+`rikitu_save_store_pair` and `rikitu_save_load_pair` APIs but executes
+three **separate Linux OS processes** sharing on-disk checkpoint slots:
+`seed`, `resume`, `verify`. The first process creates generation 1 at
+checkpoint 2050, the second loads it and commits generation 2 at
+checkpoint 4490, and the third restores it without a further write.
+Every process verifies slot generations, CRC and saved pickup/enemy data.
+GCC and Clang run separate three-process chains in both CI workflows.
+
+This is stronger than a single-process C99 serialization round trip,
+but it is not an SDMC mount test. The earlier NeXium guest QA still
+fails at guest SDMC mount; its separate Draft PR #35 is retained as a
+strict, non-green test until actual guest filesystem support succeeds.
+Neither host files nor the NeXium guest test establish physical SD-card
+power-loss durability.
