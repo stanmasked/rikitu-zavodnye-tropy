@@ -559,3 +559,22 @@ later chapter wallet/upgrades remain session-only until a separately
 versioned full-campaign persistence feature is implemented. Approved
 sprites and final audio are unchanged. CI builds the real native NRO
 plus independent GCC/Clang overlay tests.
+
+## Switch campaign save wiring (Stage 64)
+
+When SD card is mounted, the full campaign metadata is restored from
+two independently CRC-checked RKC2 records in `campaign-a.rkc` and
+`campaign-b.rkc`, entirely separate from legacy `map01-a.rks` and
+`map01-b.rks`. Autosave occurs after a chapter gate, a successful
+Moki purchase, next-chapter/shop exit and on quitting with Plus.
+
+Only **committed** chapter, Moki wallet/upgrades and chapter mode are
+stored: reloading a `playing` record restarts the chapter. The old
+MAP01 checkpoint continues to work when resuming MAP01. **Debug Y/X
+stage selection is isolated** and cannot rewrite real campaign
+metadata; diagnostic progress is not carried into next app start.
+
+No filesystem writes are attempted without SD mount. This is a
+versioned portable RKC2 metadata scheme, not a save of full gameplay
+state, mid-level progress, approved artwork or a hardware-certified
+save workflow. On-write I/O errors are currently best-effort.

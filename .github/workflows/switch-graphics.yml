@@ -27,6 +27,8 @@ on:
       - 'native/rikitu_campaign.*'
       - 'native/test_campaign_flow.c'
       - 'native/test_campaign_overlay.c'
+      - 'native/rikitu_campaign_save.*'
+      - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
       - 'tests/test-gallery-source.cjs'
@@ -122,6 +124,8 @@ on:
       - 'native/rikitu_campaign.*'
       - 'native/test_campaign_flow.c'
       - 'native/test_campaign_overlay.c'
+      - 'native/rikitu_campaign_save.*'
+      - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
       - 'tests/test-gallery-source.cjs'
@@ -468,6 +472,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_draw.c native/test_campaign_overlay.c -lm -o /tmp/rikitu-overlay-clang
           /tmp/rikitu-overlay-clang
+      - name: GCC RKC2 campaign checkpoints and RKS1 isolation
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/test_campaign_save.c -lm -o /tmp/rikitu-rkc2-gcc
+          /tmp/rikitu-rkc2-gcc
+      - name: Clang RKC2 campaign checkpoints and RKS1 isolation
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/test_campaign_save.c -lm -o /tmp/rikitu-rkc2-clang
+          /tmp/rikitu-rkc2-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
