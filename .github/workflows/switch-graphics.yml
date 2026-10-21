@@ -17,6 +17,10 @@ on:
       - 'native/rikitu_delivery.*'
       - 'native/rikitu_clock.*'
       - 'native/rikitu_orders.*'
+      - 'native/rikitu_mist.*'
+      - 'native/rikitu_mist_data.h'
+      - 'native/test_mist.c'
+      - 'tests/test-mist-source.cjs'
       - 'native/rikitu_orders_data.h'
       - 'native/test_orders.c'
       - 'tests/test-orders-source.cjs'
@@ -81,6 +85,10 @@ on:
       - 'native/rikitu_delivery.*'
       - 'native/rikitu_clock.*'
       - 'native/rikitu_orders.*'
+      - 'native/rikitu_mist.*'
+      - 'native/rikitu_mist_data.h'
+      - 'native/test_mist.c'
+      - 'tests/test-mist-source.cjs'
       - 'native/rikitu_orders_data.h'
       - 'native/test_orders.c'
       - 'tests/test-orders-source.cjs'
@@ -302,6 +310,16 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_orders.c native/test_orders.c -lm -o /tmp/rikitu-orders-clang
           /tmp/rikitu-orders-clang
+      - name: Verify MAP09 Misty Pass source parity
+        run: node tests/test-mist-source.cjs
+      - name: GCC MAP09 gusts and gate
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_mist.c native/test_mist.c -lm -o /tmp/rikitu-mist-gcc
+          /tmp/rikitu-mist-gcc
+      - name: Clang MAP09 gusts and gate
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_mist.c native/test_mist.c -lm -o /tmp/rikitu-mist-clang
+          /tmp/rikitu-mist-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
