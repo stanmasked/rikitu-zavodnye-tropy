@@ -8,6 +8,7 @@ on:
       - 'native/test_combat_guest_qa.c'
       - 'tests/check_combat_guest.py'
       - 'tests/check_emulator_scene.py'
+      - 'tests/check_save_guest.py'
       - 'tests/check_emulator_map_cycle.py'
       - 'switch_graphical/**'
       - 'native/rikitu_draw.*'
@@ -25,6 +26,7 @@ on:
       - 'native/test_combat_guest_qa.c'
       - 'tests/check_combat_guest.py'
       - 'tests/check_emulator_scene.py'
+      - 'tests/check_save_guest.py'
       - 'tests/check_emulator_map_cycle.py'
       - 'switch_graphical/**'
       - 'native/rikitu_draw.*'
@@ -58,6 +60,16 @@ jobs:
         run: |
           PATH="$DEVKITPRO/devkitA64/bin:$DEVKITPRO/tools/bin:$PATH" make -C switch_graphical QA_MODE=1 -j2
           python3 tests/check_nro.py switch_graphical/rikitu_combat_qa_probe.nro
+      - name: Build dedicated SDMC save cold-restart NRO
+        run: |
+          PATH="$DEVKITPRO/devkitA64/bin:$DEVKITPRO/tools/bin:$PATH" make -C switch_graphical QA_MODE=2 -j2
+          python3 tests/check_nro.py switch_graphical/rikitu_save_qa_probe.nro
+      - name: Upload dedicated SDMC save QA NRO
+        uses: actions/upload-artifact@v4
+        with:
+          name: rikitu-nexium-save-qa-nro
+          path: switch_graphical/rikitu_save_qa_probe.nro
+          if-no-files-found: error
       - name: Upload guest combat QA NRO
         uses: actions/upload-artifact@v4
         with:
@@ -84,6 +96,10 @@ jobs:
         with:
           name: rikitu-nexium-combat-qa-nro
           path: nro-combat
+      - uses: actions/download-artifact@v4
+        with:
+          name: rikitu-nexium-save-qa-nro
+          path: nro-save
       - name: Install headless NeXium dependencies
         shell: bash
         run: |
@@ -159,6 +175,25 @@ jobs:
             timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
               bash tests/run_nexium_graphical.sh
           fi
+      - name: Verify SDMC saves through three independent guest launches
+        shell: bash
+        run: |
+          set -euo pipefail
+          icd="$(find /usr/share/vulkan/icd.d -maxdepth 1 -name 'lvp_icd*.json' -print -quit)"
+          test -n "$icd"
+          export VK_ICD_FILENAMES="$icd"
+          export NRO_PATH="$GITHUB_WORKSPACE/nro-save/rikitu_save_qa_probe.nro"
+          export NEXIUM_DATA_ROOT="$GITHUB_WORKSPACE/evidence/save-root"
+          export RIKITU_QA_MODE=3
+          mkdir -p "$NEXIUM_DATA_ROOT/sdmc" /tmp/rikitu-xdg-runtime
+          chmod 700 /tmp/rikitu-xdg-runtime
+          export XDG_RUNTIME_DIR=/tmp/rikitu-xdg-runtime
+          for phase in seed resume verify; do
+            export RIKITU_QA_PHASE="$phase"
+            export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/sd-$phase"
+            timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
+              bash tests/run_nexium_graphical.sh
+          done
       - name: Upload runtime screenshot evidence
         if: always()
         uses: actions/upload-artifact@v4

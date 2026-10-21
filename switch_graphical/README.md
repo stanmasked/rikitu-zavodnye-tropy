@@ -1077,3 +1077,18 @@ emulator-side SD file I/O must still pass the separate three-launch
 test in PR #35. GCC/Clang host persistence is separately covered by
 Stage95 PR #89. A successful NRO build or source test cannot claim
 physical console power-loss safety.
+
+## Stage95 — SDMC independent cold guest starts (Draft PR35)
+
+The `QA_MODE=2` NRO is a separate diagnostic executable, not the shipping
+16-level app. Three separate NeXium processes share `NEXIUM_DATA_ROOT`.
+Session 1 seeds a CRC-checked RKS1 checkpoint, session 2 loads it and
+writes the next checkpoint, and session 3 validates persistence without
+writing. Each captured guest screenshot must contain four green indicators,
+and the host checks that alternating files have the right CRC, generations
+and checkpoint numbers. A red first indicator means `fsdevMountSdmc()`
+failed *before* game save decoding and must not be described as a
+successful guest persistence test. The old October 20 CI evidence had no
+green SDMC mount indicator; this refresh retains that failure signal.
+Even success here would verify emulator file persistence, not real
+Nintendo Switch SD power-loss durability or filesystem crash safety.
