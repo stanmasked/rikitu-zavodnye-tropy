@@ -26,6 +26,7 @@ on:
       - 'native/rikitu_gallery.*'
       - 'native/rikitu_campaign.*'
       - 'native/test_campaign_flow.c'
+      - 'native/test_campaign_overlay.c'
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
       - 'tests/test-gallery-source.cjs'
@@ -120,6 +121,7 @@ on:
       - 'native/rikitu_gallery.*'
       - 'native/rikitu_campaign.*'
       - 'native/test_campaign_flow.c'
+      - 'native/test_campaign_overlay.c'
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
       - 'tests/test-gallery-source.cjs'
@@ -458,6 +460,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/test_campaign_flow.c -lm -o /tmp/rikitu-flow-clang
           /tmp/rikitu-flow-clang
+      - name: GCC chapter/shop/victory overlay rendering
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_draw.c native/test_campaign_overlay.c -lm -o /tmp/rikitu-overlay-gcc
+          /tmp/rikitu-overlay-gcc
+      - name: Clang chapter/shop/victory overlay rendering
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_draw.c native/test_campaign_overlay.c -lm -o /tmp/rikitu-overlay-clang
+          /tmp/rikitu-overlay-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:

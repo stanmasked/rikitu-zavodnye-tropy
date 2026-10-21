@@ -252,3 +252,44 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
   }
   return 1;
 }
+
+/* Technical campaign phase overlay. This is not an approved character sprite. */
+int rikitu_draw_campaign_overlay(uint32_t *pixels,int width,int height,
+                                 int stride_pixels,const RikituCampaign *s,
+                                 const RikituHeartOffer *offer){
+  Canvas c;
+  uint32_t ink=rgb(238,246,247);
+  char str[64];
+  int x,y;
+  if(!pixels||!s||!offer||width<640||height<420||
+     width>3840||height>2160||stride_pixels<width)return 0;
+  if(s->mode==RIKITU_CAMPAIGN_PLAYING)return 1;
+  if(s->mode!=RIKITU_CAMPAIGN_BETWEEN &&
+     s->mode!=RIKITU_CAMPAIGN_SHOP &&
+     s->mode!=RIKITU_CAMPAIGN_VICTORY)return 0;
+  c.pixels=pixels;c.w=width;c.h=height;c.stride=stride_pixels;
+  x=(width-840)/2;y=(height-250)/2;
+  box(&c,x,y,840,250,rgb(16,30,49));
+  box(&c,x,y,840,6,rgb(76,176,187));
+  if(s->mode==RIKITU_CAMPAIGN_BETWEEN){
+    label(&c,x+38,y+38,"CHAPTER CLEARED",3,ink);
+    label(&c,x+38,y+113,"A NEXT CHAPTER",2,rgb(170,232,204));
+  }else if(s->mode==RIKITU_CAMPAIGN_SHOP){
+    label(&c,x+38,y+22,"MOKI SHOP",3,ink);
+    (void)snprintf(str,sizeof(str),"COINS %d  HEARTS %d",
+                   s->wallet,s->max_hearts);
+    label(&c,x+38,y+87,str,2,rgb(249,218,155));
+    if(offer->available){
+      (void)snprintf(str,sizeof(str),"HEART UPGRADE %d COINS",offer->price);
+      label(&c,x+38,y+123,str,2,rgb(170,232,204));
+    }else{
+      label(&c,x+38,y+123,"NO HEART UPGRADE AVAILABLE",2,ink);
+    }
+    label(&c,x+38,y+189,"A BUY  B CONTINUE",2,ink);
+  }else{
+    label(&c,x+38,y+35,"ALL 16 CHAPTERS CLEARED",3,ink);
+    label(&c,x+38,y+120,"RIKITU VICTORY",2,rgb(170,232,204));
+    label(&c,x+38,y+187,"Y DEBUG SELECT  X RESTART",2,ink);
+  }
+  return 1;
+}
