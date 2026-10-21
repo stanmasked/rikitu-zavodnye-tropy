@@ -726,3 +726,18 @@ must recover the older checkpoint record.
 The executable is a portable C99 host input regression, not proof of
 physical Switch Joy-Con input, a full MAP05 playthrough, or SD-card
 crash/power-loss durability.
+
+
+## Stage77 — MAP06 input-driven conveyor and steam checkpoint resume
+
+`native/test_delivery_controller_resume.c` replays real 60Hz input
+masks from the MAP06 spawn. It observes a grounded +42-unit/sec
+conveyor boost, the automatic -705-unit/sec steam launch, first coin
+and fragment, a gap-crossing jump, patrol damage and checkpoint #1.
+The test writes two RKL3 save generations, loads a freshly initialized
+scene, checks inventory/health/damage/timer/boss state, and resumes
+controller input. A mismatched wallet cannot load. Damage to the latest
+save causes fallback to the earlier checkpoint.
+
+This test checks the native game-loop's host-side input semantics,
+not a complete MAP06 boss battle or actual Switch HID/SD durability.
