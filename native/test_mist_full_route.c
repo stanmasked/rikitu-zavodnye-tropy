@@ -57,6 +57,7 @@ int main(void){
   RikituLoop loop;
   int armed[JUMP_COUNT]={0},ever[JUMP_COUNT]={0};
   unsigned gust_mask=0,neutral_mask=0,gap_mask=0,gap_pending=0;
+  unsigned gap_jump_pending=0,gap_jump_ever=0,gap_air_mask=0;
   int pending_gust=-1,neutral_frames=0,frame=0,i;
   fresh(&scene,&loop);
   assert(scene.level_id==9 && loop.player.x==105.0f);
@@ -107,6 +108,11 @@ int main(void){
       input|=RIKITU_INPUT_JUMP;
       armed[jump]=1;
       ever[jump]=1;
+      if(jump>=J_GAP1 && jump<=J_GAP4){
+        const unsigned bit=1u<<(unsigned)(jump-J_GAP1);
+        gap_jump_pending|=bit;
+        gap_jump_ever|=bit;
+      }
     }
 
     tick(&scene,&loop,input);
@@ -133,19 +139,24 @@ int main(void){
      * are discarded if a genuine damage respawn moves X backwards. */
     for(i=0;i<4;i++){
       const unsigned bit=1u<<(unsigned)i;
-      if(!(gap_mask&bit) && before_x<gap_end[i] &&
-         loop.player.x>=gap_end[i])
+      if(!(gap_mask&bit) && (gap_jump_pending&bit) &&
+         !loop.player.grounded && before_x<gap_end[i] &&
+         loop.player.x>=gap_end[i]){
         gap_pending|=bit;
+        gap_air_mask|=bit;
+      }
       if((gap_pending&bit) && loop.player.grounded &&
          loop.player.x>gap_end[i]+5.0f){
         gap_mask|=bit;
         gap_pending&=~bit;
+        gap_jump_pending&=~bit;
       }
     }
     /* Falling or taking fatal damage can respawn at the last checkpoint.
      * Re-arm jumps ahead of that checkpoint, without editing player state. */
     if(before_x>loop.player.x+100.0f){
       gap_pending=0u;
+      gap_jump_pending=0u;
       rearm_after_respawn(armed,loop.player.x);
     }
     assert(scene.hearts>=1 && scene.hearts<=scene.max_hearts);
@@ -157,7 +168,8 @@ int main(void){
     fprintf(stderr,"MAP09 route timed out frame=%d x=%.2f "
             "fragments=%d checkpoints=%d gusts=%u neutral=%u\n",
             frame,(double)loop.player.x,scene.stage.fragment_count,
-            scene.reached_checkpoints,gust_mask,neutral_mask);
+            scene.reached_checkpoints,gust_mask,neutral_mask,
+            gap_jump_ever,gap_air_mask,gap_mask,gap_pending);
     return 2;
   }
   for(i=0;i<JUMP_COUNT;i++)assert(ever[i]);
@@ -168,7 +180,8 @@ int main(void){
   assert(scene.reached_checkpoints==3 &&
          scene.active_checkpoint==7290.0f);
   assert(gust_mask==7u && neutral_mask==7u && neutral_frames>=3);
-  assert(gap_mask==15u && gap_pending==0u);
+  assert(gap_jump_ever==15u && gap_air_mask==15u);
+  assert(gap_mask==15u && gap_pending==0u && gap_jump_pending==0u);
   assert(loop.player.x+loop.player.w>scene.gate_x-30.0f);
   assert(scene.stage.completed && !scene.stage.boss_required);
   assert(scene.stage.coin_count>0 && scene.damage_count>0);
