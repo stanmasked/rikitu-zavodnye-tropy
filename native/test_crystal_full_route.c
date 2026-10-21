@@ -15,17 +15,20 @@
 #define RUN_RIGHT (RIKITU_INPUT_RIGHT|RIKITU_INPUT_RUN)
 
 enum {
-  J_FRAGMENT1, J_GAP1, J_GAP2, J_FRAGMENT2,
-  J_GAP3, J_GAP4, J_FRAGMENT3, JUMP_COUNT
+  J_FRAGMENT1, J_GAP1, J_GAP2, J_FRAGMENT2, J_GAP3,
+  J_AVOID_ENEMY4, J_AVOID_ENEMY5, J_GAP4, J_FRAGMENT3,
+  J_AVOID_ENEMY6, JUMP_COUNT
 };
 
 static const float spring_x[3]={1120.0f,3980.0f,7650.0f};
 static const float gap_end[4]={1930.0f,3710.0f,5550.0f,7330.0f};
 static const float jump_lo[JUMP_COUNT]={
-  1580.0f,1760.0f,3540.0f,4780.0f,5380.0f,7160.0f,8230.0f
+  1580.0f,1760.0f,3540.0f,4780.0f,5380.0f,
+  5700.0f,6840.0f,7160.0f,8230.0f,8480.0f
 };
 static const float jump_hi[JUMP_COUNT]={
-  1650.0f,1810.0f,3610.0f,4850.0f,5450.0f,7220.0f,8280.0f
+  1650.0f,1810.0f,3610.0f,4850.0f,5450.0f,
+  5750.0f,6890.0f,7220.0f,8280.0f,8530.0f
 };
 
 static void fresh(RikituScene *scene,RikituLoop *loop){
@@ -63,8 +66,11 @@ static int objective_done(int jump,const RikituScene *scene,
     case J_GAP2:return (gap_mask&2u)!=0u;
     case J_FRAGMENT2:return scene->stage.fragments[1]!=0;
     case J_GAP3:return (gap_mask&4u)!=0u;
+    case J_AVOID_ENEMY4:return scene->enemies[3].dead!=0;
+    case J_AVOID_ENEMY5:return scene->enemies[4].dead!=0;
     case J_GAP4:return (gap_mask&8u)!=0u;
     case J_FRAGMENT3:return scene->stage.fragments[2]!=0;
+    case J_AVOID_ENEMY6:return scene->enemies[5].dead!=0;
     default:return 1;
   }
 }
@@ -206,6 +212,9 @@ int main(void){
   assert(gap_jump_ever==15u && gap_air_mask==15u);
   assert(gap_mask==15u && gap_pending==0u && gap_jump_pending==0u);
   assert(ever[J_GAP1] && ever[J_GAP2] && ever[J_GAP3] && ever[J_GAP4]);
+  assert(ever[J_AVOID_ENEMY4] || scene.enemies[3].dead);
+  assert(ever[J_AVOID_ENEMY5] || scene.enemies[4].dead);
+  assert(ever[J_AVOID_ENEMY6] || scene.enemies[5].dead);
   assert(loop.player.x+loop.player.w>scene.gate_x-30.0f);
   assert(scene.stage.completed && !scene.stage.boss_required);
   assert(scene.stage.coin_count>0 && scene.damage_count>0);
