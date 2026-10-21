@@ -216,7 +216,7 @@ int main(void){
   assert(belt_mask==3u);
   assert(boss_hits==3 && boss_attempts>=3);
   assert(scene.boss.hp==0 && !scene.boss.alive);
-  assert(scene.stage.boss_defeated && !scene.stage.boss_required==0);
+  assert(scene.stage.boss_defeated && scene.stage.boss_required);
   assert(scene.stage.completed && scene.damage_count>0);
   assert(scene.stage.coin_count>0);
   assert(loop.player.x+loop.player.w>scene.gate_x-30.0f);
