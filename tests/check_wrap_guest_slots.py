@@ -19,7 +19,6 @@ import tempfile
 import zlib
 
 from check_torn_guest_slots import FAMILIES, paths
-from check_save_guest import validate_frame
 
 MAX = 0xFFFFFFFF
 
@@ -197,6 +196,7 @@ def main() -> None:
         phase = args[1]
         if phase not in ('seed', 'resume', 'verify'):
             raise SystemExit('Unsupported guest phase')
+        from check_save_guest import validate_frame  # Pillow required only in NeXium CI
         validate_frame(Path(args[2]), phase)
         validate_frame(Path(args[3]), phase)
     elif len(args) == 4 and args[0] in ('prepare', 'audit', 'verify'):
