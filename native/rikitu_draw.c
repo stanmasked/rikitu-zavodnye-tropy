@@ -206,7 +206,8 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
   /* Fixed-screen HUD: title, counters and controller instructions. */
   box(&c,0,0,width,84,rgb(16,30,49));
   box(&c,0,80,width,4,rgb(76,176,187));
-  label(&c,25,15,s->level_id==15?"RIKITU 15 CLOCK GALLERY":
+  label(&c,25,15,s->level_id==16?"RIKITU 16 HEART CHAMBER":
+                   (s->level_id==15?"RIKITU 15 CLOCK GALLERY":
                    (s->level_id==14?"RIKITU 14 HEART FOUNDRY":
                    (s->level_id==13?"RIKITU 13 CASTLE GARDENS":
                    (s->level_id==12?"RIKITU 12 SILENT MINE":
@@ -220,7 +221,7 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
                    (s->level_id==4?"RIKITU 04 GEAR BRIDGE":
                    (s->level_id==3?"RIKITU 03 MUSHROOM GROVE":
                    (s->level_id==2?"RIKITU 02 MILL CREEK":
-                   (s->level_id==1?"RIKITU 01 FLOWER TRAIL":"RIKITU TECH DEMO")))))))))))))),3,ink);
+                   (s->level_id==1?"RIKITU 01 FLOWER TRAIL":"RIKITU TECH DEMO"))))))))))))))),3,ink);
   (void)snprintf(status,sizeof(status),"FRAGMENTS %d/3  COINS %d",
        s->stage.fragment_count,s->stage.coin_count);
   label(&c,26,56,status,2,rgb(250,220,124));
