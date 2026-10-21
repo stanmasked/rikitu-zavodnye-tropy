@@ -3,7 +3,7 @@ set -euo pipefail
 test -n "$NEXIUM_BIN" || { echo "Missing emulator binary"; exit 2; }
 test -n "$NRO_PATH" || { echo "Missing NRO path"; exit 2; }
 test -n "$OUTPUT_DIR" || { echo "Missing evidence path"; exit 2; }
-if [[ "${RIKITU_QA_MODE:-0}" == "3" ]]; then
+if [[ "${RIKITU_QA_MODE:-0}" == "3" || "${RIKITU_QA_MODE:-0}" == "4" ]]; then
   test -n "${NEXIUM_DATA_ROOT:-}" || { echo "Missing persistent NeXium SD root"; exit 2; }
   mkdir -p "$NEXIUM_DATA_ROOT/sdmc"
 fi
@@ -43,7 +43,11 @@ sleep 0.8
 timeout 3s xdotool keyup --window "$window" Right
 sleep 0.4
 timeout 12s import -window "$window" "$OUTPUT_DIR/scene-after-right.png"
-if [[ "${RIKITU_QA_MODE:-0}" == "3" ]]; then
+if [[ "${RIKITU_QA_MODE:-0}" == "4" ]]; then
+  python3 tests/check_campaign_guest.py "${RIKITU_QA_PHASE:?phase required}" \
+    "$OUTPUT_DIR/scene-before.png" "$OUTPUT_DIR/scene-after-right.png" \
+    "${NEXIUM_DATA_ROOT:?root required}"
+elif [[ "${RIKITU_QA_MODE:-0}" == "3" ]]; then
   python3 tests/check_save_guest.py "${RIKITU_QA_PHASE:?phase required}" \
     "$OUTPUT_DIR/scene-before.png" "$OUTPUT_DIR/scene-after-right.png" \
     "${NEXIUM_DATA_ROOT:?root required}"

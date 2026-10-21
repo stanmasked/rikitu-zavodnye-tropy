@@ -1092,3 +1092,22 @@ successful guest persistence test. The old October 20 CI evidence had no
 green SDMC mount indicator; this refresh retains that failure signal.
 Even success here would verify emulator file persistence, not real
 Nintendo Switch SD power-loss durability or filesystem crash safety.
+ 
+## Stage96 — NeXium guest campaign RKC2 + level RKL3 cold restarts
+
+The independent `QA_MODE=4` NRO exercises both production campaign and
+in-level persistence APIs using the same on-SDMC paths as the 16-map
+Switch build. In three separate NeXium GUI processes sharing a dedicated
+`NEXIUM_DATA_ROOT`, it first seeds a MAP04 fixture with 4 maximum hearts
+(1 Moki upgrade), 157 wallet coins, checkpoint #1, fragment/coin/enemy
+flags; then it reloads that state and saves checkpoint #2, a second
+fragment/coin/enemy, 2 current hearts and an injured 2-HP boss; the
+third launch restores this final state without writing. Both 32-byte
+RKC2 and 64-byte RKL3 dual-slot families must have generations 1 and 2,
+correct CRC, and exact state fields, verified by a Python host-side
+auditor plus green indicators within each guest frame.
+
+These are deliberately constructed states in a separate test NRO, NOT a
+human controller playthrough or a proof of physical SD-card power-loss
+safety. They establish that libnx+NeXium can really mount, read and write
+these two save families between independent emulator executions.
