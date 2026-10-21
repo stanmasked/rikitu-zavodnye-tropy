@@ -149,9 +149,9 @@ int main(void){
         gap_pending|=bit;
         gap_air_mask|=bit;
       }
-      if((gap_pending&bit) && loop.player.grounded &&
+      if((gap_jump_pending&bit) && loop.player.grounded &&
          loop.player.x>gap_end[i]+5.0f){
-        gap_mask|=bit;
+        if(gap_pending&bit)gap_mask|=bit;
         gap_pending&=~bit;
         gap_jump_pending&=~bit;
       }
