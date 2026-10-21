@@ -33,6 +33,7 @@ on:
       - 'native/test_level_save_io.c'
       - 'native/test_level_resume_gameplay.c'
       - 'native/test_level_resume_all_maps.c'
+      - 'native/test_controller_checkpoint_reboot.c'
       - 'tests/test-level-save-wiring.cjs'
       - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
@@ -137,6 +138,7 @@ on:
       - 'native/test_level_save_io.c'
       - 'native/test_level_resume_gameplay.c'
       - 'native/test_level_resume_all_maps.c'
+      - 'native/test_controller_checkpoint_reboot.c'
       - 'tests/test-level-save-wiring.cjs'
       - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
@@ -530,6 +532,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_flower.c native/rikitu_mill.c native/rikitu_grove.c native/rikitu_bridge.c native/rikitu_workshop.c native/rikitu_delivery.c native/rikitu_clock.c native/rikitu_orders.c native/rikitu_mist.c native/rikitu_cloud.c native/rikitu_crystal.c native/rikitu_mine.c native/rikitu_gardens.c native/rikitu_foundry.c native/rikitu_gallery.c native/rikitu_heart.c native/test_level_resume_all_maps.c -lm -o /tmp/rikitu-stage72-clang
           /tmp/rikitu-stage72-clang
+      - name: GCC MAP02 controller checkpoint pit respawn and RKL3 reboot
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/test_controller_checkpoint_reboot.c -lm -o /tmp/rikitu-stage73-gcc
+          /tmp/rikitu-stage73-gcc
+      - name: Clang MAP02 controller checkpoint pit respawn and RKL3 reboot
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/test_controller_checkpoint_reboot.c -lm -o /tmp/rikitu-stage73-clang
+          /tmp/rikitu-stage73-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
