@@ -135,8 +135,27 @@ jobs:
           export NRO_PATH="$GITHUB_WORKSPACE/nro-combat/rikitu_combat_qa_probe.nro"
           export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/combat"
           export RIKITU_QA_MODE=1
+          mkdir -p /tmp/rikitu-xdg-runtime "$OUTPUT_DIR"
+          chmod 700 /tmp/rikitu-xdg-runtime
+          export XDG_RUNTIME_DIR=/tmp/rikitu-xdg-runtime
+          # A new Xvfb server can sporadically fail to accept Winit's first
+          # XOpenDisplay request on the runner. Retry exactly once *only*
+          # for that display-startup error, never for a game assertion.
+          set +e
           timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
-            bash tests/run_nexium_graphical.sh
+            bash tests/run_nexium_graphical.sh > "$OUTPUT_DIR/display-attempt-1.log" 2>&1
+          status=$?
+          set -e
+          cat "$OUTPUT_DIR/display-attempt-1.log"
+          if [ "$status" -ne 0 ]; then
+            if ! grep -Fq 'XOpenDisplayFailed' "$OUTPUT_DIR/display-attempt-1.log"; then
+              exit "$status"
+            fi
+            echo "Transient Xvfb/Winit display startup failure; retrying guest once"
+            sleep 3
+            timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
+              bash tests/run_nexium_graphical.sh
+          fi
       - name: Upload runtime screenshot evidence
         if: always()
         uses: actions/upload-artifact@v4
