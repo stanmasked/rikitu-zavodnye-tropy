@@ -108,8 +108,12 @@ int main(void){
       input|=RIKITU_INPUT_JUMP;
       armed[jump]=1;
       ever[jump]=1;
-      if(jump>=J_GAP1 && jump<=J_GAP4){
-        const unsigned bit=1u<<(unsigned)(jump-J_GAP1);
+      {
+        unsigned bit=0u;
+        if(jump==J_GAP1)bit=1u;
+        else if(jump==J_GAP2)bit=2u;
+        else if(jump==J_GAP3)bit=4u;
+        else if(jump==J_GAP4)bit=8u;
         gap_jump_pending|=bit;
         gap_jump_ever|=bit;
       }
@@ -166,7 +170,8 @@ int main(void){
 
   if(!scene.stage.completed){
     fprintf(stderr,"MAP09 route timed out frame=%d x=%.2f "
-            "fragments=%d checkpoints=%d gusts=%u neutral=%u\n",
+            "fragments=%d checkpoints=%d gusts=%u neutral=%u "
+            "gapJump=%u gapAir=%u gapLand=%u pending=%u\\n",
             frame,(double)loop.player.x,scene.stage.fragment_count,
             scene.reached_checkpoints,gust_mask,neutral_mask,
             gap_jump_ever,gap_air_mask,gap_mask,gap_pending);
