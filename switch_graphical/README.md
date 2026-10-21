@@ -1180,3 +1180,31 @@ This is a deterministic test of wraparound logic on an emulator-backed
 SDMC directory, not a hardware power-loss test and not a reproduction
 of years of actual writes. No shipping gameplay, maps, graphics or
 approved Rikitu character designs are modified.
+
+
+## Stage100 — interleaved campaign and level saves at crash boundaries
+
+RKC2 holds campaign identity (chapter, mode, wallet, purchased/max hearts).
+RKL3 contains one chapter's in-level checkpoint. These are independent
+dual-slot files, not an atomic four-file transaction. The Stage100 native
+GCC/Clang integration test exercises the production encoders, decoders
+and pair writers at two possible interrupt boundaries:
+
+* Chapter transition: RKC2 already reports MAP04 with the same wallet,
+  but both RKL3 slots still hold MAP03. A fresh MAP04 scene must refuse
+  to load those foreign checkpoints; its next save preserves the previous
+  MAP03 B backup.
+* Campaign rollback: the latest MAP04 RKC2 is CRC-corrupted, so older
+  MAP03 RKC2 is authoritative; the new MAP04 RKL3 slot must not mask
+  the intact MAP03 B checkpoint, even if generations differ.
+* Same-chapter wallet change: RKC2 has a new wallet but RKL3 retains
+  the previous wallet. The checkpoint must be rejected; after writing
+  a matching new RKL3, a rollback of the campaign RKC2 must recover
+  the older checkpoint with the earlier wallet, byte-for-byte intact.
+
+The test asserts a rejected decode cannot partially alter the live scene,
+uses SHA-equivalent byte snapshots of the preserved backup, and runs under
+both native GCC and Clang with strict warnings. This validates current
+identity-based fallback. It does not make separate file writes atomic,
+measure SD flush ordering, or prove sudden power-loss durability. No
+shipping save format, game rules, maps, or approved artwork changed.

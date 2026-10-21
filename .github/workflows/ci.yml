@@ -155,3 +155,8 @@ jobs:
         run: python3 tests/check_reverse_guest_slots.py --selftest
       - name: Stage99 generation rollover injector and audit selftest
         run: python3 tests/check_wrap_guest_slots.py --selftest
+
+      - name: GCC Stage100 interleaved RKC2/RKL3 crash-boundary audit
+        run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_grove.c native/rikitu_bridge.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/test_campaign_level_interleave.c -lm -o /tmp/rikitu-stage100-gcc && /tmp/rikitu-stage100-gcc
+      - name: Clang Stage100 interleaved RKC2/RKL3 crash-boundary audit
+        run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_grove.c native/rikitu_bridge.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/test_campaign_level_interleave.c -lm -o /tmp/rikitu-stage100-clang && /tmp/rikitu-stage100-clang
