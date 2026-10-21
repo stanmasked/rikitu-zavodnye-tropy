@@ -82,11 +82,18 @@ int main(void) {
   float level_save_elapsed=0.0f;
   (void)rikitu_campaign_init(&campaign,1);
   begin_stage(&scene,&game,&campaign);
-  if(R_SUCCEEDED(fsdevMountSdmc())){
-    sd_mounted=1;
-    (void)mkdir("sdmc:/switch",0777);
-    if(mkdir("sdmc:/switch/RIKITU",0777)==0 || errno==EEXIST)
-      save_ready=1;
+  /* libnx's default __appInit mounts sdmc before entering main().
+   * Calling fsdevMountSdmc twice can return libnx 0x559 because the
+   * devoptab already has a device called "sdmc". Reuse that valid
+   * registration, and only unmount if this process created it here. */
+  {
+    const int already_mounted=fsdevGetDeviceFileSystem("sdmc")!=NULL;
+    if(already_mounted || R_SUCCEEDED(fsdevMountSdmc())){
+      if(!already_mounted)sd_mounted=1;
+      (void)mkdir("sdmc:/switch",0777);
+      if(mkdir("sdmc:/switch/RIKITU",0777)==0 || errno==EEXIST)
+        save_ready=1;
+    }
   }
   if(save_ready){
     /* RKC2 is a different record family and does not decode old MAP01 RKS1.
