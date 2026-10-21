@@ -672,3 +672,18 @@ checks pause/resume and movement after the restore.
 This is a deterministic host-side button-input regression rather than
 a verified physical Joy-Con, Switch HID, or SD durability test. It
 does not replace controller-only end-to-end runs for all 16 maps.
+
+
+## Stage74 — MAP03 input-only checkpoint replay
+
+`native/test_grove_controller_resume.c` starts from the real MAP03
+scene spawn and uses 60 Hz RIGHT/RUN/JUMP button masks only.
+It records the actual mushroom launch, first coin and fragment,
+crosses the real first checkpoint, writes two RKL3 generations,
+cold-loads the latest generation and resumes moving. It also rejects
+a foreign wallet and corrupts the newer slot to prove recovery from
+the previous checkpoint. No direct player coordinate assignments
+are performed in the route.
+
+This verifies host engine input semantics, not full-map completion,
+real Nintendo Switch HID, Joy-Con hardware or physical SD durability.
