@@ -1256,3 +1256,28 @@ This tests a **failed file open**, not a torn write after an open succeeds,
 an SD flush failure, a crash between writes, or physical Switch power
 interruption. No shipping codec, gameplay, accepted map, asset or character
 design is altered.
+
+
+## Stage103 — injected partial write and flush failures
+
+The native `test_save_write_faults.c` fixture links the **actual** RKS1,
+RKC2 and RKL3 C99 pair writers with Linux-host-only linker overrides for
+`fwrite` and `fflush`. No shipping writer implementation is edited.
+
+For every codec, the fixture tests both backup orientations (A and B)
+with two independent fault modes: (1) `fwrite` writes only half of its
+fixed-size record and reports a short count; (2) a test wrapper performs
+the underlying flush, truncates the target record to half its size, then
+reports a simulated `fflush` failure. Each case requires the production
+writer to return failure, a truncated unusable target, and a byte-identical
+untouched original backup. The production loader must select that backup.
+With injection disabled, an immediate retry must create a complete valid
+generation-2 target and restore the updated level checkpoint, health,
+coin progress or campaign wallet without altering the backup.
+
+The matrix has twelve cases (3 formats x 2 backup orientations x 2 fault
+modes), compiled and executed separately with GCC and Clang using strict
+C99 warnings. These tests exercise error-path control flow and recovery,
+but do **not** simulate real physical power loss, true OS writeback timing,
+storage-device cache durability, atomic multi-file transactions, or
+`fsync`. The linker fault hooks are test-only and never part of Switch NRO.
