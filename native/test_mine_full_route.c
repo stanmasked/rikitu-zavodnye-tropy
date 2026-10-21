@@ -147,6 +147,21 @@ int main(void){
 
     tick(&scene,&loop,input);
 
+    if(frame%600==599){
+      unsigned dead_mask=0u;
+      for(i=0;i<scene.enemy_count;i++)
+        if(scene.enemies[i].dead)dead_mask|=1u<<(unsigned)i;
+      fprintf(stderr,"MAP12 progress frame=%d x=%.2f y=%.2f grounded=%d "
+              "vx=%.2f vy=%.2f hearts=%d damage=%d checkpoint=%.0f "
+              "invuln=%.2f enemies=%u fragments=%d levers=%d "
+              "bossHP=%d\\n",
+              frame,(double)loop.player.x,(double)loop.player.y,
+              loop.player.grounded,(double)loop.player.vx,(double)loop.player.vy,
+              scene.hearts,scene.damage_count,(double)scene.active_checkpoint,
+              (double)scene.invulnerability_seconds,dead_mask,
+              scene.stage.fragment_count,scene.levers_on,scene.boss.hp);
+    }
+
     if(neutral_now){
       if(fabsf(loop.player.x-before_x)>0.005f){
         fprintf(stderr,"MAP12 steam vent %d forced horizontal drift %.5f\n",
