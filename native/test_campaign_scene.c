@@ -110,10 +110,86 @@ int main(void){
     scene_init[level-1](&scene);
     assert(scene.level_id==level && scene.hearts==RIKITU_STARTING_HEARTS &&
            !scene.stage.coins[0] && scene.stage.coin_count==0);
-    printf("MAP%02d: one tick, player pixel, framebuffer guard and reset PASS\n",level);
+    /* This is a deterministic core-progression audit, NOT a gamepad route.
+     * Collect via the real pickup API, gate via the real stage API,
+     * and require three actual boss stomp events if a boss is present. */
+    {
+      const RikituRect gate_player={scene.gate_x-25.0f,413.0f,33.0f,43.0f};
+      int fragment;
+      assert(rikitu_stage_touch_gate(&scene.stage,gate_player,scene.gate_x)
+             ==RIKITU_GATE_BLOCKED);
+      for(fragment=0;fragment<RIKITU_STAGE_FRAGMENTS;fragment++){
+        const RikituRect pickup={
+          scene.fragments[fragment].x,
+          scene.fragments[fragment].y,33.0f,43.0f
+        };
+        assert(rikitu_stage_pickups(&scene.stage,pickup,scene.fragments,
+                                    scene.coins,scene.coin_total)>=1);
+      }
+      assert(scene.stage.fragment_count==RIKITU_STAGE_FRAGMENTS);
+      if(scene.stage.boss_required){
+        int hit;
+        assert(!rikitu_stage_can_finish(&scene.stage));
+        assert(rikitu_stage_touch_gate(&scene.stage,gate_player,scene.gate_x)
+               ==RIKITU_GATE_BLOCKED);
+        for(hit=0;hit<3;hit++){
+          RikituBossEvent event;
+          RikituPlayer p=scene.player;
+          /* Enter the boss rectangle from above, just across its top.
+           * Its 0.85s hit shield expires by ordinary boss ticks. */
+          p.x=scene.boss.x+1.0f;
+          p.y=scene.boss.y-p.h+2.0f;
+          p.vy=330.0f;
+          event=rikitu_boss_tick(&scene.boss,&p,
+                                  scene.boss.y-1.0f,RIKITU_FIXED_DT);
+          assert(event==(hit==2?RIKITU_BOSS_DEFEATED:RIKITU_BOSS_HURT));
+          assert(scene.boss.hp==2-hit);
+          assert(scene.boss.alive==(hit<2));
+          assert(p.vy==-490.0f);
+          if(hit==2)break;
+          /* Collision during temporary boss immunity must not damage it. */
+          p.x=scene.boss.x+1.0f;
+          p.y=scene.boss.y-p.h+2.0f;
+          p.vy=330.0f;
+          assert(rikitu_boss_tick(&scene.boss,&p,scene.boss.y-1.0f,
+                                  RIKITU_FIXED_DT)==RIKITU_BOSS_NONE);
+          assert(scene.boss.hp==2-hit);
+          /* Move the synthetic player away while the real clock expires. */
+          {
+            int tick;
+            for(tick=0;tick<54;tick++){
+              p.x=scene.boss.center+1000.0f;
+              p.y=scene.boss.y-p.h+2.0f;
+              p.vy=0.0f;
+              assert(rikitu_boss_tick(&scene.boss,&p,scene.boss.y-1.0f,
+                                      RIKITU_FIXED_DT)==RIKITU_BOSS_NONE);
+            }
+            assert(scene.boss.hit_seconds==0.0f);
+          }
+        }
+        assert(!scene.boss.alive && scene.boss.hp==0);
+        /* Mark boss completion only on the actual final stomp. */
+        scene.stage.boss_defeated=1;
+      }
+      assert(rikitu_stage_can_finish(&scene.stage));
+      assert(rikitu_stage_touch_gate(&scene.stage,gate_player,scene.gate_x)
+             ==RIKITU_GATE_COMPLETED);
+      assert(scene.stage.completed);
+      assert(rikitu_stage_touch_gate(&scene.stage,gate_player,scene.gate_x)
+             ==RIKITU_GATE_ALREADY_COMPLETED);
+      assert(rikitu_stage_next_mode(level)==
+             (level%2==0?RIKITU_NEXT_SHOP:RIKITU_NEXT_BETWEEN));
+      if(level%2==0){
+        assert(rikitu_stage_after_shop(level)==
+               (level==16?RIKITU_NEXT_VICTORY:RIKITU_NEXT_BETWEEN));
+      }else{
+        assert(rikitu_stage_after_shop(level)==0);
+      }
+    }
+    printf("MAP%02d: tick, player pixel, pickups, boss/gate and reset PASS\n",level);
   }
   assert(seen_five==1 && boss_count>=1);
   free(pixels);
-  puts("PASS 16/16 campaign scenes: tick, visible player pixels, buffer bounds and reset");
+  puts("PASS 16/16 scenes: render guard, pickups, boss cycles, exits and next modes");
   return 0;
 }
