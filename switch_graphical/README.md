@@ -654,3 +654,21 @@ level; damaging the newer slot must restore the older valid state.
 The test intentionally positions the player near pickups and checkpoint
 triggers. It does not prove complete controller-driven routes, actual
 Nintendo Switch SD-card durability or power-loss resistance.
+
+
+## Stage73 — no-teleport button route, pit respawn and RKL3
+
+`native/test_controller_checkpoint_reboot.c` runs the actual MAP02 C99
+game loop at 60 Hz, starting at the unmodified scene spawn. A fixed
+sequence of RIGHT, RUN and JUMP **input bitmasks** moves the character
+to the first checkpoint, collecting a coin and the first fragment and
+crossing an existing gap without direct position assignment. The
+character then runs to a second gap and falls to trigger the engine's
+checkpoint respawn. The test writes and inspects RKL3 generations
+before and after respawn, reloads a fresh scene, and checks the
+restored inventory, checkpoint, hearts and damage count. It also
+checks pause/resume and movement after the restore.
+
+This is a deterministic host-side button-input regression rather than
+a verified physical Joy-Con, Switch HID, or SD durability test. It
+does not replace controller-only end-to-end runs for all 16 maps.
