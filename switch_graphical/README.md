@@ -1316,3 +1316,30 @@ existing behavior; it does not prove that the two-slot algorithm is
 power-fail atomic or that old gen1 always survives subsequent writes.
 A future durable-storage design should be validated with real fsync/
 directory-sync guarantees on the target filesystem/hardware.
+
+
+## Stage105 — isolated staged-slot commit prototype (not shipping)
+
+The optional native `rikitu_staged_slot.c` helper uses a sibling
+`.pending` path. It writes the requested bytes there, checks `fwrite`,
+`fflush` and `fclose`, reopens the staging file for an exact-byte
+readback, then calls `rename` to replace the destination. **It never
+removes the existing destination first.** On any pre-rename error it
+returns failure, removes only the staging path, and leaves *both*
+already-existing slot paths byte-for-byte unchanged.
+
+This helper is **NOT connected to the shipping game**. The Stage105
+test invokes it directly on Linux host; five host-only failures
+(short write, failed flush, ambiguous close, falsified readback, failed
+rename) are injected for both existing backup orientations and three
+record sizes. It verifies that both slots survive failed staging and
+an unmodified retry can commit new bytes. This makes 30 native cases
+for each of GCC and Clang.
+
+**Critical limitations and next gate:** this prototype does not call
+`fsync`, does not prove concurrent-writer safety, and makes NO promise
+that libnx's SDMC/FAT rename supports overwriting an existing slot or
+is atomic/durable during power loss. No shipping save writer is changed.
+Before adopting it, compile and exercise actual replacement semantics
+on a Switch-target NRO and verify behaviour in NeXium; physical SD
+power-cut durability will still require separate hardware evidence.
