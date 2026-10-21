@@ -1208,3 +1208,29 @@ both native GCC and Clang with strict warnings. This validates current
 identity-based fallback. It does not make separate file writes atomic,
 measure SD flush ordering, or prove sudden power-loss durability. No
 shipping save format, game rules, maps, or approved artwork changed.
+
+
+## Stage101 — NeXium rejects CRC-valid foreign RKL3 checkpoints
+
+Unlike Stage97/98's truncated or checksum-invalid slot, Stage101 modifies
+a complete RKL3 record and recalculates a *correct* CRC32. Only the newest
+checkpoint is changed: either MAP04 becomes MAP03 or the encoded wallet
+becomes 158 rather than campaign RKC2's 157. The independent RKC2 slots
+remain unchanged. Both A-newest and B-newest slot layouts are exercised.
+
+For each identity fault/slot orientation, two independent real guest NRO
+starts seed legitimate MAP04 RKC2/RKL3 generation 1 and 2. With the guest
+stopped, host fault injection creates a semantically foreign, checksum-valid
+newest RKL3 while preserving older RKL3 byte for byte. A third guest must
+read the older matching checkpoint, show four green resume indicators and
+repair the foreign slot. The auditor requires the original RKL3 data to
+be recreated byte exactly, surviving backup SHA256 unchanged, campaign
+RKC2 B/generation2 untouched and A/generation3 matching its expected
+checksum. A fourth independent guest must load the upgraded checkpoint
+with green verify indicators without altering any file.
+
+The regular CI also self-tests rejection of the uncorrected identity
+mismatch and of a modified older backup. Existing normal and faulted
+Stage95–100 guest scenarios continue unchanged. This is not a real SD
+power cut and does not make RKC2/RKL3 updates an atomic transaction.
+No gameplay, map logic, character art or shipping-save writer modified.
