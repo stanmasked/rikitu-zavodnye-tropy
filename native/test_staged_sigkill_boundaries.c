@@ -90,40 +90,43 @@ static void encode_real(int family,int generation,uint8_t out[RIKITU_LEVEL_SAVE_
   switch(family){
   case MAP:
     flower(&scene,&loop,phase);
+    if(generation==4)scene.hearts=2; /* Distinguish gen4 from gen3. */
     assert(rikitu_save_encode(out,&scene,&loop,(uint32_t)generation));
     break;
   case CAMPAIGN:
     assert(rikitu_campaign_init(&c,4));
-    c.wallet=157+phase;
+    c.wallet=157+phase+(generation==4?1:0);
     assert(rikitu_campaign_save_encode(out,&c,(uint32_t)generation));
     break;
   default:
     assert(rikitu_campaign_init(&c,4));
     c.wallet=157;
     bridge(&scene,&loop,phase);
+    if(generation==4)scene.hearts=2;
     assert(rikitu_level_save_encode(out,&scene,&loop,&c,(uint32_t)generation));
     break;
   }
 }
 static void assert_load(int family,const char *a,const char *b,int gen){
   const int phase=gen==1?0:gen==2?1:2;
+  const int expected_hearts=gen==4?2:3-phase;
   RikituScene s;
   RikituLoop l;
   RikituCampaign c;
   if(family==MAP){
     flower(&s,&l,0);
     assert(rikitu_save_load_pair(a,b,&s,&l));
-    assert(s.reached_checkpoints==phase && s.hearts==3-phase);
+    assert(s.reached_checkpoints==phase && s.hearts==expected_hearts);
   }else if(family==CAMPAIGN){
     memset(&c,0,sizeof(c));
     assert(rikitu_campaign_save_load_pair(a,b,&c));
-    assert(c.level==4 && c.wallet==157+phase);
+    assert(c.level==4 && c.wallet==157+phase+(gen==4?1:0));
   }else{
     assert(rikitu_campaign_init(&c,4));
     c.wallet=157;
     bridge(&s,&l,0);
     assert(rikitu_level_save_load_pair(a,b,&s,&l,&c));
-    assert(s.reached_checkpoints==phase && s.hearts==3-phase);
+    assert(s.reached_checkpoints==phase && s.hearts==expected_hearts);
     assert(s.stage.coin_count==phase);
     if(phase>0)assert(s.stage.coins[phase-1]==1);
   }
