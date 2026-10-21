@@ -955,3 +955,19 @@ remain alive and the exit unavailable.
 This input regression does not teleport the player, alter enemy or
 pickup state, rebalance physics, validate physical Joy-Cons, or certify
 durability of a real Switch SD card.
+
+## Stage91 — complete MAP16 Heart Chamber by real 60Hz controller input
+
+`native/test_heart_full_route.c` is the first candidate for a complete
+finale replay. It begins at x=105 and uses only LEFT/RIGHT/RUN/JUMP
+masks, requiring two deliberate jumps to elevated fragments (plus first
+platform walking pickup), all three fragment pickups, four airborne
+far-edge crossings followed by landings, five mixed steam/clock launchers
+with zero-input no-horizontal-drift frames, three measured conveyor
+velocities, all three checkpoints, and three authentic stomp hits on the
+mandatory final boss before entering the fragment-and-boss-gated exit.
+
+No test code edits player coordinates, flags pickups, unlocks the gate or
+changes boss HP. Both GCC and Clang run this deterministic host route in
+ordinary and graphical CI. This is *not* verification on actual Nintendo
+Switch hardware, a human playthrough, or an SD power-cut durability test.
