@@ -720,6 +720,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_heart.c native/test_heart_full_route.c -lm -o /tmp/rikitu-stage91-graphics-clang
           /tmp/rikitu-stage91-graphics-clang
+      - name: GCC Stage92 real finale campaign victory and RKC2 save
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -DRIKITU_STAGE92_REAL_VICTORY -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_heart.c native/test_heart_full_route.c -lm -o /tmp/rikitu-stage92-graphics-gcc
+          /tmp/rikitu-stage92-graphics-gcc
+      - name: Clang Stage92 real finale campaign victory and RKC2 save
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -DRIKITU_STAGE92_REAL_VICTORY -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_heart.c native/test_heart_full_route.c -lm -o /tmp/rikitu-stage92-graphics-clang
+          /tmp/rikitu-stage92-graphics-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
