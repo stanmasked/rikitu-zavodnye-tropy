@@ -1386,3 +1386,26 @@ the test does not soften this gate or delete the target as a fallback.
 
 This observation is specific to this emulation run; no conclusion is
 drawn about the precise caching cause until verified separately.
+
+
+## Stage107 — real saved records via staged commit (still isolated)
+
+The native `test_staged_real_records.c` fixture now uses the **real**
+RKS1 44-byte, RKC2 32-byte and RKL3 64-byte C99 encoder and pair
+loader together with the experimental sibling-pending writer. For
+each family, with either A or B initially valid, it checks:
+
+1. A leftover truncated `.pending` file never becomes a live save.
+2. Staging a genuinely encoded generation 2 to the alternate slot
+   loads the new progress without modifying generation 1.
+3. Staging valid generation 3 **over the existing gen1** preserves
+   the complete generation-2 backup, with no leftover pending file.
+4. Corrupting the newest gen3 causes the **production loader** to
+   recover the gen2 record; staging a corrected gen3 restores progress.
+5. All level checkpoints/hearts/coins and campaign wallet state
+   agree with the expected live save, not just file sizes or magic.
+
+The six combined family/orientation cases run separately on strict GCC
+and Clang. These tests do not link the experimental writer into the
+shipping Switch save paths and do not prove physical SD power-cut
+durability, directory sync or real-hardware FAT rename atomicity.
