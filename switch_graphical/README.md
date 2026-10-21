@@ -1111,3 +1111,22 @@ These are deliberately constructed states in a separate test NRO, NOT a
 human controller playthrough or a proof of physical SD-card power-loss
 safety. They establish that libnx+NeXium can really mount, read and write
 these two save families between independent emulator executions.
+ 
+## Stage97 — recover from a torn/corrupt newest SDMC slot in NeXium
+
+`tests/check_torn_guest_slots.py` adds explicit simulated media faults to
+the previously verified RKS1 and RKC2/RKL3 guest cold restart process.
+For each family, two *independent* NeXium NRO runs first commit intact A
+generation 1 and B generation 2. The host then deliberately damages the
+newer B: CRC corruption for RKS1 and RKC2, and an incomplete 13-byte
+RKL3 write. The older A and its SHA256 digest must remain unchanged.
+A third independent guest must reload the older A, show all four green
+status indicators for the older checkpoint, and recreate B. The auditor
+checks both complete CRC-valid records, two generations and byte-for-byte
+identity with the original saved data; a fourth guest then loads the
+repaired latest B without writing.
+
+This proves that the actual libnx/NRO save codecs use the older valid slot
+after synthetic corruption and safely rewrite the newer slot in NeXium.
+It deliberately does **not** simulate real SD flushes, sudden electrical
+power loss, filesystem metadata damage, or actual Switch hardware.
