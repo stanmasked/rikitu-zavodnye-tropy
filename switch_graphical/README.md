@@ -624,3 +624,18 @@ Once-only stage rewards remain the separate RKC2 responsibility.
 Writes are best-effort: SD failures are not surfaced in the UI and
 actual Nintendo Switch hardware save durability remains unverified.
 Approved art, ROM contents and existing file schemas remain unchanged.
+
+## Stage70 — gameplay-level checkpoint replay
+
+`native/test_level_resume_gameplay.c` uses the real fixed-step C99
+engine to collect a coin and a fragment in MAP02, then crosses a real
+checkpoint and persists two RKL3 generations. It restarts MAP02,
+restores the latest checkpoint, revisits the previously collected items
+and checks that no duplicate pickups are awarded. Corrupting the
+newest record falls back to the earlier valid state. Wrong-chapter
+and wrong-wallet restores are rejected. GCC and Clang execute this
+portable integration test in the graphical host CI.
+
+The test controls starting positions to focus on save semantics;
+it is not a full controller-only level completion or a hardware SD
+durability test. No approved character assets are changed.

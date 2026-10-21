@@ -22,6 +22,23 @@ static int read_slot(const char *path,uint8_t out[RIKITU_LEVEL_SAVE_BYTES]){
 static int newer(uint32_t x,uint32_t y){
   return x!=y&&(uint32_t)(x-y)<0x80000000u;
 }
+/* Never use a stale chapter/wallet record when choosing a file to
+ * overwrite. It may have a much higher generation than the active
+ * campaign's last good checkpoint. The loader already applies the same
+ * identity requirement when actually restoring a checkpoint. */
+static int belongs_to_campaign(const uint8_t p[RIKITU_LEVEL_SAVE_BYTES],
+                               const RikituCampaign *c){
+  const uint32_t wallet=(uint32_t)p[36]|
+             ((uint32_t)p[37]<<8)|
+             ((uint32_t)p[38]<<16)|
+             ((uint32_t)p[39]<<24);
+  return c&&rikitu_campaign_valid(c)&&
+         c->mode==RIKITU_CAMPAIGN_PLAYING&&
+         p[5]==(uint8_t)c->level &&
+         p[8]==(uint8_t)c->max_hearts &&
+         p[41]==(uint8_t)c->purchased_hearts &&
+         wallet==(uint32_t)c->wallet;
+}
 int rikitu_level_save_load_pair(const char *a,const char *b,
                                  RikituScene *scene,RikituLoop *loop,
                                  const RikituCampaign *campaign){
@@ -56,9 +73,11 @@ int rikitu_level_save_store_pair(const char *a,const char *b,
   if(!allowed_path(a)||!allowed_path(b)||strcmp(a,b)==0||
      !scene||!loop||!campaign)return 0;
   if(read_slot(a,x))
-    vx=rikitu_level_save_inspect(x,sizeof(x),&gx);
+    vx=rikitu_level_save_inspect(x,sizeof(x),&gx) &&
+       belongs_to_campaign(x,campaign);
   if(read_slot(b,y))
-    vy=rikitu_level_save_inspect(y,sizeof(y),&gy);
+    vy=rikitu_level_save_inspect(y,sizeof(y),&gy) &&
+       belongs_to_campaign(y,campaign);
   if(vx&&vy){
     if(newer(gy,gx)){generation=gy+1;path=a;}
     else{generation=gx+1;path=b;}
