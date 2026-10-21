@@ -182,3 +182,6 @@ jobs:
         run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_staged_slot.c native/test_staged_slot_faults.c -Wl,--wrap=fwrite -Wl,--wrap=fflush -Wl,--wrap=fclose -Wl,--wrap=fread -Wl,--wrap=rename -o /tmp/rikitu-stage105-gcc && /tmp/rikitu-stage105-gcc
       - name: Clang Stage105 isolated staged-slot fault injection (30 cases)
         run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_staged_slot.c native/test_staged_slot_faults.c -Wl,--wrap=fwrite -Wl,--wrap=fflush -Wl,--wrap=fclose -Wl,--wrap=fread -Wl,--wrap=rename -o /tmp/rikitu-stage105-clang && /tmp/rikitu-stage105-clang
+
+      - name: Stage106 SDMC guest file auditor selftest
+        run: python3 tests/check_staged_rename_guest.py --selftest
