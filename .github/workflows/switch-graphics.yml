@@ -21,6 +21,10 @@ on:
       - 'native/rikitu_cloud.*'
       - 'native/rikitu_crystal.*'
       - 'native/rikitu_mine.*'
+      - 'native/rikitu_gardens.*'
+      - 'native/rikitu_gardens_data.h'
+      - 'native/test_gardens.c'
+      - 'tests/test-gardens-source.cjs'
       - 'native/rikitu_mine_data.h'
       - 'native/test_mine.c'
       - 'tests/test-mine-source.cjs'
@@ -101,6 +105,10 @@ on:
       - 'native/rikitu_cloud.*'
       - 'native/rikitu_crystal.*'
       - 'native/rikitu_mine.*'
+      - 'native/rikitu_gardens.*'
+      - 'native/rikitu_gardens_data.h'
+      - 'native/test_gardens.c'
+      - 'tests/test-gardens-source.cjs'
       - 'native/rikitu_mine_data.h'
       - 'native/test_mine.c'
       - 'tests/test-mine-source.cjs'
@@ -374,6 +382,16 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_mine.c native/test_mine.c -lm -o /tmp/rikitu-mine-clang
           /tmp/rikitu-mine-clang
+      - name: Verify MAP13 Castle Gardens source parity
+        run: node tests/test-gardens-source.cjs
+      - name: GCC MAP13 mushrooms switches and fragments
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_gardens.c native/test_gardens.c -lm -o /tmp/rikitu-gardens-gcc
+          /tmp/rikitu-gardens-gcc
+      - name: Clang MAP13 mushrooms switches and fragments
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_gardens.c native/test_gardens.c -lm -o /tmp/rikitu-gardens-clang
+          /tmp/rikitu-gardens-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
