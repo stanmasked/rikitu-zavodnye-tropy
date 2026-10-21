@@ -39,7 +39,9 @@ include $(DEVKITPRO)/libnx/switch_rules
 #   NACP building is skipped as well.
 #---------------------------------------------------------------------------------
 # QA_MODE=1 builds a separate, asset-free NeXium combat test binary.
-ifeq ($(QA_MODE),4)
+ifeq ($(QA_MODE),5)
+TARGET       := rikitu_staged_rename_qa_probe
+else ifeq ($(QA_MODE),4)
 TARGET       := rikitu_campaign_qa_probe
 else ifeq ($(QA_MODE),2)
 TARGET       := rikitu_save_qa_probe
@@ -51,7 +53,9 @@ endif
 APP_TITLE := RIKITU 2D Scene Probe
 APP_AUTHOR := RIKITU LAB
 APP_VERSION := 0.1.0
-ifeq ($(QA_MODE),4)
+ifeq ($(QA_MODE),5)
+BUILD        := build_staged_rename_qa
+else ifeq ($(QA_MODE),4)
 BUILD        := build_campaign_qa
 else ifeq ($(QA_MODE),2)
 BUILD        := build_save_qa
@@ -104,7 +108,9 @@ export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
 
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
-ifeq ($(QA_MODE),4)
+ifeq ($(QA_MODE),5)
+CFILES := staged_rename_qa_main.c rikitu_staged_slot.c
+else ifeq ($(QA_MODE),4)
 CFILES := campaign_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_demo.c rikitu_bridge.c rikitu_enemies.c rikitu_boss.c rikitu_campaign.c rikitu_campaign_save.c rikitu_campaign_save_io.c rikitu_level_save.c rikitu_level_save_io.c
 else ifeq ($(QA_MODE),2)
 CFILES := save_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c rikitu_boss.c rikitu_save.c rikitu_save_io.c
