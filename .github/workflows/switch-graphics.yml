@@ -26,6 +26,7 @@ on:
       - 'native/rikitu_gallery.*'
       - 'native/rikitu_campaign.*'
       - 'native/test_campaign_flow.c'
+      - 'native/test_campaign_transition_save_chain.c'
       - 'native/test_campaign_overlay.c'
       - 'native/rikitu_campaign_save.*'
       - 'native/rikitu_level_save.*'
@@ -149,6 +150,7 @@ on:
       - 'native/rikitu_gallery.*'
       - 'native/rikitu_campaign.*'
       - 'native/test_campaign_flow.c'
+      - 'native/test_campaign_transition_save_chain.c'
       - 'native/test_campaign_overlay.c'
       - 'native/rikitu_campaign_save.*'
       - 'native/rikitu_level_save.*'
@@ -728,6 +730,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -DRIKITU_STAGE92_REAL_VICTORY -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_heart.c native/test_heart_full_route.c -lm -o /tmp/rikitu-stage92-graphics-clang
           /tmp/rikitu-stage92-graphics-clang
+      - name: GCC Stage94 real 16-level campaign transition/restart RKC2 chain
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_draw.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_flower.c native/rikitu_mill.c native/rikitu_grove.c native/rikitu_bridge.c native/rikitu_workshop.c native/rikitu_delivery.c native/rikitu_clock.c native/rikitu_orders.c native/rikitu_mist.c native/rikitu_cloud.c native/rikitu_crystal.c native/rikitu_mine.c native/rikitu_gardens.c native/rikitu_foundry.c native/rikitu_gallery.c native/rikitu_heart.c native/test_campaign_transition_save_chain.c -lm -o /tmp/rikitu-stage94-graphics-gcc
+          /tmp/rikitu-stage94-graphics-gcc
+      - name: Clang Stage94 real 16-level campaign transition/restart RKC2 chain
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_draw.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_flower.c native/rikitu_mill.c native/rikitu_grove.c native/rikitu_bridge.c native/rikitu_workshop.c native/rikitu_delivery.c native/rikitu_clock.c native/rikitu_orders.c native/rikitu_mist.c native/rikitu_cloud.c native/rikitu_crystal.c native/rikitu_mine.c native/rikitu_gardens.c native/rikitu_foundry.c native/rikitu_gallery.c native/rikitu_heart.c native/test_campaign_transition_save_chain.c -lm -o /tmp/rikitu-stage94-graphics-clang
+          /tmp/rikitu-stage94-graphics-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
