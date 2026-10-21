@@ -30,6 +30,7 @@ on:
       - 'native/rikitu_campaign_save.*'
       - 'native/rikitu_level_save.*'
       - 'native/test_level_save.c'
+      - 'native/test_level_save_io.c'
       - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
@@ -130,6 +131,7 @@ on:
       - 'native/rikitu_campaign_save.*'
       - 'native/rikitu_level_save.*'
       - 'native/test_level_save.c'
+      - 'native/test_level_save_io.c'
       - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
@@ -496,6 +498,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_mill.c native/rikitu_gardens.c native/rikitu_heart.c native/test_level_save.c -lm -o /tmp/rikitu-levelsave-clang
           /tmp/rikitu-levelsave-clang
+      - name: GCC RKL3 two-slot crash recovery and legacy isolation
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/test_level_save_io.c -lm -o /tmp/rikitu-rkl3-io-gcc
+          /tmp/rikitu-rkl3-io-gcc
+      - name: Clang RKL3 two-slot crash recovery and legacy isolation
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/test_level_save_io.c -lm -o /tmp/rikitu-rkl3-io-clang
+          /tmp/rikitu-rkl3-io-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
