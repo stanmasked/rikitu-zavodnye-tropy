@@ -17,6 +17,7 @@ enum { J_START, J_FRAGMENT1, J_GAP1, J_GAP2,
        J_FRAGMENT2, J_GAP3, J_GAP4, J_FRAGMENT3, JUMP_COUNT };
 
 static const float gust_x[3]={1240.0f,3880.0f,7520.0f};
+static const float gap_end[4]={1910.0f,3590.0f,5340.0f,7110.0f};
 
 static void fresh(RikituScene *scene,RikituLoop *loop){
   rikitu_mist_init(scene);
@@ -55,7 +56,7 @@ int main(void){
   RikituScene scene;
   RikituLoop loop;
   int armed[JUMP_COUNT]={0},ever[JUMP_COUNT]={0};
-  unsigned gust_mask=0,neutral_mask=0;
+  unsigned gust_mask=0,neutral_mask=0,gap_mask=0,gap_pending=0;
   int pending_gust=-1,neutral_frames=0,frame=0,i;
   fresh(&scene,&loop);
   assert(scene.level_id==9 && loop.player.x==105.0f);
@@ -127,10 +128,26 @@ int main(void){
       }
     }
 
+    /* A jump attempt alone is not enough: record a gap only after the
+     * player crosses its far edge and lands beyond it. Pending crossings
+     * are discarded if a genuine damage respawn moves X backwards. */
+    for(i=0;i<4;i++){
+      const unsigned bit=1u<<(unsigned)i;
+      if(!(gap_mask&bit) && before_x<gap_end[i] &&
+         loop.player.x>=gap_end[i])
+        gap_pending|=bit;
+      if((gap_pending&bit) && loop.player.grounded &&
+         loop.player.x>gap_end[i]+5.0f){
+        gap_mask|=bit;
+        gap_pending&=~bit;
+      }
+    }
     /* Falling or taking fatal damage can respawn at the last checkpoint.
      * Re-arm jumps ahead of that checkpoint, without editing player state. */
-    if(before_x>loop.player.x+100.0f)
+    if(before_x>loop.player.x+100.0f){
+      gap_pending=0u;
       rearm_after_respawn(armed,loop.player.x);
+    }
     assert(scene.hearts>=1 && scene.hearts<=scene.max_hearts);
     assert(scene.reached_checkpoints>=0 &&
            scene.reached_checkpoints<=(int)scene.checkpoint_total);
@@ -151,9 +168,10 @@ int main(void){
   assert(scene.reached_checkpoints==3 &&
          scene.active_checkpoint==7290.0f);
   assert(gust_mask==7u && neutral_mask==7u && neutral_frames>=3);
+  assert(gap_mask==15u && gap_pending==0u);
   assert(loop.player.x+loop.player.w>scene.gate_x-30.0f);
   assert(scene.stage.completed && !scene.stage.boss_required);
-  assert(scene.stage.coin_count>0 && scene.damage_count>=0);
+  assert(scene.stage.coin_count>0 && scene.damage_count>0);
   printf("PASS MAP09 full input route: %d frames, 3 fragments, "
          "4 gaps, 3 gusts/no drift, 3 checkpoints, %d damage events\n",
          frame,scene.damage_count);
