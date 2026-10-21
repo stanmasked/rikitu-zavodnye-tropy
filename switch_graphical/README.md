@@ -1343,3 +1343,46 @@ is atomic/durable during power loss. No shipping save writer is changed.
 Before adopting it, compile and exercise actual replacement semantics
 on a Switch-target NRO and verify behaviour in NeXium; physical SD
 power-cut durability will still require separate hardware evidence.
+
+
+## Stage106 — NeXium-only same-directory SDMC replace semantics
+
+QA_MODE=5 builds `rikitu_staged_rename_qa_probe.nro`. It runs
+`rikitu_staged_slot_commit` inside a real Switch guest, against separate
+`sdmc:/switch/RIKITU/stage106-a.bin` and `stage106-b.bin` files,
+**never** against RKS1/RKC2/RKL3 game saves.
+
+Three independent NeXium cold launches reuse the same private SD root.
+The first seeds A=OLD and B=STALE, then attempts a sibling-pending
+commit of B=NEW **over the already-existing B**. The second reads the
+persisted OLD/NEW pair and attempts A=LATEST over already-existing A.
+The third checks LATEST/NEW byte-for-byte without writing. Every guest
+renders four green/red status checks. The host audits exact file bytes,
+the lack of leftover .pending files and both guest screenshots.
+
+The new workflow `.github/workflows/stage106-staged-rename.yml` builds
+this dedicated NRO, obtains NeXium, and checks all three cold starts. A
+failed replace on emulated SDMC must remain a **failure**: neither the
+test nor the staging helper removes a live target as a workaround.
+
+Even if the test passes, NeXium is not hardware evidence for atomic
+FAT rename or power-loss durability. Shipping saves remain unchanged;
+a physical SD hardware test and a safe durability protocol are still
+required before production adoption.
+
+
+### Stage106 observation from first real NeXium guest
+
+The first guest's staging operation produced **exactly** A=OLD/B=NEW
+in its uploaded SDMC artifact, with no leftover pending file, but the
+guest's immediate post-rename read check set the fourth status marker
+red. This separates observed persisted file bytes from the state of
+in-process libnx/NeXium filesystem readback. The revised guest marker
+checks the staging helper's return value, and an external host auditor
+checks both exact files **after** the guest ends. The next independently
+booted guest must load them successfully before performing a second
+replacement. An error from the staging commit still fails immediately:
+the test does not soften this gate or delete the target as a fallback.
+
+This observation is specific to this emulation run; no conclusion is
+drawn about the precise caching cause until verified separately.
