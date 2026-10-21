@@ -893,3 +893,19 @@ this opening-stage test. Unlike isolated surface contract tests, this
 regression never assigns player coordinates or modifies pickups/enemies.
 Both GCC and Clang run it in standard and graphical-host CI. This is not
 yet the full MAP14 route or physical Nintendo Switch controller QA.
+
+## Stage87 — MAP14 Heart Foundry full controller route
+
+`native/test_foundry_full_route.c` extends the verified Stage86 opening into
+the whole level using 60Hz RIGHT/RUN/JUMP/LEFT native-engine input masks.
+The first elevated fragment and first pit are deliberately one jump, not
+two impossible consecutive jumps. The test requires four real airborne
+pit crossings followed by grounded far-platform landings; three fragments;
+three steam vents with zero-input no-horizontal-drift frames; three
+conveyors with measured grounded velocity; three touch-triggered levers;
+three checkpoints; real damage; and the three-hit mandatory boss before
+the level exit. Respawns only reset the test's pending crossing state.
+Neither player positions nor pickup/boss state are directly edited.
+
+Strict GCC/Clang input replay runs in ordinary and graphical host CI. This
+is not an assertion of real Switch hardware/Joy-Con or SD durability QA.

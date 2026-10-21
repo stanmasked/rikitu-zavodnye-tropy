@@ -54,6 +54,7 @@ on:
       - 'native/rikitu_foundry_data.h'
       - 'native/test_foundry.c'
       - 'native/test_foundry_input_opening.c'
+      - 'native/test_foundry_full_route.c'
       - 'tests/test-foundry-source.cjs'
       - 'native/rikitu_gardens_data.h'
       - 'native/test_gardens.c'
@@ -172,6 +173,7 @@ on:
       - 'native/rikitu_foundry_data.h'
       - 'native/test_foundry.c'
       - 'native/test_foundry_input_opening.c'
+      - 'native/test_foundry_full_route.c'
       - 'tests/test-foundry-source.cjs'
       - 'native/rikitu_gardens_data.h'
       - 'native/test_gardens.c'
@@ -670,6 +672,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_foundry.c native/test_foundry_input_opening.c -lm -o /tmp/rikitu-stage86-graphics-clang
           /tmp/rikitu-stage86-graphics-clang
+      - name: GCC MAP14 full route, four gaps, vents, levers and boss
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_foundry.c native/test_foundry_full_route.c -lm -o /tmp/rikitu-stage87-graphics-gcc
+          /tmp/rikitu-stage87-graphics-gcc
+      - name: Clang MAP14 full route, four gaps, vents, levers and boss
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_foundry.c native/test_foundry_full_route.c -lm -o /tmp/rikitu-stage87-graphics-clang
+          /tmp/rikitu-stage87-graphics-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
