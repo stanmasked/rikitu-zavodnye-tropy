@@ -153,3 +153,5 @@ jobs:
         run: python3 tests/check_torn_guest_slots.py --selftest
       - name: Stage98 reverse A-slot failure injector selftest
         run: python3 tests/check_reverse_guest_slots.py --selftest
+      - name: Stage99 generation rollover injector and audit selftest
+        run: python3 tests/check_wrap_guest_slots.py --selftest
