@@ -24,7 +24,7 @@ static const float spring_x[3]={1120.0f,3980.0f,7650.0f};
 static const float gap_end[4]={1930.0f,3710.0f,5550.0f,7330.0f};
 static const float jump_lo[JUMP_COUNT]={
   1580.0f,1760.0f,3540.0f,4780.0f,5380.0f,
-  5700.0f,6840.0f,7160.0f,8230.0f,8480.0f
+  5700.0f,6840.0f,7160.0f,8250.0f,8480.0f
 };
 static const float jump_hi[JUMP_COUNT]={
   1650.0f,1810.0f,3610.0f,4850.0f,5450.0f,
