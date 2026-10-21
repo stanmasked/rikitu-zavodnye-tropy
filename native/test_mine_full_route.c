@@ -53,14 +53,16 @@ static unsigned gap_bit(int jump){
   }
 }
 static int objective_done(int jump,const RikituScene *scene,
-                          unsigned gap_mask){
+                          unsigned gap_mask,float player_x){
+  /* A historical crossing is enough only while the player is already
+   * beyond that gap. A respawn checkpoint before it must jump again. */
   switch(jump){
     case J_FRAGMENT1:return scene->stage.fragments[0]!=0;
-    case J_GAP1:return (gap_mask&1u)!=0u;
-    case J_GAP2:return (gap_mask&2u)!=0u;
+    case J_GAP1:return (gap_mask&1u)!=0u && player_x>gap_end[0]+5.0f;
+    case J_GAP2:return (gap_mask&2u)!=0u && player_x>gap_end[1]+5.0f;
     case J_FRAGMENT2:return scene->stage.fragments[1]!=0;
-    case J_GAP3:return (gap_mask&4u)!=0u;
-    case J_GAP4:return (gap_mask&8u)!=0u;
+    case J_GAP3:return (gap_mask&4u)!=0u && player_x>gap_end[2]+5.0f;
+    case J_GAP4:return (gap_mask&8u)!=0u && player_x>gap_end[3]+5.0f;
     case J_FRAGMENT3:return scene->stage.fragments[2]!=0;
     default:return 1;
   }
@@ -73,7 +75,7 @@ static void rearm_after_respawn(int armed[JUMP_COUNT],float x,
                                 unsigned gap_mask){
   int i;
   for(i=0;i<JUMP_COUNT;i++)
-    if(jump_lo[i]>x+40.0f && !objective_done(i,scene,gap_mask))
+    if(jump_lo[i]>x+40.0f && !objective_done(i,scene,gap_mask,x))
       armed[i]=0;
 }
 
@@ -123,7 +125,7 @@ int main(void){
       boss_attempts++;
     }else{
       for(i=0;i<JUMP_COUNT;i++){
-        if(armed[i] || objective_done(i,&scene,gap_mask))continue;
+        if(armed[i] || objective_done(i,&scene,gap_mask,loop.player.x))continue;
         if(loop.player.x>jump_lo[i] && loop.player.x<jump_hi[i]){
           jump=i;
           if(loop.player.grounded){
