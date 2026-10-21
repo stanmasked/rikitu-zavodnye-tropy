@@ -909,3 +909,17 @@ Neither player positions nor pickup/boss state are directly edited.
 
 Strict GCC/Clang input replay runs in ordinary and graphical host CI. This
 is not an assertion of real Switch hardware/Joy-Con or SD durability QA.
+
+## Stage88 — MAP15 Clock Gallery authentic input-driven opening
+
+`native/test_gallery_input_opening.c` uses 60 Hz RIGHT/RUN/JUMP from the
+unchanged MAP15 spawn to checkpoint #1 (x=2500). It observes the actual
+clock-pad -675 launch and neutral/no-horizontal-drift frame, the first
+elevated fragment, a genuine jump over the first 80-unit floor gap with
+airborne far-edge crossing and grounded landing, automatic activation of
+lever #1, and a real checkpoint. All actions are simulated by the game
+engine, not by manually setting player coordinates or pickup flags.
+
+Strict GCC/Clang checks are wired into both CI paths. The test does not
+claim full MAP15 completion, Switch/Joy-Con hardware certification or
+independent SD-card cold-restart durability.
