@@ -19,13 +19,16 @@ enum {
 static const float jump_lo[JUMP_COUNT]={
   760.0f,1690.0f,1840.0f,2630.0f,3830.0f,
   4200.0f,5110.0f,5790.0f,6420.0f,
-  7350.0f,7580.0f,8600.0f,8850.0f
+  7350.0f,7670.0f,8600.0f,8850.0f
 };
 static const float jump_hi[JUMP_COUNT]={
   805.0f,1750.0f,1900.0f,2690.0f,3865.0f,
   4250.0f,5160.0f,5840.0f,6470.0f,
-  7410.0f,7640.0f,8650.0f,8900.0f
+  7410.0f,7720.0f,8650.0f,8900.0f
 };
+/* Gap four begins at x=7750; take off near that edge, not 170 units
+ * earlier. Otherwise the 60Hz jump can cross x=7830 while already too
+ * low to land on the far platform, provoking repeated checkpoint reloads. */
 static const float gap_end[4]={2030.0f,3970.0f,5940.0f,7830.0f};
 static const float mushroom_x[3]={1100.0f,4780.0f,8190.0f};
 
