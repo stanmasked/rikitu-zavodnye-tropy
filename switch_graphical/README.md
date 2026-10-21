@@ -1013,7 +1013,9 @@ press for the MAP16-to-MAP01 wrap. The companion
 distinct fixed HUD title strips and a matching returned MAP01 strip.
 It intentionally does not claim OCR, finished art, real Joy-Con
 compatibility, live player-cleared chapter transitions or console SD
-power-cut durability. If the emulator's keyboard mapping doesn't expose
-Nintendo Y as the X11 key `y`, this test should FAIL visibly rather than
-misreport success. Evidence PNGs are uploaded by the existing NeXium
+power-cut durability. NeXium's default keyboard mapping assigns Nintendo Y to X11 key `z`
+(see nexium-gui/src/controller_config.rs in nexium-emu/nexium).
+The HUD comparison excludes NeXium's changing FPS performance panel
+at x=14..238; earlier attempts using X11 key `y` were not valid
+level-switch evidence. Evidence PNGs are uploaded by the existing NeXium
 artifact step. Stage93 adds no new character art or physics changes.
