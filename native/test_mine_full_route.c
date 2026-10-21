@@ -88,6 +88,7 @@ int main(void){
   unsigned gap_jump_ever=0,gap_air_mask=0;
   int pending_vent=-1,neutral_frames=0,frame=0,i;
   int boss_hits=0,boss_attempts=0,last_boss_hp=3,retreat=0;
+  size_t enemy_index;
 
   fresh(&scene,&loop);
   assert(scene.level_id==12 && loop.player.x==105.0f);
@@ -149,8 +150,9 @@ int main(void){
 
     if(frame%600==599){
       unsigned dead_mask=0u;
-      for(i=0;i<scene.enemy_count;i++)
-        if(scene.enemies[i].dead)dead_mask|=1u<<(unsigned)i;
+      for(enemy_index=0;enemy_index<scene.enemy_count;enemy_index++)
+        if(scene.enemies[enemy_index].dead)
+          dead_mask|=1u<<(unsigned)enemy_index;
       fprintf(stderr,"MAP12 progress frame=%d x=%.2f y=%.2f grounded=%d "
               "vx=%.2f vy=%.2f hearts=%d damage=%d checkpoint=%.0f "
               "invuln=%.2f enemies=%u fragments=%d levers=%d "
