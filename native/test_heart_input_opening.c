@@ -24,7 +24,7 @@ int main(void){
   RikituScene scene;
   RikituLoop loop;
   int frame,vent_launched=0,vent_neutral=0,first_belt=0;
-  int fragment_jump=0,gap_jump=0,gap_air=0,gap_land=0;
+  int fragment_before_gap=0,gap_jump=0,gap_air=0,gap_land=0;
   int respawns=0,neutral_next=0,gap_pending=0;
   fresh(&scene,&loop);
   assert(scene.level_id==16 && scene.world_width==11750.0f);
@@ -43,14 +43,6 @@ int main(void){
        loop.player.vy<-500.0f){
       input=0u;
       neutral_now=1;
-    }else if(!fragment_jump && !scene.stage.fragments[0] &&
-             loop.player.x>=1920.0f && loop.player.x<1990.0f){
-      if(loop.player.grounded){
-        input=RUN_RIGHT|RIKITU_INPUT_JUMP;
-        fragment_jump=1;
-      }else{
-        input=0u;
-      }
     }else if(!gap_jump && loop.player.x>=2085.0f &&
              loop.player.x<2140.0f){
       if(loop.player.grounded){
@@ -61,6 +53,13 @@ int main(void){
       }
     }
     tick(&scene,&loop,input);
+
+    /* Fragment #1 is directly over the elevated x1820..2015 platform.
+     * Walking across its pickup collision rectangle is sufficient.
+     * Jumping at x1920 actually overshoots it vertically. Record
+     * natural pickup before the first pit rather than injecting state. */
+    if(!gap_jump && scene.stage.fragments[0])
+      fragment_before_gap=1;
 
     if(neutral_now){
       assert(fabsf(loop.player.x-before_x)<0.005f);
@@ -94,7 +93,6 @@ int main(void){
       respawns++;
       neutral_next=0;
       gap_pending=0;
-      if(!scene.stage.fragments[0])fragment_jump=0;
       if(!gap_land)gap_jump=0;
     }
     assert(scene.hearts>=1 && scene.hearts<=scene.max_hearts);
@@ -102,16 +100,16 @@ int main(void){
            !scene.stage.boss_defeated);
   }
   if(scene.reached_checkpoints!=1 ||
-     !scene.stage.fragments[0] || !fragment_jump ||
+     !scene.stage.fragments[0] || !fragment_before_gap ||
      !gap_jump || !gap_air || !gap_land ||
      !vent_launched || !vent_neutral || !first_belt){
     fprintf(stderr,"MAP16 opening incomplete frame=%d x=%.2f "
             "fragment=%d checkpoint=%d belt=%d vent=%d neutral=%d "
-            "fragmentJump=%d gapJump=%d air=%d land=%d "
+            "fragmentBeforeGap=%d gapJump=%d air=%d land=%d "
             "respawns=%d damage=%d\n",
             frame,(double)loop.player.x,scene.stage.fragment_count,
             scene.reached_checkpoints,first_belt,vent_launched,
-            vent_neutral,fragment_jump,gap_jump,gap_air,gap_land,
+            vent_neutral,fragment_before_gap,gap_jump,gap_air,gap_land,
             respawns,scene.damage_count);
     return 2;
   }
