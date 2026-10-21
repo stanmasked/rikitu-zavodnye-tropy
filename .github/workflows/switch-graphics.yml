@@ -38,6 +38,7 @@ on:
       - 'native/test_bridge_controller_resume.c'
       - 'native/test_workshop_controller_resume.c'
       - 'native/test_delivery_controller_resume.c'
+      - 'native/test_clock_controller_resume.c'
       - 'tests/test-level-save-wiring.cjs'
       - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
@@ -147,6 +148,7 @@ on:
       - 'native/test_bridge_controller_resume.c'
       - 'native/test_workshop_controller_resume.c'
       - 'native/test_delivery_controller_resume.c'
+      - 'native/test_clock_controller_resume.c'
       - 'tests/test-level-save-wiring.cjs'
       - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
@@ -580,6 +582,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_delivery.c native/test_delivery_controller_resume.c -lm -o /tmp/rikitu-stage77-clang
           /tmp/rikitu-stage77-clang
+      - name: GCC MAP07 clock launch conveyor and RKL3 checkpoint recovery
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_clock.c native/test_clock_controller_resume.c -lm -o /tmp/rikitu-stage78-gcc
+          /tmp/rikitu-stage78-gcc
+      - name: Clang MAP07 clock launch conveyor and RKL3 checkpoint recovery
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_clock.c native/test_clock_controller_resume.c -lm -o /tmp/rikitu-stage78-clang
+          /tmp/rikitu-stage78-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:

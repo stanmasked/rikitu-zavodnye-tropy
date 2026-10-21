@@ -741,3 +741,22 @@ save causes fallback to the earlier checkpoint.
 
 This test checks the native game-loop's host-side input semantics,
 not a complete MAP06 boss battle or actual Switch HID/SD durability.
+
+
+## Stage78 — MAP07 input-driven clock launch, conveyor and RKL3
+
+`native/test_clock_controller_resume.c` uses the original MAP07 scene
+spawn and authentic 60 Hz RIGHT/RUN/JUMP input rather than changing
+the player's world position. It validates the first clock pad's
+-675 units/sec vertical impulse, opening coin, fragment, gap and
+checkpoint 1. Past that checkpoint it measures the first conveyor's
++40 units/sec velocity contribution during grounded running.
+
+The route saves RKL3 generation 1 before the conveyor and generation 2
+after it, cold-reloads a fresh scene, verifies health, coins,
+fragments, damage and elapsed time, and resumes input. Foreign-wallet
+loading is rejected; corrupting the latest slot falls back to the
+first generation and its checkpoint.
+
+The C99 test is host button-mask replay, not physical Joy-Con testing,
+full MAP07 completion or Switch SD power-off recovery.
