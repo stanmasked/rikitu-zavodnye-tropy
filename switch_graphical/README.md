@@ -1234,3 +1234,25 @@ mismatch and of a modified older backup. Existing normal and faulted
 Stage95–100 guest scenarios continue unchanged. This is not a real SD
 power cut and does not make RKC2/RKL3 updates an atomic transaction.
 No gameplay, map logic, character art or shipping-save writer modified.
+
+
+## Stage102 — failed target file open and retry without losing a good slot
+
+The native C99 fixture `native/test_save_write_retry.c` tests all three
+production pair writers (RKS1, RKC2 and RKL3). For each format it creates
+one verified slot, tests A-survives/B-blocked and B-survives/A-blocked,
+and makes the target path an empty directory so `fopen(...,"wb")` must
+fail deterministically, regardless of runner permissions.
+
+Every failed write must report failure while preserving the last valid
+save byte-for-byte. Restoring from the remaining valid slot must still
+recover the previous state. Removing the directory and repeating the
+save must write the new state to the opposite slot without rewriting
+the backup. The fixture asserts checkpoint, health, coin progress or
+campaign wallet changes survive the successful retry and runs under both
+GCC and Clang with strict C99 warnings.
+
+This tests a **failed file open**, not a torn write after an open succeeds,
+an SD flush failure, a crash between writes, or physical Switch power
+interruption. No shipping codec, gameplay, accepted map, asset or character
+design is altered.
