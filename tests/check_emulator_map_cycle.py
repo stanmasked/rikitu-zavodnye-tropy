@@ -23,12 +23,13 @@ def title_band(path: Path, expected_size: tuple[int, int] | None):
         raise ValueError(
             f"{path.name}: inconsistent screenshot size {rgb.size}; expected {expected_size}"
         )
-    # libnx renders the chapter title in the fixed top HUD panel. Exclude
-    # the moving level geometry and cyan player marker below y=84.
+    # NeXium displays changing FPS diagnostics over the title at x=14..238.
+    # Compare the visible chapter name at x=246..510 instead, and avoid the
+    # moving world and player geometry below the HUD.
     sx = rgb.width / 1280.0
     sy = rgb.height / 720.0
     band = rgb.crop(
-        (int(20 * sx), int(9 * sy), int(480 * sx), int(46 * sy))
+        (int(246 * sx), int(9 * sy), int(510 * sx), int(46 * sy))
     )
     return rgb.size, band
 
