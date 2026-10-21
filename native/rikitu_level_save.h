@@ -14,8 +14,20 @@ int rikitu_level_save_encode(uint8_t out[RIKITU_LEVEL_SAVE_BYTES],
                              const RikituLoop *loop,
                              const RikituCampaign *campaign,
                              uint32_t generation);
+/* Validate a record's self-contained CRC/generation for alternating slots.
+ * Full scene/campaign validation is still required before actual restore. */
+int rikitu_level_save_inspect(const uint8_t *bytes,size_t size,
+                              uint32_t *generation);
 int rikitu_level_save_decode(RikituScene *scene,RikituLoop *loop,
                              const RikituCampaign *campaign,
                              const uint8_t *bytes,size_t size,
                              uint32_t *generation);
+/* Alternating SD/host file pair, .rkl only. Never opens legacy .rks/.rkc. */
+int rikitu_level_save_load_pair(const char *a,const char *b,
+                                 RikituScene *scene,RikituLoop *loop,
+                                 const RikituCampaign *campaign);
+int rikitu_level_save_store_pair(const char *a,const char *b,
+                                  const RikituScene *scene,
+                                  const RikituLoop *loop,
+                                  const RikituCampaign *campaign);
 #endif

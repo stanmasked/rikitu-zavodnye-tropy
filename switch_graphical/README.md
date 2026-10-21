@@ -594,3 +594,15 @@ This isolated PR adds codec plus strict GCC/Clang host tests. It does
 not yet wire RKL3 into device SD files; MAP01 RKS1 and RKC2 are
 preserved unchanged. That follow-up requires independent save-pair
 recovery and checkpoint lifecycle testing. It is not a gamepad route.
+
+## RKL3 two-slot I/O (Stage 68)
+
+`rikitu_level_save_io.c` adds independent alternating 64-byte
+`.rkl` files, generation-based selection with wraparound, checksum
+validation and fallback on corrupt or truncated writes. Both loading
+and writing require paths ending `.rkl`, so MAP01 `.rks` and campaign
+`.rkc` slots are never accessed by this component. Older checkpoints
+also must match the chapter and RKC2 wallet/upgrade identity before
+being loaded. Host GCC/Clang regression tests exercise recovery and
+legacy-file preservation. This PR still does **not** enable automatic
+Switch SD writes: that is the next integration stage.

@@ -98,6 +98,23 @@ int rikitu_level_save_encode(uint8_t out[RIKITU_LEVEL_SAVE_BYTES],
   put32(out+60,crc32(out,60));
   return 1;
 }
+int rikitu_level_save_inspect(const uint8_t *p,size_t size,
+                              uint32_t *generation){
+  size_t i;
+  uint32_t gen;
+  if(!p||size!=RIKITU_LEVEL_SAVE_BYTES||
+     p[0]!='R'||p[1]!='K'||p[2]!='L'||p[3]!='3'||p[4]!=3||
+     p[5]<1||p[5]>16||p[6]>3||p[7]<1||p[8]<3||p[8]>7||
+     p[7]>p[8]||p[9]>3||(p[10]&~7u)||(p[11]&~63u)||
+     (p[23]&~3u)||(p[40]&~7u)||p[41]>4)return 0;
+  for(i=42;i<60;i++)if(p[i])return 0;
+  if(crc32(p,60)!=get32(p+60))return 0;
+  gen=get32(p+32);
+  if(!gen||get32(p+24)>9999u||get32(p+28)>36000000u||
+     get32(p+36)>1440u)return 0;
+  if(generation)*generation=gen;
+  return 1;
+}
 int rikitu_level_save_decode(RikituScene *s,RikituLoop *l,
                              const RikituCampaign *c,const uint8_t *p,
                              size_t size,uint32_t *generation){
