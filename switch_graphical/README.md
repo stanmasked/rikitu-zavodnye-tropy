@@ -1130,3 +1130,23 @@ This proves that the actual libnx/NRO save codecs use the older valid slot
 after synthetic corruption and safely rewrite the newer slot in NeXium.
 It deliberately does **not** simulate real SD flushes, sudden electrical
 power loss, filesystem metadata damage, or actual Switch hardware.
+ 
+## Stage98 — reverse A-slot recovery after simulated interrupted writes
+
+Stage97's guest test damaged the latest B while preserving A. Stage98
+exercises the symmetric and equally important opposite slot orientation.
+After seed/resume in two independent NeXium NRO executions, the host
+moves original A/gen1 to the B path and original B/gen2 to the A path.
+Only newest A is then damaged: truncate RKS1 and RKC2 to 13 bytes,
+and corrupt RKL3's CRC byte. The older B must remain byte-for-byte
+intact. A third independent guest restores the previous version from B,
+reports all green status markers and rewrites A/gen2. The host checks
+the two original SHA256 digests and correct CRC/generation ordering
+A/gen2 and B/gen1. A fourth guest validates the restored latest A.
+
+The `tests/check_reverse_guest_slots.py --selftest` first proves that
+injected faults are rejected and correctly repaired fixtures pass.
+This is controlled corruption of completed host-backed SDMC files,
+not a kill of a guest while a real write is in flight, not fsync
+validation, and not physical Switch power-interruption certification.
+No shipping game content, accepted art or physics changes.
