@@ -362,3 +362,21 @@ The graphics are neutral technical indicators, not redesigns of the
 approved Rikitu/other character sprites. End-to-end controller
 completion, physical Switch saves for MAP07, final sound and assets
 remain unverified. MAP01 save-slot isolation is preserved.
+
+## MAP08 — Orders Depot native C99 (Stage 47)
+
+The eighth browser stage is ported to the portable graphical scene,
+selectable by Y after MAP07, restarting with X. Original geometry:
+10180 units, five ground spans, thirteen platforms, 90 coins,
+three fragments, checkpoints 2380/5230/7710 and six patrols.
+
+Three grounded conveyor belts (+45/-48/+47) and three one-touch
+warehouse levers (2120/5390/7560) use the existing 60-Hz engine.
+The levers animate the route; the original game.js does NOT require
+lever activation to unlock the exit. The three-hit patrol automaton
+at x9470, together with the three fragments, gates x9990.
+
+Strict GCC/Clang C99 integration tests and Node.js browser-source parity
+are provided. This technical prototype does NOT certify controller-only
+level completion, approved character art/audio integration, nor
+persistent saves for MAP08. MAP01 saves stay isolated.
