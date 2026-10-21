@@ -687,3 +687,24 @@ are performed in the route.
 
 This verifies host engine input semantics, not full-map completion,
 real Nintendo Switch HID, Joy-Con hardware or physical SD durability.
+
+
+## Stage75 — MAP04 real input route, enemy and switch persistence
+
+`native/test_bridge_controller_resume.c` follows MAP04 from its real
+spawn using RIGHT/RUN/JUMP input at 60 Hz. The script runs through
+the first patrol's actual contact damage, collects the first coin
+and fragment, crosses the first floor gap, and reaches checkpoint 1.
+RKL3 generation A is saved with lever 1 off. The script then triggers
+lever 1 through the actual player-overlap rule and saves generation B.
+
+Reopening MAP04 from scratch restores lever state, player health,
+checkpoint, pickups, enemy status and timer. The test revisits the
+already-on lever to assert it cannot be counted twice. A corrupted B
+record must fall back to A with lever 1 still off; controller input
+can then toggle that lever once. The wrong-wallet campaign must not
+restore foreign data.
+
+This is host-side C99 button-mask replay rather than hardware HID
+testing, and it does not simulate full MAP04 boss completion or
+power-cut SD recovery.
