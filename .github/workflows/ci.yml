@@ -129,3 +129,5 @@ jobs:
         run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -DRIKITU_STAGE92_REAL_VICTORY -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_heart.c native/test_heart_full_route.c -lm -o /tmp/rikitu-stage92-gcc && /tmp/rikitu-stage92-gcc
       - name: Clang Stage92 real finale campaign victory and RKC2 save
         run: clang -std=c99 -Wall -Wextra -Werror -pedantic -DRIKITU_STAGE92_REAL_VICTORY -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_heart.c native/test_heart_full_route.c -lm -o /tmp/rikitu-stage92-clang && /tmp/rikitu-stage92-clang
+      - name: Stage93 Switch/Nexium sixteen-map source wiring
+        run: node tests/test-map-cycle-source.cjs
