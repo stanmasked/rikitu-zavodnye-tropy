@@ -606,3 +606,21 @@ also must match the chapter and RKC2 wallet/upgrade identity before
 being loaded. Host GCC/Clang regression tests exercise recovery and
 legacy-file preservation. This PR still does **not** enable automatic
 Switch SD writes: that is the next integration stage.
+
+## Nintendo Switch in-level checkpoints (Stage 69)
+
+At startup, a playing RKC2 chapter 2–16 may restore its most recent
+valid RKL3 checkpoint from `level-a.rkl`/`level-b.rkl` if its chapter,
+wallet and heart upgrades still match. Recovered pickups, defeated
+patrols and boss HP resume at the last checkpoint with one second of
+protection. Chapter 1 continues using only its original RKS1 files.
+
+During ordinary gameplay, the NRO writes RKL3 on meaningful progress
+changes (coins, fragments, enemies, boss, checkpoint, health or levers)
+with at least two seconds between writes, and once on Plus quit.
+No RKL3 writes occur in debug Y/X runs or after completing a chapter.
+Once-only stage rewards remain the separate RKC2 responsibility.
+
+Writes are best-effort: SD failures are not surfaced in the UI and
+actual Nintendo Switch hardware save durability remains unverified.
+Approved art, ROM contents and existing file schemas remain unchanged.

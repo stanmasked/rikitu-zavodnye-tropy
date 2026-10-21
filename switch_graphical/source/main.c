@@ -26,11 +26,14 @@
 #include "rikitu_save.h"
 #include "rikitu_campaign.h"
 #include "rikitu_campaign_save.h"
+#include "rikitu_level_save.h"
 
 #define MAP01_A "sdmc:/switch/RIKITU/map01-a.rks"
 #define MAP01_B "sdmc:/switch/RIKITU/map01-b.rks"
 #define CAMPAIGN_A "sdmc:/switch/RIKITU/campaign-a.rkc"
 #define CAMPAIGN_B "sdmc:/switch/RIKITU/campaign-b.rkc"
+#define LEVEL_A "sdmc:/switch/RIKITU/level-a.rkl"
+#define LEVEL_B "sdmc:/switch/RIKITU/level-b.rkl"
 
 /* Keep debug map selection and campaign progression on the same table. */
 static void (*const stage_init[16])(RikituScene *)={
@@ -73,6 +76,10 @@ int main(void) {
   float save_elapsed=0.0f;
   uint8_t last_saved[28]={0};
   uint8_t now[RIKITU_SAVE_BYTES];
+  uint8_t level_now[RIKITU_LEVEL_SAVE_BYTES];
+  uint8_t level_last[RIKITU_LEVEL_SAVE_BYTES]={0};
+  int level_have_last=0;
+  float level_save_elapsed=0.0f;
   (void)rikitu_campaign_init(&campaign,1);
   begin_stage(&scene,&game,&campaign);
   if(R_SUCCEEDED(fsdevMountSdmc())){
@@ -92,6 +99,12 @@ int main(void) {
       if(rikitu_save_encode(now,&scene,&game,1)){
         memcpy(last_saved,now,sizeof(last_saved));have_last=1;
       }
+    }else if(campaign.level>1 &&
+             campaign.mode==RIKITU_CAMPAIGN_PLAYING){
+      if(rikitu_level_save_load_pair(LEVEL_A,LEVEL_B,
+                                     &scene,&game,&campaign) &&
+         rikitu_level_save_encode(level_last,&scene,&game,&campaign,1))
+        level_have_last=1;
     }
   }
   framebufferCreate(&fb,nwindowGetDefault(),RIKITU_SCENE_WIDTH,
@@ -114,6 +127,11 @@ int main(void) {
       if(save_ready && !campaign_debug)
         (void)rikitu_campaign_save_store_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign);
       if(save_ready && !campaign_debug &&
+         campaign.mode==RIKITU_CAMPAIGN_PLAYING &&
+         campaign.level>1 && !scene.stage.completed)
+        (void)rikitu_level_save_store_pair(LEVEL_A,LEVEL_B,
+                                           &scene,&game,&campaign);
+      if(save_ready && !campaign_debug &&
          rikitu_save_encode(now,&scene,&game,1) &&
          (!have_last || memcmp(now,last_saved,sizeof(last_saved))!=0))
         (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
@@ -128,12 +146,14 @@ int main(void) {
       (void)rikitu_campaign_init(&campaign,selected);
       begin_stage(&scene,&game,&campaign);
       save_elapsed=0.0f;have_last=0;
+      level_save_elapsed=0.0f;level_have_last=0;
     }else if(pressed & HidNpadButton_X){
       campaign_debug=1;
       const int selected=scene.level_id;
       (void)rikitu_campaign_init(&campaign,selected);
       begin_stage(&scene,&game,&campaign);
       save_elapsed=0.0f;have_last=0;
+      level_save_elapsed=0.0f;level_have_last=0;
     }else if(campaign.mode==RIKITU_CAMPAIGN_SHOP){
       if(pressed & HidNpadButton_A){
         const RikituHeartPurchase bought=rikitu_campaign_buy(&campaign);
@@ -145,6 +165,7 @@ int main(void) {
         if(transition==1){
           begin_stage(&scene,&game,&campaign);
           save_elapsed=0.0f;have_last=0;
+        level_save_elapsed=0.0f;level_have_last=0;
         }
         if(transition && save_ready && !campaign_debug)
           (void)rikitu_campaign_save_store_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign);
@@ -154,6 +175,7 @@ int main(void) {
       if(rikitu_campaign_continue(&campaign)==1){
         begin_stage(&scene,&game,&campaign);
         save_elapsed=0.0f;have_last=0;
+        level_save_elapsed=0.0f;level_have_last=0;
         if(save_ready && !campaign_debug)
           (void)rikitu_campaign_save_store_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign);
       }
@@ -201,6 +223,28 @@ int main(void) {
           have_last=1;
         }
         save_elapsed=0.0f;
+      }
+    }
+    /* RKL3 stores only *changed* MAP02-16 progress. Ignore time and
+     * generation bytes when determining dirty state; coin/checkpoint/enemy/
+     * boss/lever/health changes are represented by bytes 0..27,40..41.
+     * Crash recovery uses alternating .rkl slots, never RKS1 or RKC2. */
+    if(campaign.mode==RIKITU_CAMPAIGN_PLAYING &&
+       campaign.level>1 && !campaign_debug && save_ready &&
+       !scene.stage.completed &&
+       rikitu_level_save_encode(level_now,&scene,&game,&campaign,1)){
+      const int dirty=!level_have_last ||
+          memcmp(level_now,level_last,28)!=0 ||
+          level_now[40]!=level_last[40] ||
+          level_now[41]!=level_last[41];
+      level_save_elapsed+=wall_seconds;
+      if(dirty && level_save_elapsed>=2.0f){
+        if(rikitu_level_save_store_pair(LEVEL_A,LEVEL_B,
+                                        &scene,&game,&campaign)){
+          memcpy(level_last,level_now,sizeof(level_last));
+          level_have_last=1;
+        }
+        level_save_elapsed=0.0f;
       }
     }
     /* A short yielding sleep reduces a busy-loop, but it does not define
