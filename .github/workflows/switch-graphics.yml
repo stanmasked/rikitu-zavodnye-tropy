@@ -42,6 +42,7 @@ on:
       - 'native/test_orders_controller_resume.c'
       - 'native/test_mist_controller_resume.c'
       - 'native/test_mist_full_route.c'
+      - 'native/test_cloud_full_route.c'
       - 'tests/test-level-save-wiring.cjs'
       - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
@@ -155,6 +156,7 @@ on:
       - 'native/test_orders_controller_resume.c'
       - 'native/test_mist_controller_resume.c'
       - 'native/test_mist_full_route.c'
+      - 'native/test_cloud_full_route.c'
       - 'tests/test-level-save-wiring.cjs'
       - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
@@ -620,6 +622,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_mist.c native/test_mist_full_route.c -lm -o /tmp/rikitu-stage81-clang
           /tmp/rikitu-stage81-clang
+      - name: GCC MAP10 full input route, belts, gusts and boss
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_cloud.c native/test_cloud_full_route.c -lm -o /tmp/rikitu-stage82-gcc
+          /tmp/rikitu-stage82-gcc
+      - name: Clang MAP10 full input route, belts, gusts and boss
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_cloud.c native/test_cloud_full_route.c -lm -o /tmp/rikitu-stage82-clang
+          /tmp/rikitu-stage82-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:

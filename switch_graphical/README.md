@@ -414,9 +414,18 @@ RIKITU_MAX_LAUNCHERS=4 and RIKITU_MAX_BELTS=4.
 Automated Node.js source-audit and GCC/Clang fixed-step tests
 cover every source coordinate, gust horizontal composition,
 both belt directions, checkpoints, boss gating and invalid sizes.
-These are neutral technical graphics; existing approved character
-art is not redrawn. This is not a complete ordinary-input
-playthrough, finished sprite/audio integration or hardware-save test.
+Stage82 adds `native/test_cloud_full_route.c`, which replays MAP10
+from the authentic spawn using controller masks only. It validates
+four airborne gap crossings, all four gusts without horizontal drift,
+both conveyor directions, all fragments and checkpoints, three actual
+stomps on the Wind Automaton, and the real gated exit. Strict GCC and
+Clang run this route in both the browser/game-rule and graphical
+Switch host-render workflows.
+
+These are neutral technical graphics; approved character art is not
+redrawn. The route certifies host simulation and CI, not physical
+Joy-Con input, real Switch performance, finished sprite/audio
+integration or SD-card power-loss durability.
 
 ## MAP11 — Crystal Caves source-first C99 (Stage 50)
 
