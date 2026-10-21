@@ -12,6 +12,7 @@ on:
       - 'tests/check_campaign_guest.py'
       - 'tests/check_torn_guest_slots.py'
       - 'tests/check_reverse_guest_slots.py'
+      - 'tests/check_wrap_guest_slots.py'
       - 'tests/check_emulator_map_cycle.py'
       - 'switch_graphical/**'
       - 'native/rikitu_draw.*'
@@ -33,6 +34,7 @@ on:
       - 'tests/check_campaign_guest.py'
       - 'tests/check_torn_guest_slots.py'
       - 'tests/check_reverse_guest_slots.py'
+      - 'tests/check_wrap_guest_slots.py'
       - 'tests/check_emulator_map_cycle.py'
       - 'switch_graphical/**'
       - 'native/rikitu_draw.*'
@@ -314,6 +316,54 @@ jobs:
             export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage98-$family-verify"
             timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
               bash tests/run_nexium_graphical.sh
+          done
+      - name: Test SDMC uint32 generation wrap in both slot orientations in NeXium
+        shell: bash
+        run: |
+          set -euo pipefail
+          icd="$(find /usr/share/vulkan/icd.d -maxdepth 1 -name 'lvp_icd*.json' -print -quit)"
+          test -n "$icd"
+          export VK_ICD_FILENAMES="$icd"
+          mkdir -p /tmp/rikitu-xdg-runtime
+          chmod 700 /tmp/rikitu-xdg-runtime
+          export XDG_RUNTIME_DIR=/tmp/rikitu-xdg-runtime
+          # Keep default save guest validation unchanged for all previous stages.
+          # Only these runs use the dedicated wraparound CRC/generation auditor.
+          export RIKITU_QA_WRAP=1
+          for family in rks1 campaign; do
+            if [[ "$family" == "rks1" ]]; then
+              export NRO_PATH="$GITHUB_WORKSPACE/nro-save/rikitu_save_qa_probe.nro"
+              export RIKITU_QA_MODE=3
+            else
+              export NRO_PATH="$GITHUB_WORKSPACE/nro-campaign/rikitu_campaign_qa_probe.nro"
+              export RIKITU_QA_MODE=4
+            fi
+            for older in a b; do
+              export NEXIUM_DATA_ROOT="$GITHUB_WORKSPACE/evidence/stage99-$family-$older-root"
+              mkdir -p "$NEXIUM_DATA_ROOT/sdmc"
+              export RIKITU_QA_PHASE=seed
+              export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage99-$family-$older-seed"
+              timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
+                bash tests/run_nexium_graphical.sh
+              # Artificially advance a valid first-generation record to max
+              # uint32 without modifying gameplay bytes, then recompute CRC.
+              # For older=B, move the original guest-written A record to B.
+              python3 tests/check_wrap_guest_slots.py prepare "$NEXIUM_DATA_ROOT" "$family" "$older"
+              export RIKITU_QA_PHASE=resume
+              export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage99-$family-$older-resume"
+              timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
+                bash tests/run_nexium_graphical.sh
+              # Actual guest must have created the opposite slot/gen1 and
+              # kept the old max-generation backup SHA256 intact.
+              python3 tests/check_wrap_guest_slots.py audit "$NEXIUM_DATA_ROOT" "$family" "$older"
+              export RIKITU_QA_PHASE=verify
+              export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage99-$family-$older-verify"
+              timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
+                bash tests/run_nexium_graphical.sh
+              # Third guest must select new gen1 over UINT32_MAX and write
+              # neither slot; fail on unexpected re-serialization.
+              python3 tests/check_wrap_guest_slots.py verify "$NEXIUM_DATA_ROOT" "$family" "$older"
+            done
           done
       - name: Upload runtime screenshot evidence
         if: always()

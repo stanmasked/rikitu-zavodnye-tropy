@@ -43,7 +43,13 @@ sleep 0.8
 timeout 3s xdotool keyup --window "$window" Right
 sleep 0.4
 timeout 12s import -window "$window" "$OUTPUT_DIR/scene-after-right.png"
-if [[ "${RIKITU_QA_MODE:-0}" == "4" ]]; then
+if [[ "${RIKITU_QA_WRAP:-0}" == "1" ]]; then
+  # Stage99 performs its own generation/CRC audit, since the ordinary
+  # save QA checkers intentionally expect only generations 1 and 2.
+  [[ "${RIKITU_QA_MODE:-0}" == "3" || "${RIKITU_QA_MODE:-0}" == "4" ]] || exit 2
+  python3 tests/check_wrap_guest_slots.py frame "${RIKITU_QA_PHASE:?phase required}" \
+    "$OUTPUT_DIR/scene-before.png" "$OUTPUT_DIR/scene-after-right.png"
+elif [[ "${RIKITU_QA_MODE:-0}" == "4" ]]; then
   python3 tests/check_campaign_guest.py "${RIKITU_QA_PHASE:?phase required}" \
     "$OUTPUT_DIR/scene-before.png" "$OUTPUT_DIR/scene-after-right.png" \
     "${NEXIUM_DATA_ROOT:?root required}"

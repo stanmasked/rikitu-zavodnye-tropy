@@ -1150,3 +1150,33 @@ This is controlled corruption of completed host-backed SDMC files,
 not a kill of a guest while a real write is in flight, not fsync
 validation, and not physical Switch power-interruption certification.
 No shipping game content, accepted art or physics changes.
+
+
+## Stage99 — uint32 generation wraparound, both slot orientations
+
+RKS1, RKC2 and RKL3 save slots contain independent CRC32 checksums and
+uint32 generation counters. Stage99 tests the rarely reached transition
+from generation 0xffffffff to 1 (zero is disallowed), in both directions
+A(max) -> B(1) and B(max) -> A(1).
+
+The first real guest writes valid A/gen1; the host changes only its
+generation to 0xffffffff and recalculates CRC, optionally moving the
+whole record into slot B. This synthesizes the high counter without
+billions of NRO runs. In a second independent guest, the codec must
+load this first checkpoint and write the upgraded state to the opposite
+slot at generation 1. The host verifies generation, CRC, checkpoint
+and SHA256 stability of the original older save. A third independent
+NeXium guest must load the *newer generation 1* rather than the stale
+0xffffffff record, displaying four green phase-specific checks.
+The post-verify auditor requires byte-exact stability of both slots.
+
+Stage99 adds an opt-in screenshot-only audit path for the dedicated
+QA NROs because previous Stage95–98 checkers intentionally assert
+generation sequences 1 then 2. Those existing checkers and all regular
+NeXium scenarios remain unchanged. The new selftest in standard CI
+requires missing/zero-generation saves and mutated backups to fail.
+
+This is a deterministic test of wraparound logic on an emulator-backed
+SDMC directory, not a hardware power-loss test and not a reproduction
+of years of actual writes. No shipping gameplay, maps, graphics or
+approved Rikitu character designs are modified.
