@@ -1,5 +1,16 @@
 # RIKITU — experimental 2D framebuffer scene
 
+## Current status after Stage92
+
+The graphical NRO now compiles all sixteen canonical map initializers
+(MAP01–MAP16) and includes fixed-step gameplay, controller navigation,
+Moki shop/between-level/victory overlays, and separate RKS1/RKL3/RKC2
+progress saving. Earlier sections below chronicle individual milestones
+and can describe older limitations; they are not a claim that the current
+binary is restricted to MAP01. Art remains neutral placeholder rendering,
+not the approved Rikitu character sprites, animations or final soundtrack.
+NeXium provides emulator evidence, not physical Nintendo Switch QA.
+
 This is the first graphical Nintendo Switch NRO experiment. It is not the
 finished game and does not contain approved RIKITU mascot/character art.
 
@@ -990,3 +1001,19 @@ Both GCC and Clang replay the full ending plus serialization assertions
 in normal and graphical host CI. A valid in-memory RKC2 roundtrip is
 not evidence of actual Switch SD filesystem durability or real-console
 end-to-end UI testing.
+
+## Stage93 — NeXium all-sixteen-level guest selector smoke
+
+`tests/run_nexium_graphical.sh` has a scoped
+`RIKITU_MAP_CYCLE_QA=1` mode for the **actual compiled graphical NRO**.
+After the existing cyan-marker movement test, it issues fifteen Y key
+presses, capturing each of the sixteen level HUDs and one additional Y
+press for the MAP16-to-MAP01 wrap. The companion
+`tests/check_emulator_map_cycle.py` checks screenshot dimensions, 16
+distinct fixed HUD title strips and a matching returned MAP01 strip.
+It intentionally does not claim OCR, finished art, real Joy-Con
+compatibility, live player-cleared chapter transitions or console SD
+power-cut durability. If the emulator's keyboard mapping doesn't expose
+Nintendo Y as the X11 key `y`, this test should FAIL visibly rather than
+misreport success. Evidence PNGs are uploaded by the existing NeXium
+artifact step. Stage93 adds no new character art or physics changes.
