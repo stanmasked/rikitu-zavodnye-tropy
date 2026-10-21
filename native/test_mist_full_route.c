@@ -171,7 +171,7 @@ int main(void){
   if(!scene.stage.completed){
     fprintf(stderr,"MAP09 route timed out frame=%d x=%.2f "
             "fragments=%d checkpoints=%d gusts=%u neutral=%u "
-            "gapJump=%u gapAir=%u gapLand=%u pending=%u\\n",
+            "gapJump=%u gapAir=%u gapLand=%u pending=%u\n",
             frame,(double)loop.player.x,scene.stage.fragment_count,
             scene.reached_checkpoints,gust_mask,neutral_mask,
             gap_jump_ever,gap_air_mask,gap_mask,gap_pending);
