@@ -639,3 +639,18 @@ portable integration test in the graphical host CI.
 The test controls starting positions to focus on save semantics;
 it is not a full controller-only level completion or a hardware SD
 durability test. No approved character assets are changed.
+
+
+## Stage72 — all-map RKL3 gameplay checkpoint regression
+
+`native/test_level_resume_all_maps.c` exercises MAP02–MAP16 with real
+60 Hz C99 engine ticks. Each map collects its first coin and fragment,
+crosses a checkpoint, writes two RKL3 generations and restarts the
+scene. It verifies restored checkpoint, hearts, boss health and pickup
+flags, then re-enters the original pickup positions to ensure no double
+awards. Wrong-wallet and wrong-chapter records must not mutate a fresh
+level; damaging the newer slot must restore the older valid state.
+
+The test intentionally positions the player near pickups and checkpoint
+triggers. It does not prove complete controller-driven routes, actual
+Nintendo Switch SD-card durability or power-loss resistance.
