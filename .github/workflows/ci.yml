@@ -89,3 +89,7 @@ jobs:
         run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_cloud.c native/test_cloud_full_route.c -lm -o /tmp/rikitu-stage82-gcc && /tmp/rikitu-stage82-gcc
       - name: Clang MAP10 full input route, belts, gusts and boss
         run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_cloud.c native/test_cloud_full_route.c -lm -o /tmp/rikitu-stage82-clang && /tmp/rikitu-stage82-clang
+      - name: GCC MAP11 full input route, crystal springs and exit
+        run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_crystal.c native/test_crystal_full_route.c -lm -o /tmp/rikitu-stage83-gcc && /tmp/rikitu-stage83-gcc
+      - name: Clang MAP11 full input route, crystal springs and exit
+        run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_crystal.c native/test_crystal_full_route.c -lm -o /tmp/rikitu-stage83-clang && /tmp/rikitu-stage83-clang
