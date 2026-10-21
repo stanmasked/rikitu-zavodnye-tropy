@@ -11,6 +11,7 @@ on:
       - 'tests/check_save_guest.py'
       - 'tests/check_campaign_guest.py'
       - 'tests/check_torn_guest_slots.py'
+      - 'tests/check_reverse_guest_slots.py'
       - 'tests/check_emulator_map_cycle.py'
       - 'switch_graphical/**'
       - 'native/rikitu_draw.*'
@@ -31,6 +32,7 @@ on:
       - 'tests/check_save_guest.py'
       - 'tests/check_campaign_guest.py'
       - 'tests/check_torn_guest_slots.py'
+      - 'tests/check_reverse_guest_slots.py'
       - 'tests/check_emulator_map_cycle.py'
       - 'switch_graphical/**'
       - 'native/rikitu_draw.*'
@@ -269,6 +271,47 @@ jobs:
             # Fourth independent guest: newest B is now restored.
             export RIKITU_QA_PHASE=verify
             export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage97-$family-verify"
+            timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
+              bash tests/run_nexium_graphical.sh
+          done
+      - name: Test reverse-slot RKS1/RKC2/RKL3 guest recovery from damaged newest A
+        shell: bash
+        run: |
+          set -euo pipefail
+          icd="$(find /usr/share/vulkan/icd.d -maxdepth 1 -name 'lvp_icd*.json' -print -quit)"
+          test -n "$icd"
+          export VK_ICD_FILENAMES="$icd"
+          mkdir -p /tmp/rikitu-xdg-runtime
+          chmod 700 /tmp/rikitu-xdg-runtime
+          export XDG_RUNTIME_DIR=/tmp/rikitu-xdg-runtime
+          for family in rks1 campaign; do
+            if [[ "$family" == "rks1" ]]; then
+              export NRO_PATH="$GITHUB_WORKSPACE/nro-save/rikitu_save_qa_probe.nro"
+              export RIKITU_QA_MODE=3
+            else
+              export NRO_PATH="$GITHUB_WORKSPACE/nro-campaign/rikitu_campaign_qa_probe.nro"
+              export RIKITU_QA_MODE=4
+            fi
+            export NEXIUM_DATA_ROOT="$GITHUB_WORKSPACE/evidence/stage98-$family-root"
+            mkdir -p "$NEXIUM_DATA_ROOT/sdmc"
+            for phase in seed resume; do
+              export RIKITU_QA_PHASE="$phase"
+              export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage98-$family-$phase"
+              timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
+                bash tests/run_nexium_graphical.sh
+            done
+            # The host swaps valid slots (A gen2/B gen1) and damages only newest A.
+            python3 tests/check_reverse_guest_slots.py inject "$NEXIUM_DATA_ROOT" "$family"
+            # Third *independent guest*: read intact B gen1,
+            # confirm previous state, then repair A as generation 2.
+            export RIKITU_QA_PHASE=resume
+            export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage98-$family-repair"
+            timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
+              bash tests/run_nexium_graphical.sh
+            python3 tests/check_reverse_guest_slots.py check "$NEXIUM_DATA_ROOT" "$family"
+            # Fourth independent guest: newest A is now restored.
+            export RIKITU_QA_PHASE=verify
+            export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage98-$family-verify"
             timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
               bash tests/run_nexium_graphical.sh
           done
