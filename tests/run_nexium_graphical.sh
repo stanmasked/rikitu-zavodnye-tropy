@@ -47,7 +47,9 @@ else
   "$OUTPUT_DIR/scene-before.png" "$OUTPUT_DIR/scene-after-right.png"
 fi
 
-# Explicit opt-in: explore the real graphical NRO's Y debug chapter selector.
+# Explicit opt-in: explore the real graphical NRO's Nintendo Y stage selector.
+# NeXium's default keyboard config maps Nintendo Y to X11 key Z (not Y).
+# Source: nexium-emu/nexium/nexium-gui/src/controller_config.rs
 # The normal smoke test above remains unchanged; failed map switches are
 # reported with the screenshots, not treated as a successful host simulation.
 if [[ "${RIKITU_MAP_CYCLE_QA:-0}" == "1" && "${RIKITU_QA_MODE:-0}" != "1" ]]; then
@@ -57,16 +59,16 @@ if [[ "${RIKITU_MAP_CYCLE_QA:-0}" == "1" && "${RIKITU_QA_MODE:-0}" != "1" ]]; th
   for stage in $(seq 2 16); do
     printf -v id "%02d" "$stage"
     xdotool windowfocus --sync "$window" || true
-    timeout 3s xdotool keydown --window "$window" y
+    timeout 3s xdotool keydown --window "$window" z
     sleep 0.16
-    timeout 3s xdotool keyup --window "$window" y
+    timeout 3s xdotool keyup --window "$window" z
     sleep 0.42
     timeout 12s import -window "$window" "$out/map-$id.png"
     echo "NeXium guest Y map cycle: captured chapter $stage"
   done
-  timeout 3s xdotool keydown --window "$window" y
+  timeout 3s xdotool keydown --window "$window" z
   sleep 0.16
-  timeout 3s xdotool keyup --window "$window" y
+  timeout 3s xdotool keyup --window "$window" z
   sleep 0.42
   timeout 12s import -window "$window" "$out/map-wrap-01.png"
   python3 tests/check_emulator_map_cycle.py "$out"
