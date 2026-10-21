@@ -177,3 +177,8 @@ jobs:
         run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_flower.c native/rikitu_bridge.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_save.c native/rikitu_save_io.c native/test_save_fclose_uncertainty.c -Wl,--wrap=fclose -lm -o /tmp/rikitu-stage104-gcc && /tmp/rikitu-stage104-gcc
       - name: Clang Stage104 ambiguous fclose torn and complete slot recovery
         run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_flower.c native/rikitu_bridge.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_save.c native/rikitu_save_io.c native/test_save_fclose_uncertainty.c -Wl,--wrap=fclose -lm -o /tmp/rikitu-stage104-clang && /tmp/rikitu-stage104-clang
+
+      - name: GCC Stage105 isolated staged-slot fault injection (30 cases)
+        run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_staged_slot.c native/test_staged_slot_faults.c -Wl,--wrap=fwrite -Wl,--wrap=fflush -Wl,--wrap=fclose -Wl,--wrap=fread -Wl,--wrap=rename -o /tmp/rikitu-stage105-gcc && /tmp/rikitu-stage105-gcc
+      - name: Clang Stage105 isolated staged-slot fault injection (30 cases)
+        run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_staged_slot.c native/test_staged_slot_faults.c -Wl,--wrap=fwrite -Wl,--wrap=fflush -Wl,--wrap=fclose -Wl,--wrap=fread -Wl,--wrap=rename -o /tmp/rikitu-stage105-clang && /tmp/rikitu-stage105-clang
