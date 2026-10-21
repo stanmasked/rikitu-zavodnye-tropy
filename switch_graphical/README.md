@@ -578,3 +578,19 @@ No filesystem writes are attempted without SD mount. This is a
 versioned portable RKC2 metadata scheme, not a save of full gameplay
 state, mid-level progress, approved artwork or a hardware-certified
 save workflow. On-write I/O errors are currently best-effort.
+
+## RKL3 in-level portable checkpoint codec (Stage 67)
+
+`native/rikitu_level_save.[ch]` defines a 64-byte CRC32 checkpoint
+for each of the 16 chapters. It includes the checkpoint index, health,
+fragments, per-coin pickup bitset, defeated patrol bitset, lever states,
+boss HP/defeat, elapsed time and a wallet/upgrades identity guard
+matching RKC2. Saved records restore at a checkpoint rather than in
+mid-air, reset boss immunity and apply temporary player protection.
+Only an uncompleted playing scene is accepted; completed stages are
+recorded by RKC2 to avoid paying out rewards twice.
+
+This isolated PR adds codec plus strict GCC/Clang host tests. It does
+not yet wire RKL3 into device SD files; MAP01 RKS1 and RKC2 are
+preserved unchanged. That follow-up requires independent save-pair
+recovery and checkpoint lifecycle testing. It is not a gamepad route.

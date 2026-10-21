@@ -28,6 +28,8 @@ on:
       - 'native/test_campaign_flow.c'
       - 'native/test_campaign_overlay.c'
       - 'native/rikitu_campaign_save.*'
+      - 'native/rikitu_level_save.*'
+      - 'native/test_level_save.c'
       - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
@@ -126,6 +128,8 @@ on:
       - 'native/test_campaign_flow.c'
       - 'native/test_campaign_overlay.c'
       - 'native/rikitu_campaign_save.*'
+      - 'native/rikitu_level_save.*'
+      - 'native/test_level_save.c'
       - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
@@ -484,6 +488,14 @@ jobs:
           /tmp/rikitu-rkc2-clang
       - name: Protect campaign and MAP01 saves during Y/X debug
         run: node tests/test-debug-save-isolation.cjs
+      - name: GCC RKL3 in-level pickup and boss checkpoint codec
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_mill.c native/rikitu_gardens.c native/rikitu_heart.c native/test_level_save.c -lm -o /tmp/rikitu-levelsave-gcc
+          /tmp/rikitu-levelsave-gcc
+      - name: Clang RKL3 in-level pickup and boss checkpoint codec
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_mill.c native/rikitu_gardens.c native/rikitu_heart.c native/test_level_save.c -lm -o /tmp/rikitu-levelsave-clang
+          /tmp/rikitu-levelsave-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
