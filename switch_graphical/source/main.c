@@ -25,9 +25,12 @@
 #include "rikitu_heart.h"
 #include "rikitu_save.h"
 #include "rikitu_campaign.h"
+#include "rikitu_campaign_save.h"
 
 #define MAP01_A "sdmc:/switch/RIKITU/map01-a.rks"
 #define MAP01_B "sdmc:/switch/RIKITU/map01-b.rks"
+#define CAMPAIGN_A "sdmc:/switch/RIKITU/campaign-a.rkc"
+#define CAMPAIGN_B "sdmc:/switch/RIKITU/campaign-b.rkc"
 
 /* Keep debug map selection and campaign progression on the same table. */
 static void (*const stage_init[16])(RikituScene *)={
@@ -63,6 +66,7 @@ int main(void) {
   RikituScene scene;
   RikituLoop game;
   RikituCampaign campaign;
+  int campaign_debug=0;
   u64 last_tick;
   int error=0;
   int sd_mounted=0,save_ready=0,have_last=0;
@@ -78,9 +82,16 @@ int main(void) {
       save_ready=1;
   }
   if(save_ready){
-    (void)rikitu_save_load_pair(MAP01_A,MAP01_B,&scene,&game);
-    if(rikitu_save_encode(now,&scene,&game,1)){
-      memcpy(last_saved,now,sizeof(last_saved));have_last=1;
+    /* RKC2 is a different record family and does not decode old MAP01 RKS1.
+     * The current chapter restarts at its beginning after loading campaign
+     * metadata; only MAP01 retains its legacy intra-level checkpoint. */
+    if(rikitu_campaign_save_load_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign))
+      begin_stage(&scene,&game,&campaign);
+    if(campaign.level==1 && campaign.mode==RIKITU_CAMPAIGN_PLAYING){
+      (void)rikitu_save_load_pair(MAP01_A,MAP01_B,&scene,&game);
+      if(rikitu_save_encode(now,&scene,&game,1)){
+        memcpy(last_saved,now,sizeof(last_saved));have_last=1;
+      }
     }
   }
   framebufferCreate(&fb,nwindowGetDefault(),RIKITU_SCENE_WIDTH,
@@ -100,6 +111,8 @@ int main(void) {
     held=padGetButtons(&pad);
     pressed=padGetButtonsDown(&pad);
     if(pressed & HidNpadButton_Plus){
+      if(save_ready && !campaign_debug)
+        (void)rikitu_campaign_save_store_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign);
       if(save_ready && rikitu_save_encode(now,&scene,&game,1) &&
          (!have_last || memcmp(now,last_saved,sizeof(last_saved))!=0))
         (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
@@ -108,6 +121,7 @@ int main(void) {
     /* Y/X remain debug-only. They start a separate campaign at the selected
      * map and do not persist a fake clear or add duplicate coin rewards. */
     if(pressed & HidNpadButton_Y){
+      campaign_debug=1;
       const int selected=scene.level_id==16?1:scene.level_id+1;
       if(scene.level_id==1 && save_ready &&
          rikitu_save_encode(now,&scene,&game,1))
@@ -118,6 +132,7 @@ int main(void) {
         (void)rikitu_save_load_pair(MAP01_A,MAP01_B,&scene,&game);
       save_elapsed=0.0f;have_last=0;
     }else if(pressed & HidNpadButton_X){
+      campaign_debug=1;
       const int selected=scene.level_id;
       (void)rikitu_campaign_init(&campaign,selected);
       begin_stage(&scene,&game,&campaign);
@@ -127,7 +142,9 @@ int main(void) {
       }
     }else if(campaign.mode==RIKITU_CAMPAIGN_SHOP){
       if(pressed & HidNpadButton_A){
-        (void)rikitu_campaign_buy(&campaign);
+        const RikituHeartPurchase bought=rikitu_campaign_buy(&campaign);
+        if(bought.success && save_ready && !campaign_debug)
+          (void)rikitu_campaign_save_store_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign);
         /* The upgrade remains available in the next stage. */
       }else if(pressed & HidNpadButton_B){
         const int transition=rikitu_campaign_continue(&campaign);
@@ -135,12 +152,16 @@ int main(void) {
           begin_stage(&scene,&game,&campaign);
           save_elapsed=0.0f;have_last=0;
         }
+        if(transition && save_ready && !campaign_debug)
+          (void)rikitu_campaign_save_store_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign);
       }
     }else if(campaign.mode==RIKITU_CAMPAIGN_BETWEEN &&
              (pressed & HidNpadButton_A)){
       if(rikitu_campaign_continue(&campaign)==1){
         begin_stage(&scene,&game,&campaign);
         save_elapsed=0.0f;have_last=0;
+        if(save_ready && !campaign_debug)
+          (void)rikitu_campaign_save_store_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign);
       }
     }
     if(campaign.mode==RIKITU_CAMPAIGN_PLAYING){
@@ -152,6 +173,8 @@ int main(void) {
         if(!rikitu_campaign_finish(&campaign,&scene.stage)){
           error=3;break;
         }
+        if(save_ready && !campaign_debug)
+          (void)rikitu_campaign_save_store_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign);
         if(scene.level_id==1 && save_ready)
           (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
       }
