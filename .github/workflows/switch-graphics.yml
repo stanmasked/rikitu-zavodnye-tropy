@@ -49,6 +49,7 @@ on:
       - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
+      - 'native/test_gallery_input_opening.c'
       - 'tests/test-gallery-source.cjs'
       - 'tests/test-debug-save-isolation.cjs'
       - 'native/rikitu_foundry_data.h'
@@ -168,6 +169,7 @@ on:
       - 'native/test_campaign_save.c'
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
+      - 'native/test_gallery_input_opening.c'
       - 'tests/test-gallery-source.cjs'
       - 'tests/test-debug-save-isolation.cjs'
       - 'native/rikitu_foundry_data.h'
@@ -680,6 +682,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_foundry.c native/test_foundry_full_route.c -lm -o /tmp/rikitu-stage87-graphics-clang
           /tmp/rikitu-stage87-graphics-clang
+      - name: GCC MAP15 clock gallery opening via real controller input
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_gallery.c native/test_gallery_input_opening.c -lm -o /tmp/rikitu-stage88-graphics-gcc
+          /tmp/rikitu-stage88-graphics-gcc
+      - name: Clang MAP15 clock gallery opening via real controller input
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_gallery.c native/test_gallery_input_opening.c -lm -o /tmp/rikitu-stage88-graphics-clang
+          /tmp/rikitu-stage88-graphics-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
