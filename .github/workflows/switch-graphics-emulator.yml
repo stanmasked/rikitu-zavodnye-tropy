@@ -4,6 +4,7 @@ on:
     paths:
       - '.github/workflows/switch-graphics-emulator.yml'
       - 'tests/run_nexium_graphical.sh'
+      - 'tests/run_nexium_retry_display.sh'
       - 'native/rikitu_combat_guest_qa.*'
       - 'native/test_combat_guest_qa.c'
       - 'tests/check_combat_guest.py'
@@ -27,6 +28,7 @@ on:
     paths:
       - '.github/workflows/switch-graphics-emulator.yml'
       - 'tests/run_nexium_graphical.sh'
+      - 'tests/run_nexium_retry_display.sh'
       - 'native/rikitu_combat_guest_qa.*'
       - 'native/test_combat_guest_qa.c'
       - 'tests/check_combat_guest.py'
@@ -345,23 +347,20 @@ jobs:
               mkdir -p "$NEXIUM_DATA_ROOT/sdmc"
               export RIKITU_QA_PHASE=seed
               export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage99-$family-$older-seed"
-              timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
-                bash tests/run_nexium_graphical.sh
+              bash tests/run_nexium_retry_display.sh
               # Artificially advance a valid first-generation record to max
               # uint32 without modifying gameplay bytes, then recompute CRC.
               # For older=B, move the original guest-written A record to B.
               python3 tests/check_wrap_guest_slots.py prepare "$NEXIUM_DATA_ROOT" "$family" "$older"
               export RIKITU_QA_PHASE=resume
               export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage99-$family-$older-resume"
-              timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
-                bash tests/run_nexium_graphical.sh
+              bash tests/run_nexium_retry_display.sh
               # Actual guest must have created the opposite slot/gen1 and
               # kept the old max-generation backup SHA256 intact.
               python3 tests/check_wrap_guest_slots.py audit "$NEXIUM_DATA_ROOT" "$family" "$older"
               export RIKITU_QA_PHASE=verify
               export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage99-$family-$older-verify"
-              timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
-                bash tests/run_nexium_graphical.sh
+              bash tests/run_nexium_retry_display.sh
               # Third guest must select new gen1 over UINT32_MAX and write
               # neither slot; fail on unexpected re-serialization.
               python3 tests/check_wrap_guest_slots.py verify "$NEXIUM_DATA_ROOT" "$family" "$older"
@@ -389,8 +388,7 @@ jobs:
               for phase in seed resume; do
                 export RIKITU_QA_PHASE="$phase"
                 export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage101-$fault-$newest-$phase"
-                timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
-                  bash tests/run_nexium_graphical.sh
+                bash tests/run_nexium_retry_display.sh
               done
               # RKC2 A/gen1 and B/gen2 remain untouched. Only newest RKL3
               # is replaced by a fully checksummed but foreign level or wallet.
@@ -402,14 +400,12 @@ jobs:
               export RIKITU_QA_WRAP=1
               export RIKITU_QA_PHASE=resume
               export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage101-$fault-$newest-repair"
-              timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
-                bash tests/run_nexium_graphical.sh
+              bash tests/run_nexium_retry_display.sh
               python3 tests/check_mismatched_guest_level.py audit \
                 "$NEXIUM_DATA_ROOT" "$fault" "$newest"
               export RIKITU_QA_PHASE=verify
               export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage101-$fault-$newest-verify"
-              timeout --kill-after=5s 110s xvfb-run -a -s '-screen 0 1280x720x24' \
-                bash tests/run_nexium_graphical.sh
+              bash tests/run_nexium_retry_display.sh
               python3 tests/check_mismatched_guest_level.py verify \
                 "$NEXIUM_DATA_ROOT" "$fault" "$newest"
             done
