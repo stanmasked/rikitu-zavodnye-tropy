@@ -8,6 +8,7 @@ on:
       - 'native/test_combat_guest_qa.c'
       - 'tests/check_combat_guest.py'
       - 'tests/check_emulator_scene.py'
+      - 'tests/check_emulator_map_cycle.py'
       - 'switch_graphical/**'
       - 'native/rikitu_draw.*'
       - 'native/rikitu_demo.*'
@@ -24,6 +25,7 @@ on:
       - 'native/test_combat_guest_qa.c'
       - 'tests/check_combat_guest.py'
       - 'tests/check_emulator_scene.py'
+      - 'tests/check_emulator_map_cycle.py'
       - 'switch_graphical/**'
       - 'native/rikitu_draw.*'
       - 'native/rikitu_demo.*'
@@ -118,6 +120,7 @@ jobs:
           test -n "$icd"
           export VK_ICD_FILENAMES="$icd"
           export NRO_PATH="$GITHUB_WORKSPACE/nro/rikitu_scene_probe.nro"
+          export RIKITU_MAP_CYCLE_QA=1
           export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence"
           mkdir -p "$OUTPUT_DIR"
           mkdir -p /tmp/rikitu-xdg-runtime
