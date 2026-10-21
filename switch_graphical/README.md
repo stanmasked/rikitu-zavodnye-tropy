@@ -802,3 +802,23 @@ collected items intact.
 The test runs under host GCC and Clang. It does not establish full
 MAP09 completion, actual Joy-Con HID compatibility or physical
 Switch SD crash/power-cut durability.
+
+
+## Stage81 — full MAP09 route from spawn to the real exit
+
+`native/test_mist_full_route.c` replays the complete Misty Pass using
+only 60Hz RIGHT/RUN/JUMP input from the authentic spawn. It crosses all
+four floor gaps, collects all three fragments, activates the three
+checkpoints and reaches the real fragment-gated exit. It also checks
+each gust's vertical impulse and injects a neutral input frame after
+every launch to prove that the surface never forces horizontal drift.
+
+The route re-arms only jump triggers that are ahead of a genuine damage
+respawn checkpoint; it never edits player coordinates to skip gameplay.
+The test permits authentic enemy damage and verifies that progression
+survives respawns while collected fragments remain collected.
+
+The full route runs with strict GCC and Clang in both the normal host
+CI and graphical Switch host-render CI. It is a host simulation, not
+physical Joy-Con, Switch hardware, SD durability or 60fps performance
+certification.
