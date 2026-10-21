@@ -148,7 +148,10 @@ int main(void){
             input|=RIKITU_INPUT_JUMP;
             armed[jump]=1;
             ever[jump]=1;
-            gap_jump_pending|=bit;
+            /* A genuine repeat crossing after checkpoint respawn
+             * must not leave a stale pending bit for an already proven
+             * gap. Preserve the historical crossing evidence. */
+            if((gap_mask&bit)==0u)gap_jump_pending|=bit;
             gap_jump_ever|=bit;
           }else{
             /* Hold horizontal position on safe ground until a real jump is
@@ -275,7 +278,15 @@ int main(void){
   assert(vent_mask==7u && neutral_mask==7u && neutral_frames>=3);
   assert(belt_mask==7u);
   assert(gap_jump_ever==15u && gap_air_mask==15u);
-  assert(gap_mask==15u && gap_pending==0u && gap_jump_pending==0u);
+  if(gap_mask!=15u || gap_pending!=0u || gap_jump_pending!=0u){
+    fprintf(stderr,"MAP12 crossing invariant: jump=%u air=%u "
+            "land=%u awaitingLanding=%u awaitingAir=%u "
+            "frame=%d x=%.2f bossHits=%d\n",
+            gap_jump_ever,gap_air_mask,gap_mask,
+            gap_pending,gap_jump_pending,frame,
+            (double)loop.player.x,boss_hits);
+    return 3;
+  }
   for(i=0;i<JUMP_COUNT;i++)assert(ever[i]);
   assert(boss_hits==3 && boss_attempts>=3);
   assert(scene.boss.hp==0 && !scene.boss.alive);
