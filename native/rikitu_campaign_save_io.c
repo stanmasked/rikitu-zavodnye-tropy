@@ -1,6 +1,14 @@
 #include "rikitu_campaign_save.h"
 #include <stdio.h>
 #include <string.h>
+/* Restrict this new writer to .rkc paths, guarding legacy MAP01 .rks.
+ * Rejected paths are never opened, even if the record itself is valid. */
+static int campaign_path(const char *p){
+  size_t n;
+  if(!p)return 0;
+  n=strlen(p);
+  return n>4 && strcmp(p+n-4,".rkc")==0;
+}
 static int read_slot(const char *path,
                      uint8_t p[RIKITU_CAMPAIGN_SAVE_BYTES]){
   FILE *f;
@@ -28,7 +36,8 @@ int rikitu_campaign_save_load_pair(
   uint8_t x[RIKITU_CAMPAIGN_SAVE_BYTES],y[RIKITU_CAMPAIGN_SAVE_BYTES];
   uint32_t gx=0,gy=0;
   int vx,vy;
-  if(!a||!b||!campaign||strcmp(a,b)==0)return 0;
+  if(!campaign_path(a)||!campaign_path(b)||!campaign||
+     strcmp(a,b)==0)return 0;
   vx=read_slot(a,x)&&check(x,&gx);
   vy=read_slot(b,y)&&check(y,&gy);
   if(!vx&&!vy)return 0;
@@ -47,8 +56,8 @@ int rikitu_campaign_save_store_pair(
   const char *target;
   FILE *f;
   size_t n;
-  if(!a||!b||!campaign||strcmp(a,b)==0||
-     !rikitu_campaign_valid(campaign))return 0;
+  if(!campaign_path(a)||!campaign_path(b)||!campaign||
+     strcmp(a,b)==0||!rikitu_campaign_valid(campaign))return 0;
   vx=read_slot(a,x)&&check(x,&gx);
   vy=read_slot(b,y)&&check(y,&gy);
   if(vx&&vy){
