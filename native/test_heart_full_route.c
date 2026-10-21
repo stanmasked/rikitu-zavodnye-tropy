@@ -5,6 +5,11 @@
  */
 #include "rikitu_heart.h"
 #include "rikitu_demo.h"
+/* Extra Stage92 integration is compiled separately to keep Stage91's
+ * verified gameplay-only executable unchanged. */
+#ifdef RIKITU_STAGE92_REAL_VICTORY
+#include "rikitu_campaign_save.h"
+#endif
 #include <assert.h>
 #include <math.h>
 #include <stdio.h>
@@ -66,6 +71,15 @@ int main(void){
   int fragment2_jump=0,fragment3_jump=0;
 
   fresh(&s,&l);
+#ifdef RIKITU_STAGE92_REAL_VICTORY
+  {
+    RikituCampaign before;
+    assert(rikitu_campaign_init(&before,16));
+    /* Actual untouched opening state cannot advance the campaign. */
+    assert(!rikitu_campaign_finish(&before,&s.stage));
+    assert(before.mode==RIKITU_CAMPAIGN_PLAYING && before.wallet==0);
+  }
+#endif
   assert(s.level_id==16 && l.player.x==105.0f);
   assert(s.world_width==11750.0f && s.gate_x==11560.0f);
   assert(s.checkpoint_total==3 && s.launcher_count==5);
@@ -224,6 +238,41 @@ int main(void){
   assert(s.stage.boss_defeated && rikitu_stage_can_finish(&s.stage));
   assert(l.player.x+l.player.w>s.gate_x-30.0f);
   assert(s.stage.completed && s.stage.coin_count>0);
+#ifdef RIKITU_STAGE92_REAL_VICTORY
+  {
+    RikituCampaign campaign,restored,untouched;
+    uint8_t saved[RIKITU_CAMPAIGN_SAVE_BYTES];
+    uint8_t corrupt[RIKITU_CAMPAIGN_SAVE_BYTES];
+    uint32_t generation=0;
+    assert(rikitu_campaign_init(&campaign,16));
+    /* This is the *actual* three-fragment/three-stomp stage, not a
+     * fabricated synthetic win state. The resulting shop is mandatory. */
+    assert(rikitu_campaign_finish(&campaign,&s.stage));
+    assert(campaign.mode==RIKITU_CAMPAIGN_SHOP && campaign.level==16);
+    assert(campaign.wallet==s.stage.coin_count && campaign.wallet>0);
+    assert(!rikitu_campaign_finish(&campaign,&s.stage));
+    assert(rikitu_campaign_continue(&campaign)==2);
+    assert(campaign.mode==RIKITU_CAMPAIGN_VICTORY);
+    assert(rikitu_campaign_valid(&campaign));
+    assert(!rikitu_campaign_continue(&campaign));
+    assert(rikitu_campaign_save_encode(saved,&campaign,314u));
+    assert(rikitu_campaign_save_decode(&restored,saved,sizeof(saved),
+                                       &generation));
+    assert(generation==314u && restored.level==16);
+    assert(restored.mode==RIKITU_CAMPAIGN_VICTORY);
+    assert(restored.wallet==s.stage.coin_count);
+    assert(restored.max_hearts==campaign.max_hearts);
+    /* A damaged save cannot silently turn victory into progress. */
+    untouched=restored;
+    memcpy(corrupt,saved,sizeof(corrupt));
+    corrupt[12]^=0x40u;
+    assert(!rikitu_campaign_save_decode(&restored,corrupt,
+                                        sizeof(corrupt),NULL));
+    assert(memcmp(&restored,&untouched,sizeof(restored))==0);
+    puts("PASS Stage92 actual MAP16 completion -> Moki shop -> final "
+         "campaign victory -> checked RKC2 save/reload");
+  }
+#endif
   printf("PASS MAP16 final full input route: frames=%d "
          "3 fragments, 4 gaps, 5 steam/clock launchers/no drift, "
          "3 belts, 3 checkpoints, 3 boss hits, damage=%d\n",
