@@ -1369,3 +1369,20 @@ Even if the test passes, NeXium is not hardware evidence for atomic
 FAT rename or power-loss durability. Shipping saves remain unchanged;
 a physical SD hardware test and a safe durability protocol are still
 required before production adoption.
+
+
+### Stage106 observation from first real NeXium guest
+
+The first guest's staging operation produced **exactly** A=OLD/B=NEW
+in its uploaded SDMC artifact, with no leftover pending file, but the
+guest's immediate post-rename read check set the fourth status marker
+red. This separates observed persisted file bytes from the state of
+in-process libnx/NeXium filesystem readback. The revised guest marker
+checks the staging helper's return value, and an external host auditor
+checks both exact files **after** the guest ends. The next independently
+booted guest must load them successfully before performing a second
+replacement. An error from the staging commit still fails immediately:
+the test does not soften this gate or delete the target as a fallback.
+
+This observation is specific to this emulation run; no conclusion is
+drawn about the precise caching cause until verified separately.
