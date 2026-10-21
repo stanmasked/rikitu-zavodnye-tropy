@@ -88,6 +88,7 @@ int main(void){
   unsigned gap_jump_ever=0,gap_air_mask=0;
   int pending_vent=-1,neutral_frames=0,frame=0,i;
   int boss_hits=0,boss_attempts=0,last_boss_hp=3,retreat=0;
+  int boss_jump_active=0;
   size_t enemy_index;
 
   fresh(&scene,&loop);
@@ -119,11 +120,23 @@ int main(void){
       }else{
         input=RUN_LEFT;
       }
-    }else if(scene.boss.alive && loop.player.grounded &&
-             scene.boss.hit_seconds<=0.0f &&
-             loop.player.x>9750.0f && loop.player.x<9790.0f){
-      input=RUN_RIGHT|RIKITU_INPUT_JUMP;
-      boss_attempts++;
+    }else if(scene.boss.alive){
+      const float target=scene.boss.x-180.0f;
+      if(boss_jump_active){
+        if(loop.player.grounded)boss_jump_active=0;
+        input=RUN_RIGHT;
+      }else if(loop.player.grounded &&
+               scene.boss.hit_seconds<=0.0f &&
+               loop.player.x>target-8.0f &&
+               loop.player.x<target+8.0f){
+        input=RUN_RIGHT|RIKITU_INPUT_JUMP;
+        boss_jump_active=1;
+        boss_attempts++;
+      }else if(loop.player.x>target+8.0f){
+        input=RUN_LEFT;
+      }else{
+        input=RUN_RIGHT;
+      }
     }else{
       for(i=0;i<JUMP_COUNT;i++){
         if(armed[i] || objective_done(i,&scene,gap_mask,loop.player.x))continue;
@@ -156,7 +169,7 @@ int main(void){
       fprintf(stderr,"MAP12 progress frame=%d x=%.2f y=%.2f grounded=%d "
               "vx=%.2f vy=%.2f hearts=%d damage=%d checkpoint=%.0f "
               "invuln=%.2f enemies=%u fragments=%d levers=%d "
-              "bossHP=%d\\n",
+              "bossHP=%d\n",
               frame,(double)loop.player.x,(double)loop.player.y,
               loop.player.grounded,(double)loop.player.vx,(double)loop.player.vy,
               scene.hearts,scene.damage_count,(double)scene.active_checkpoint,
@@ -219,6 +232,7 @@ int main(void){
       boss_hits++;
       last_boss_hp=scene.boss.hp;
       retreat=scene.boss.alive;
+      boss_jump_active=0;
     }
 
     /* The engine's real fatal-damage respawn moves X back to a checkpoint.
