@@ -120,7 +120,8 @@ int main(void){
       }else{
         input=RUN_LEFT;
       }
-    }else if(scene.boss.alive){
+    }else if(scene.boss.alive &&
+             loop.player.x>scene.boss.center-450.0f){
       const float target=scene.boss.x-180.0f;
       if(boss_jump_active){
         if(loop.player.grounded)boss_jump_active=0;
@@ -241,6 +242,8 @@ int main(void){
       gap_pending=0u;
       gap_jump_pending=0u;
       pending_vent=-1;
+      retreat=0;
+      boss_jump_active=0;
       rearm_after_respawn(armed,loop.player.x,&scene,gap_mask);
     }
 
