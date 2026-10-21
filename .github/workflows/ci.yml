@@ -77,3 +77,11 @@ jobs:
         run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/test_stage.c -lm -o /tmp/rikitu-stage-gcc && /tmp/rikitu-stage-gcc
       - name: Native stage objectives (Clang)
         run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/test_stage.c -lm -o /tmp/rikitu-stage-clang && /tmp/rikitu-stage-clang
+      - name: GCC MAP09 gust input and RKL3 checkpoint recovery
+        run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mist.c native/test_mist_controller_resume.c -lm -o /tmp/rikitu-stage80-gcc && /tmp/rikitu-stage80-gcc
+      - name: Clang MAP09 gust input and RKL3 checkpoint recovery
+        run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mist.c native/test_mist_controller_resume.c -lm -o /tmp/rikitu-stage80-clang && /tmp/rikitu-stage80-clang
+      - name: GCC MAP09 full input route, fragments and gusts
+        run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_mist.c native/test_mist_full_route.c -lm -o /tmp/rikitu-stage81-gcc && /tmp/rikitu-stage81-gcc
+      - name: Clang MAP09 full input route, fragments and gusts
+        run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_mist.c native/test_mist_full_route.c -lm -o /tmp/rikitu-stage81-clang && /tmp/rikitu-stage81-clang

@@ -779,3 +779,46 @@ B must roll back to the older pre-lever A state with pickups intact.
 These are native C99 host button-mask tests, not full MAP08 boss
 completion or tests of physical Joy-Con hardware and Switch SD
 power-loss resilience.
+
+
+## Stage80 — MAP09 gust, neutral input and pre/post-checkpoint recovery
+
+`native/test_mist_controller_resume.c` replays the actual MAP09
+Misty Pass spawn using 60Hz RIGHT/RUN/JUMP input rather than changing
+player coordinates. It checks the first -690 units/sec wind gust and
+then sends a full neutral input frame while airborne to assert
+zero involuntary horizontal drift. The path receives genuine patrol
+contact damage, collects the opening coin and fragment, crosses the
+first gap and reaches the first checkpoint.
+
+RKL3 generation A is written before checkpoint 1 at spawn checkpoint
+105; generation B is written after reaching checkpoint 1 at X=2280.
+The regression restores the latest generation into a freshly
+initialized scene, validates pickups, hearts, damage, timer and
+controller motion, rejects a foreign campaign wallet, then corrupts
+B to prove rollback to the *older pre-checkpoint* A state with
+collected items intact.
+
+The test runs under host GCC and Clang. It does not establish full
+MAP09 completion, actual Joy-Con HID compatibility or physical
+Switch SD crash/power-cut durability.
+
+
+## Stage81 — full MAP09 route from spawn to the real exit
+
+`native/test_mist_full_route.c` replays the complete Misty Pass using
+only 60Hz RIGHT/RUN/JUMP input from the authentic spawn. It crosses all
+four floor gaps, collects all three fragments, activates the three
+checkpoints and reaches the real fragment-gated exit. It also checks
+each gust's vertical impulse and injects a neutral input frame after
+every launch to prove that the surface never forces horizontal drift.
+
+The route re-arms only jump triggers that are ahead of a genuine damage
+respawn checkpoint; it never edits player coordinates to skip gameplay.
+The test permits authentic enemy damage and verifies that progression
+survives respawns while collected fragments remain collected.
+
+The full route runs with strict GCC and Clang in both the normal host
+CI and graphical Switch host-render CI. It is a host simulation, not
+physical Joy-Con, Switch hardware, SD durability or 60fps performance
+certification.
