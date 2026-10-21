@@ -4,7 +4,7 @@
 # and other exit statuses remain immediately fatal. Separate invocations
 # retain the same user-provided NEXIUM_DATA_ROOT and unique OUTPUT_DIR.
 set -euo pipefail
-: "\${OUTPUT_DIR:?Evidence directory required}"
+: "${OUTPUT_DIR:?Evidence directory required}"
 mkdir -p "$OUTPUT_DIR"
 for attempt in 1 2; do
   log="$OUTPUT_DIR/display-attempt-$attempt.log"
