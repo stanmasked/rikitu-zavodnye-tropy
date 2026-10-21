@@ -542,3 +542,19 @@ The `native/test_campaign_flow.c` regression is compiled and executed
 with GCC and Clang in CI. This PR changes the portable core, **not**
 the Switch controller/UI yet. Existing diagnostic level selection,
 MAP01-only saves and approved visual designs are unchanged.
+
+## RKC2 campaign save format — portable core (Stage 63)
+
+The new `native/rikitu_campaign_save.[ch]` and companion I/O module
+use **separate** 32-byte campaign records with magic `RKC2`, schema 2,
+little-endian fields, CRC32, monotonic wrap-safe generation counters,
+and two alternating files. The old 44-byte MAP01 `RKS1` saves remain
+untouched. A truncated, corrupt or older slot cannot overwrite the
+surviving good checkpoint. Invalid inputs never modify memory.
+
+Persisted: current level (1–16), phase (playing/intermission/shop/victory),
+coin wallet and earned heart capacity. In-stage geometry, pickups and
+position are **not** snapshotted in this first schema; on reload the
+current level starts over. Debug stage selection must not write RKC2
+campaign progress. Device save wiring comes in a later PR; this one
+adds the independent format and GCC/Clang recovery tests only.

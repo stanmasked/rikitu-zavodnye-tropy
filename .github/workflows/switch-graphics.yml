@@ -25,6 +25,7 @@ on:
       - 'native/rikitu_foundry.*'
       - 'native/rikitu_gallery.*'
       - 'native/rikitu_campaign.*'
+      - 'native/test_campaign_save.c'
       - 'native/test_campaign_flow.c'
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
@@ -119,6 +120,7 @@ on:
       - 'native/rikitu_foundry.*'
       - 'native/rikitu_gallery.*'
       - 'native/rikitu_campaign.*'
+      - 'native/test_campaign_save.c'
       - 'native/test_campaign_flow.c'
       - 'native/rikitu_gallery_data.h'
       - 'native/test_gallery.c'
@@ -458,6 +460,14 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/test_campaign_flow.c -lm -o /tmp/rikitu-flow-clang
           /tmp/rikitu-flow-clang
+      - name: GCC RKC2 campaign checkpoint CRC and dual-slot recovery
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/test_campaign_save.c -lm -o /tmp/rikitu-campaign-save-gcc
+          /tmp/rikitu-campaign-save-gcc
+      - name: Clang RKC2 campaign checkpoint CRC and dual-slot recovery
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/test_campaign_save.c -lm -o /tmp/rikitu-campaign-save-clang
+          /tmp/rikitu-campaign-save-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
