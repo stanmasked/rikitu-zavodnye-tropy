@@ -20,6 +20,10 @@ on:
       - 'native/rikitu_mist.*'
       - 'native/rikitu_cloud.*'
       - 'native/rikitu_crystal.*'
+      - 'native/rikitu_mine.*'
+      - 'native/rikitu_mine_data.h'
+      - 'native/test_mine.c'
+      - 'tests/test-mine-source.cjs'
       - 'native/rikitu_crystal_data.h'
       - 'native/test_crystal.c'
       - 'tests/test-crystal-source.cjs'
@@ -96,6 +100,10 @@ on:
       - 'native/rikitu_mist.*'
       - 'native/rikitu_cloud.*'
       - 'native/rikitu_crystal.*'
+      - 'native/rikitu_mine.*'
+      - 'native/rikitu_mine_data.h'
+      - 'native/test_mine.c'
+      - 'tests/test-mine-source.cjs'
       - 'native/rikitu_crystal_data.h'
       - 'native/test_crystal.c'
       - 'tests/test-crystal-source.cjs'
@@ -356,6 +364,16 @@ jobs:
         run: |
           clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_crystal.c native/test_crystal.c -lm -o /tmp/rikitu-crystal-clang
           /tmp/rikitu-crystal-clang
+      - name: Verify MAP12 Silent Mine browser source parity
+        run: node tests/test-mine-source.cjs
+      - name: GCC MAP12 steam belts switches boss gate
+        run: |
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_mine.c native/test_mine.c -lm -o /tmp/rikitu-mine-gcc
+          /tmp/rikitu-mine-gcc
+      - name: Clang MAP12 steam belts switches boss gate
+        run: |
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_mine.c native/test_mine.c -lm -o /tmp/rikitu-mine-clang
+          /tmp/rikitu-mine-clang
       - name: Upload pixel-accurate host render
         uses: actions/upload-artifact@v4
         with:
