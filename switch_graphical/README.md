@@ -1059,3 +1059,21 @@ fails at guest SDMC mount; its separate Draft PR #35 is retained as a
 strict, non-green test until actual guest filesystem support succeeds.
 Neither host files nor the NeXium guest test establish physical SD-card
 power-loss durability.
+ 
+## Stage95 — default libnx SDMC mount reuse in the actual Switch NRO
+
+The default libnx `__appInit()` invokes `fsdevMountSdmc()` before
+`main()`. Calling it a second time with the same name can fail with
+libnx result 0x559: `fsdevMountDevice` returned -1 because `sdmc`
+was already registered. Stage95 first calls
+`fsdevGetDeviceFileSystem("sdmc")` to reuse this existing mount; only
+if missing will it explicitly mount SDMC, and only its own registration
+is unmounted on exit. RKS1, RKC2 and RKL3 save/reload initialization
+continues after the same `save_ready` directory check. This change
+does not modify save-file formats or save-game progress.
+
+The original NeXium guest probe exposed result 0x559, but
+emulator-side SD file I/O must still pass the separate three-launch
+test in PR #35. GCC/Clang host persistence is separately covered by
+Stage95 PR #89. A successful NRO build or source test cannot claim
+physical console power-loss safety.
