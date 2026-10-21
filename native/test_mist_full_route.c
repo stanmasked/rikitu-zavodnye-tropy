@@ -56,7 +56,7 @@ int main(void){
   RikituLoop loop;
   int armed[JUMP_COUNT]={0},ever[JUMP_COUNT]={0};
   unsigned gust_mask=0,neutral_mask=0;
-  int pending_gust=-1,neutral_frames=0,frame=0;
+  int pending_gust=-1,neutral_frames=0,frame=0,i;
   fresh(&scene,&loop);
   assert(scene.level_id==9 && loop.player.x==105.0f);
   assert(scene.world_width==9520.0f && scene.gate_x==9330.0f);
@@ -143,7 +143,7 @@ int main(void){
             scene.reached_checkpoints,gust_mask,neutral_mask);
     return 2;
   }
-  for(frame=0;frame<JUMP_COUNT;frame++)assert(ever[frame]);
+  for(i=0;i<JUMP_COUNT;i++)assert(ever[i]);
   assert(scene.stage.fragment_count==3);
   assert(scene.stage.fragments[0] && scene.stage.fragments[1] &&
          scene.stage.fragments[2]);
