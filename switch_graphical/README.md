@@ -1281,3 +1281,38 @@ C99 warnings. These tests exercise error-path control flow and recovery,
 but do **not** simulate real physical power loss, true OS writeback timing,
 storage-device cache durability, atomic multi-file transactions, or
 `fsync`. The linker fault hooks are test-only and never part of Switch NRO.
+
+
+## Stage104 — ambiguous fclose: complete or torn candidate
+
+Stage104 links unmodified RKS1, RKC2 and RKL3 pair writers into a
+native GCC/Clang test with a host-only `--wrap=fclose` hook. The hook
+ignores closes of files opened for reading, but makes the one writer's
+close return `EOF` with `errno=EIO`, after actually closing the stream.
+
+Two deterministic outcomes are modeled:
+
+* **Torn target:** Immediately before the close, the test truncates the
+  fully flushed target to half its expected length. The writer returns
+  failure; the previous backup stays byte-identical, the loader selects
+  that backup, and a retry writes generation 2 into the damaged target.
+* **Complete target despite error:** The actual close succeeds and a valid
+  generation-2 save remains on disk, but the wrapper reports failure.
+  The loader selects gen2. The following save writes gen3 over the
+  original gen1 slot **while preserving the valid gen2 backup**. This
+  matches current two-slot selection semantics.
+
+Each outcome runs for RKS1/RKC2/RKL3 with A or B as the original backup:
+12 cases per compiler, checking correct generations, state restoration,
+byte-level preservation and retry behavior. Nothing is added to shipping
+libnx code, save formats, maps or approved assets.
+
+**Critical durability limitation:** an actual OS `fclose`/device-cache
+error can leave apparently complete bytes that have *not* reached stable
+storage. CRC-valid readback alone cannot certify flush ordering or safe
+power-loss recovery. In the complete-target case, the next write may
+overwrite the original gen1 slot. Therefore this test characterizes the
+existing behavior; it does not prove that the two-slot algorithm is
+power-fail atomic or that old gen1 always survives subsequent writes.
+A future durable-storage design should be validated with real fsync/
+directory-sync guarantees on the target filesystem/hardware.
