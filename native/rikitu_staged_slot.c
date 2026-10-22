@@ -64,7 +64,7 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
   char *tmp=NULL;
   uint8_t *readback=NULL;
   size_t name_len,read_n;
-  int ok=0,extra,close_ok,opened_tmp=0;
+  int ok=0,extra,read_error,close_ok,opened_tmp=0;
   FILE *f=NULL;
   if(!target||!target[0]||!record||!n||n>4096u)return 0;
 #if defined(__linux__)
@@ -175,8 +175,10 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
 #endif
   read_n=fread(readback,1,n,f);
   extra=fgetc(f);
+  read_error=ferror(f);
   close_ok=fclose(f)==0;f=NULL;
-  if(!close_ok||read_n!=n||extra!=EOF||memcmp(readback,record,n)!=0)goto done;
+  if(!close_ok||read_error||read_n!=n||extra!=EOF||
+     memcmp(readback,record,n)!=0)goto done;
   /* Refuse a renamed/replaced pending path even if the contents have
    * independently passed the exact-byte readback. This does not make
    * a malicious post-check path swap atomic. */
