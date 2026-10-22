@@ -1438,3 +1438,25 @@ recovery, metadata writeback, fsync durability, or safe multiprocess
 concurrency. The test uses the Linux runner's process and filesystem
 semantics; firmware and physical SD need separate qualification before
 production adoption.
+
+
+## Stage109 — valid abandoned pending versus blocked staging path
+
+The Linux-only `native/test_staged_pending_isolation.c` fixture links
+real RKS1/RKC2/RKL3 encoders and unmodified production pair loaders
+with the experimental, unshipped sibling-pending writer. For each format
+and original A/B backup orientation, it checks two distinct failures:
+
+* A fully encoded **CRC-valid generation 4** record left at a
+  `.pending` path is never loaded as committed progress while live
+  slots contain generations 1 and 2. A new staged generation 3 safely
+  replaces the abandoned pending and becomes the newest valid live save.
+* A `.pending` path occupied by a directory blocks the staged write.
+  Both live slots must remain byte-identical and the normal loader must
+  still select generation 2. Removing that obstruction and retrying
+  commits generation 3 without touching the valid generation-2 backup.
+
+Twelve family/orientation/case scenarios run with strict GCC and Clang.
+These checks do not establish cross-process writer safety, FAT/SDMC
+power-loss guarantees, fsync durability or resistance to malicious
+filesystem path races. The shipping game does not call this helper.
