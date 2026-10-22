@@ -123,7 +123,7 @@ export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 ifeq ($(QA_MODE),8)
 CFILES := staged_pair_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_draw.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c rikitu_boss.c rikitu_mill.c rikitu_save.c rikitu_save_io.c rikitu_grove.c rikitu_bridge.c rikitu_workshop.c rikitu_delivery.c rikitu_clock.c rikitu_orders.c rikitu_mist.c rikitu_cloud.c rikitu_crystal.c rikitu_mine.c rikitu_gardens.c rikitu_foundry.c rikitu_gallery.c rikitu_heart.c rikitu_campaign.c rikitu_campaign_save.c rikitu_campaign_save_io.c rikitu_level_save.c rikitu_level_save_io.c rikitu_staged_slot.c rikitu_staged_pair.c
 else ifeq ($(QA_MODE),7)
-CFILES := staged_faults_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_demo.c rikitu_flower.c rikitu_bridge.c rikitu_enemies.c rikitu_boss.c rikitu_campaign.c rikitu_campaign_save.c rikitu_campaign_save_io.c rikitu_level_save.c rikitu_level_save_io.c rikitu_save.c rikitu_save_io.c rikitu_staged_slot.c
+CFILES := staged_faults_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_demo.c rikitu_flower.c rikitu_bridge.c rikitu_enemies.c rikitu_boss.c rikitu_campaign.c rikitu_campaign_save.c rikitu_campaign_save_io.c rikitu_level_save.c rikitu_level_save_io.c rikitu_save.c rikitu_save_io.c rikitu_staged_slot.c rikitu_staged_pair.c
 else ifeq ($(QA_MODE),6)
 CFILES := staged_codecs_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_demo.c rikitu_flower.c rikitu_bridge.c rikitu_enemies.c rikitu_boss.c rikitu_campaign.c rikitu_save.c rikitu_campaign_save.c rikitu_level_save.c rikitu_staged_slot.c
 else ifeq ($(QA_MODE),5)
