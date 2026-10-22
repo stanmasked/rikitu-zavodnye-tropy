@@ -104,6 +104,29 @@ These are source-level findings, not proof of physical SDMC behavior. Keep
 the existing-target rename and `fsdevCommitDevice` result checks as
 separate QA cases, and do not claim power-loss durability from NeXium alone.
 
+### Stage128 CI evidence: dependency setup no longer hits the 15-minute limit
+
+On commit `db5013deda904692a100643a84e337add2351451`, two guest workflows
+completed successfully after adding bounded APT operations and disabling
+recommended packages:
+
+- [Stage106 rename replacement](https://github.com/stanmasked/rikitu-zavodnye-tropy/actions/runs/39839316416):
+  the index update fetched about 3 MB in roughly 3 seconds; dependency
+  installation fetched 31.7 MB in about 5 seconds. The three independent
+  cold-start phases passed, and the host checker confirmed the expected A/B
+  hashes and no leftover pending file.
+- [Stage125 real-codec staged replacement](https://github.com/stanmasked/rikitu-zavodnye-tropy/actions/runs/39839316721):
+  the install step and all three guest starts passed.
+
+The latest PR112 commit `3b0c019318776903840e04572014c392de9d5fa4` adds
+logging of the devkitPro package set plus SHA-256 hashes of the installed
+libnx headers and archive to four Switch build workflows. Those checks are
+queued as of this document revision. Until their logs are available, the
+package fingerprint is pending.
+
+The emulator runs support the staged-replacement behavior under NeXium only.
+They do not establish physical Switch SDMC power-loss durability.
+
 ### 4. Replacement policy
 
 Do not implement an unlink-first fallback merely because replacement rename fails. If the target filesystem cannot replace an existing destination, design a separate two-slot-safe rotation protocol that always retains the newest valid slot across every interruption boundary. That protocol requires its own tests before integration.
