@@ -1487,3 +1487,40 @@ does not establish equivalent symlink resistance. Concurrent-writer
 races, rename power-cut atomicity, fsync and FAT durability are
 separate unresolved issues. The shipping game's save code has not
 been changed.
+
+
+## Stage111 — concurrent writers to the same staging slot (Linux only)
+
+The optional staged writer has a deliberate fixed path `<slot>.pending`.
+Without serialization, two independent writers can interleave their
+writes or unlink each other's pending record. On Linux hosts only, the
+experimental helper now takes an **exclusive advisory flock** on a
+persistent sibling `<slot>.pending.lock` **before touching pending**.
+The lockfile is created with `O_NOFOLLOW` and is never unlinked by
+the writer: keeping its inode stable ensures competing processes do
+not accidentally lock different inodes. The lock is held until
+readback verification and the live rename have completed, and it is
+released when errors occur or when a process exits/dies. Any failure
+to obtain the lock fails closed without writing to the target.
+
+The new `native/test_staged_writer_concurrency.c` uses real
+`fork` processes, the genuine RKS1/RKC2/RKL3 encoders and production
+pair loaders. Child 1 writes and flushes half its pending record then
+stops on SIGSTOP while it still holds the lock. Child 2 attempts to
+stage a distinguishable newer record and must remain blocked without
+touching the half-written record. In one mode child 1 resumes; in
+the other it is killed with SIGKILL and the OS releases its lock.
+Child 2 then commits the later generation, while the previous valid
+backup remains byte-identical. Each format, A/B orientation and
+termination mode is tested, giving 12 runs on GCC and 12 on Clang.
+
+**Important limitations:** the lock applies *only* to the same
+target pathname among cooperative Linux writers. It does not
+serialize writes to both slots of a pair or solve generation ordering
+for independent simultaneous writers across A/B. Locks are advisory,
+and untrusted programs can bypass them. The persistent lock path
+must not be deleted externally while writers are active. There is no
+equivalent lock guarantee yet on Switch/libnx, and the fallback there
+remains the prior experimental behaviour. Physical SD power loss,
+FAT metadata ordering, fsync durability and multi-device usage remain
+unproven. Production game saves still do not use the helper.
