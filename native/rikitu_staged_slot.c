@@ -10,6 +10,7 @@
 #if defined(__linux__)
 #include <sys/file.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #endif
 
 #if defined(__linux__)
@@ -57,6 +58,8 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
   const char lock_suffix[]=".pending.lock";
   char *lock_path=NULL;
   int lock_fd=-1;
+  dev_t stage_dev=0;
+  ino_t stage_ino=0;
 #endif
   char *tmp=NULL;
   uint8_t *readback=NULL;
@@ -126,6 +129,8 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
       (void)close(fd);
       goto done;
     }
+    stage_dev=stage_stat.st_dev;
+    stage_ino=stage_stat.st_ino;
     if(ftruncate(fd,0)!=0){(void)close(fd);goto done;}
     opened_tmp=1;
     f=fdopen(fd,"wb");
@@ -150,20 +155,57 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
   }
   close_ok=fclose(f)==0;f=NULL;
   if(!close_ok)goto done;
+#if defined(__linux__)
+  {
+    struct stat check_stat;
+    int read_fd=open(tmp,O_RDONLY|O_NOFOLLOW|O_NONBLOCK);
+    if(read_fd<0)goto done;
+    if(fstat(read_fd,&check_stat)!=0||
+       !S_ISREG(check_stat.st_mode)||check_stat.st_nlink!=1||
+       check_stat.st_dev!=stage_dev||check_stat.st_ino!=stage_ino){
+      (void)close(read_fd);
+      goto done;
+    }
+    f=fdopen(read_fd,"rb");
+    if(!f){(void)close(read_fd);goto done;}
+  }
+#else
   f=fopen(tmp,"rb");
   if(!f)goto done;
+#endif
   read_n=fread(readback,1,n,f);
   extra=fgetc(f);
   close_ok=fclose(f)==0;f=NULL;
   if(!close_ok||read_n!=n||extra!=EOF||memcmp(readback,record,n)!=0)goto done;
+  /* Refuse a renamed/replaced pending path even if the contents have
+   * independently passed the exact-byte readback. This does not make
+   * a malicious post-check path swap atomic. */
+#if defined(__linux__)
+  {
+    struct stat path_stat;
+    if(lstat(tmp,&path_stat)!=0||
+       !S_ISREG(path_stat.st_mode)||path_stat.st_nlink!=1||
+       path_stat.st_dev!=stage_dev||path_stat.st_ino!=stage_ino)goto done;
+  }
+#endif
   /* No unlink-first fallback: on a filesystem that rejects replace,
    * fail without destroying the existing target or other backup. */
   if(rename(tmp,target)!=0)goto done;
   ok=1;
 done:
   if(f)(void)fclose(f);
-  /* Never delete a pre-existing directory/path when fopen failed. */
-  if(!ok&&tmp&&opened_tmp)(void)remove(tmp);
+  /* If the pending pathname was swapped, do not delete the replacement
+   * while cleaning up our failed write. Only unlink our opened inode. */
+  if(!ok&&tmp&&opened_tmp){
+#if defined(__linux__)
+    struct stat path_stat;
+    if(lstat(tmp,&path_stat)==0&&S_ISREG(path_stat.st_mode)&&
+       path_stat.st_nlink==1&&path_stat.st_dev==stage_dev&&
+       path_stat.st_ino==stage_ino)(void)unlink(tmp);
+#else
+    (void)remove(tmp);
+#endif
+  }
 #if defined(__linux__)
   if(lock_fd>=0){(void)flock(lock_fd,LOCK_UN);(void)close(lock_fd);}
   /* Intentionally preserve .pending.lock for future concurrent writers. */
