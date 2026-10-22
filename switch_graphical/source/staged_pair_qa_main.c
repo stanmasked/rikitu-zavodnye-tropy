@@ -200,6 +200,9 @@ static int reject_traversal_path(void){
   /* Make the nested parent writable first: a rejected write must prove
    * path validation, not merely fail because its parent is missing. */
   if(mkdir(nested_dir,0777)!=0)return 0;
+  /* On phases with a valid A slot, a single file must not masquerade as
+   * a two-slot recovery pair. The host regression covers output immutability. */
+  if(rikitu_save_load_pair(paths[MAP][0],paths[MAP][0],&s,&l))return 0;
   if(rikitu_save_store_pair(escaped_path,paths[MAP][1],&s,&l)||
      rikitu_save_store_pair(nested_path,paths[MAP][1],&s,&l)||
      rikitu_save_store_pair(wrong_ext_a,wrong_ext_b,&s,&l)||
