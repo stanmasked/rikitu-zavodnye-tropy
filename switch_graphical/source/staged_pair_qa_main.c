@@ -218,12 +218,34 @@ static int reject_traversal_path(void){
     if(existed[f][b]&&
        !read_exact(paths[f][b],before[f][b],record_size(f)))return 0;
   }
-  /* On later cold starts, A is valid; a single file must not masquerade
-   * as a two-slot recovery pair. Rejection must preserve caller state. */
-  s.hearts=1;s.reached_checkpoints=2;l.active_seconds=777.0f;
-  if(rikitu_save_load_pair(paths[MAP][0],paths[MAP][0],&s,&l)||
-     s.hearts!=1||s.reached_checkpoints!=2||l.active_seconds!=777.0f)
-    return 0;
+  /* On later cold starts, A is valid for each family; a single file must
+   * not masquerade as a two-slot recovery pair. Rejection must preserve
+   * caller state on the actual Switch guest, not only in host tests. */
+  if(existed[MAP][0]){
+    s.hearts=1;s.reached_checkpoints=2;l.active_seconds=777.0f;
+    if(rikitu_save_load_pair(paths[MAP][0],paths[MAP][0],&s,&l)||
+       s.hearts!=1||s.reached_checkpoints!=2||l.active_seconds!=777.0f)
+      return 0;
+  }
+  if(existed[CAMPAIGN][0]){
+    if(!rikitu_campaign_init(&c,4))return 0;
+    c.wallet=123;
+    if(rikitu_campaign_save_load_pair(paths[CAMPAIGN][0],
+                                      paths[CAMPAIGN][0],&c)||
+       c.level!=4||c.wallet!=123||c.mode!=RIKITU_CAMPAIGN_PLAYING)
+      return 0;
+  }
+  if(existed[LEVEL][0]){
+    if(!rikitu_campaign_init(&c,4))return 0;
+    c.wallet=157;
+    seed_bridge(&s,&l);
+    s.hearts=1;s.reached_checkpoints=2;l.active_seconds=777.0f;
+    if(rikitu_level_save_load_pair(paths[LEVEL][0],paths[LEVEL][0],
+                                   &s,&l,&c)||
+       s.hearts!=1||s.reached_checkpoints!=2||
+       s.stage.coin_count!=0||l.active_seconds!=777.0f)
+      return 0;
+  }
   seed_flower(&s,&l);
   if(rikitu_save_store_pair(escaped_path,paths[MAP][1],&s,&l)||
      rikitu_save_store_pair(nested_path,paths[MAP][1],&s,&l)||
