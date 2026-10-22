@@ -1566,3 +1566,31 @@ does not establish atomic snapshot consistency for readers, storage
 durability or device cache flush ordering; no libnx/physical Switch
 pair-wide lock implementation has been validated, so **production
 Switch saving remains unchanged**.
+
+
+## Stage113 — semantic identity, generation overflow, and forged pair locks
+
+The optional Linux-host pair-wide writer is tested against three
+additional failure boundaries using unchanged game codecs and loaders:
+
+* Wrap-safe election: when one valid slot has generation
+  `UINT32_MAX` and the other generation `1`, the second is newer.
+  A pair-wide staged update must choose the older slot and write
+  generation 2, preserving the valid generation-1 fallback. Both
+  slot orientations are tested for RKS1/RKC2/RKL3.
+* Foreign RKL3 identity: a CRC-valid checkpoint with a higher
+  generation (1000) but a **different campaign wallet** must be
+  excluded by the caller's full RKL3 decode/identity callback.
+  With a valid generation-4 record belonging to the current
+  campaign in the other slot, the next staged generation must be 5,
+  overwriting the foreign slot while preserving the current backup.
+* Host lockfile symlink: an existing `<slot>.pair.lock` symlink
+  pointing to either live save must fail closed without modifying
+  the symlink or any live bytes. After removing that symlink, the
+  same staged pair operation may resume normally.
+
+The 14 cases are compiled independently with strict GCC and Clang.
+They do not modify production Switch writers or claim that physical
+SDMC/FAT rename, file locking, power-loss atomicity, or directory
+flush semantics have been proven. The paired writer is still a
+separate Linux-only experimental API.
