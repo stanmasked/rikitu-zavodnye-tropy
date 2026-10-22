@@ -2,8 +2,10 @@
  *
  * A directory deliberately occupies the next writer's slot path, so fopen
  * ("wb") fails deterministically while the other slot contains one valid
- * checkpoint. The writer must return failure; the source slot must remain
- * byte-identical and loadable; clearing the obstacle must allow a retry.
+ * checkpoint. The writer must return failure and the source slot must
+ * remain byte-identical. While the other slot is unreadable, load also fails
+ * closed because it cannot establish which generation is newest. Clearing
+ * the obstacle must allow recovery from the source slot and a writer retry.
  *
  * Both A-backed and B-backed orientations are covered for RKS1/RKC2/RKL3.
  * This models failure to open the target path, not a partial SD write,
