@@ -155,10 +155,16 @@ compiled the isolated QA NRO successfully in container
   `12a59cdfdceab83e39ee129b0275dd803e393e83f19de3922a3b6cc95c767edd`
 
 The run reported `PASS NRO0 header: program=196608 bytes, file=219333 bytes`.
-This establishes the pinned SDK inputs and a successful isolated QA NRO build,
-not successful runtime behavior on physical Switch hardware. The NeXium runs
-remain limited to their tested emulator scenarios and do not establish
-physical SDMC power-loss durability.
+The follow-on guest proof in
+[Stage126 run 39845005538](https://github.com/stanmasked/rikitu-zavodnye-tropy/actions/runs/39845005538)
+also completed successfully. Six independent NeXium starts exercised seed,
+partial pending, observe, blocked commit, recovery, and final verification
+with authentic RKS1/RKC2/RKL3 records. The blocked phase preserved all six
+live-slot byte sequences; after removing the obstruction, the retry wrote
+generation 4 to slot B while preserving generation 3 in slot A for each
+format. This is evidence for the isolated staged-slot QA path under NeXium,
+not proof of physical Switch SDMC power-loss durability and not yet proof
+that production save functions use the staged writer.
 
 ### 4. Replacement policy
 
