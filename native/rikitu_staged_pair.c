@@ -80,8 +80,16 @@ static int pair_commit_internal(
   if(!lock_path||!x||!y||!out)goto done;
   memcpy(lock_path,base,len);
   memcpy(lock_path+len,suffix,sizeof(suffix));
-  fd=open(lock_path,O_RDWR|O_CREAT|O_NOFOLLOW,0600);
-  if(fd<0||flock(fd,LOCK_EX)!=0)goto done;
+  fd=open(lock_path,O_RDWR|O_CREAT|O_NOFOLLOW|O_NONBLOCK,0600);
+  if(fd<0)goto done;
+  /* Do not accept a special file or hard-linked live record as the
+   * stable pair-wide lock; never unlink a trusted lock after use. */
+  {
+    struct stat lock_stat;
+    if(fstat(fd,&lock_stat)!=0||
+       !S_ISREG(lock_stat.st_mode)||lock_stat.st_nlink!=1)goto done;
+  }
+  if(flock(fd,LOCK_EX)!=0)goto done;
   /* Selection is performed AFTER the lock, not on a stale earlier read.
    * Do not consider any .pending file a valid generation. */
   va=slot_generation(a,x,n,validate,context,&ga);
