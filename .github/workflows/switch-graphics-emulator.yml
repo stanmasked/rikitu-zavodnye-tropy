@@ -67,7 +67,7 @@ jobs:
         run: |
           set -euo pipefail
           printf 'DEVKITPRO=%s\n' "$DEVKITPRO"
-          dkp-pacman -Q libnx switch-dev devkitA64 devkitARM
+          dkp-pacman -Q libnx devkitA64 devkitARM
           test -f "$DEVKITPRO/libnx/include/switch/runtime/devices/fs_dev.h"
           test -f "$DEVKITPRO/libnx/include/switch/services/fs.h"
           libnx_archive="$(find "$DEVKITPRO" -type f -name libnx.a -print -quit)"
