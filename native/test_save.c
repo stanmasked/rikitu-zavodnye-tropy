@@ -103,6 +103,7 @@ int main(void){
   assert(fclose(f)==0);
   assert(rikitu_save_load_pair(FILE_A,FILE_B,&d,&r)&&d.hearts==1);
   (void)remove(FILE_A);(void)remove(FILE_B);
+  (void)remove(WRONG_A);(void)remove(WRONG_B);
   assert(!rikitu_save_load_pair(FILE_A,FILE_B,&d,&r));
   puts("PASS MAP01 dual-slot save v1: CRC, 90 coins, six enemies, checkpoint, hits, time, corrupt/partial fallback");
   return 0;
