@@ -15,7 +15,7 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
   char *tmp=NULL;
   uint8_t *readback=NULL;
   size_t name_len,read_n;
-  int ok=0,extra,close_ok;
+  int ok=0,extra,close_ok,opened_tmp=0;
   FILE *f=NULL;
   if(!target||!target[0]||!record||!n||n>4096u)return 0;
   name_len=strlen(target);
@@ -27,6 +27,7 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
   memcpy(tmp+name_len,suffix,sizeof(suffix));
   f=fopen(tmp,"wb");
   if(!f)goto done;
+  opened_tmp=1;
   if(fwrite(record,1,n,f)!=n||fflush(f)!=0){
     (void)fclose(f);f=NULL;
     goto done;
@@ -45,7 +46,8 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
   ok=1;
 done:
   if(f)(void)fclose(f);
-  if(!ok&&tmp)(void)remove(tmp);
+  /* Never delete a pre-existing directory/path when fopen failed. */
+  if(!ok&&tmp&&opened_tmp)(void)remove(tmp);
   free(readback);
   free(tmp);
   return ok;
