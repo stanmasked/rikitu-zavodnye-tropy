@@ -104,28 +104,35 @@ These are source-level findings, not proof of physical SDMC behavior. Keep
 the existing-target rename and `fsdevCommitDevice` result checks as
 separate QA cases, and do not claim power-loss durability from NeXium alone.
 
-### Stage128 CI evidence: dependency setup no longer hits the 15-minute limit
+### Stage128–129 CI evidence: bounded dependency setup and libnx fingerprint
 
 On commit `db5013deda904692a100643a84e337add2351451`, two guest workflows
 completed successfully after adding bounded APT operations and disabling
 recommended packages:
 
 - [Stage106 rename replacement](https://github.com/stanmasked/rikitu-zavodnye-tropy/actions/runs/39839316416):
-  the index update fetched about 3 MB in roughly 3 seconds; dependency
-  installation fetched 31.7 MB in about 5 seconds. The three independent
-  cold-start phases passed, and the host checker confirmed the expected A/B
-  hashes and no leftover pending file.
+  package indexes fetched about 3 MB in roughly 3 seconds; dependency
+  installation fetched 31.7 MB in about 5 seconds. Three independent cold
+  starts passed, with expected A/B hashes and no leftover pending file.
 - [Stage125 real-codec staged replacement](https://github.com/stanmasked/rikitu-zavodnye-tropy/actions/runs/39839316721):
-  the install step and all three guest starts passed.
+  dependency installation and all three guest starts passed.
 
-The latest PR112 commit `3b0c019318776903840e04572014c392de9d5fa4` adds
-logging of the devkitPro package set plus SHA-256 hashes of the installed
-libnx headers and archive to four Switch build workflows. Those checks are
-queued as of this document revision. Until their logs are available, the
-package fingerprint is pending.
+The first Stage128 attempt to fingerprint the build environment failed before
+compilation because the devkitPro container's default shell was `sh`, while
+the diagnostic used Bash-only `set -o pipefail`. This was a workflow-script
+compatibility error, not evidence of a libnx or save-code failure. Commit
+`c31a2a1ad7d17977043a475cc468e5101b0786d1` explicitly selects Bash for that
+step in the four Switch workflows.
 
-The emulator runs support the staged-replacement behavior under NeXium only.
-They do not establish physical Switch SDMC power-loss durability.
+The subsequent run set is queued as of this document revision. The exact
+installed devkitPro package versions and libnx header/archive SHA-256 values
+are still pending successful logs. Do not treat the public libnx source
+snapshot as the confirmed build contract until these fingerprints are
+captured.
+
+The successful NeXium runs support only the tested emulator scenarios. They
+do not establish physical Switch SDMC power-loss durability. The package
+fingerprint itself is not yet verified.
 
 ### 4. Replacement policy
 
