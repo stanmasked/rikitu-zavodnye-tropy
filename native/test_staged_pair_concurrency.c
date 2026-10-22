@@ -65,7 +65,7 @@ static int codec_encode(uint8_t *out,size_t n,uint32_t gen,void *opaque){
   RikituScene s;
   RikituLoop l;
   RikituCampaign c;
-  int kind=ctx->writer==1?3:ctx->writer==2?4:ctx->writer;
+  int kind=ctx->writer==1?3:ctx->writer==2?4:ctx->writer==3?1:0;
   int phase=kind==0?0:kind==1?1:2;
   assert(n==bytes_of(ctx->family));
   if(ctx->entered_marker){
@@ -183,7 +183,7 @@ static void run_case(int family,int newer_b,int killed){
   older=newer_b?a:b;
   backup=newer_b?b:a;
   ctx.writer=0;assert(codec_encode(initial1,n,1,&ctx));
-  ctx.writer=1;assert(codec_encode(initial2,n,2,&ctx));
+  ctx.writer=3;assert(codec_encode(initial2,n,2,&ctx));
   ctx.writer=1;assert(codec_encode(first3,n,3,&ctx));
   ctx.writer=2;assert(codec_encode(second3,n,3,&ctx));
   ctx.writer=2;assert(codec_encode(second4,n,4,&ctx));
