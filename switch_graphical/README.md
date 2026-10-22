@@ -1594,3 +1594,41 @@ They do not modify production Switch writers or claim that physical
 SDMC/FAT rename, file locking, power-loss atomicity, or directory
 flush semantics have been proven. The paired writer is still a
 separate Linux-only experimental API.
+
+
+## Stage114 — reject stale gameplay snapshots before promoting generations
+
+The **experimental Linux-only** pair writer now exports a separate
+`rikitu_staged_pair_commit_if_current` API, accepting the latest
+generation the caller actually observed at the moment its gameplay
+snapshot was prepared. Within the same exclusive pair lock used
+for generation election, it reads and semantically validates BOTH
+slots, finds the newest wrap-safe generation, and compares it to
+the supplied `expected_generation`. If the two do not match, it
+fails **before encoding or touching either live or pending file**.
+The caller must reload or explicitly reconcile its gameplay state
+before attempting another write; blindly retrying with a newly
+guessed expected generation would defeat the guard.
+
+`expected_generation=0` represents a deliberately absent/invalid
+pair; only the first guarded save may succeed when both slots are
+empty. Existing unguarded `rikitu_staged_pair_commit` remains
+unchanged in intent for existing test fixtures, and neither helper
+is linked into shipping Switch saves.
+
+The Stage114 native test uses authentic RKS1/RKC2/RKL3 encoders and
+production pair loaders across A/B orientations. It checks three
+histories (18 cases per compiler): a gen1/gen2 pair promoted to
+gen3, stale writer rejected and fresh writer promoted to gen4;
+UINT32_MAX/gen1 wrap where stale UINT32_MAX is rejected before
+generation 2; and empty initial slots where only expected 0
+can create gen1. Rejected writes preserve BOTH live files
+byte-for-byte, leave `.pending` absent, never invoke the encoder,
+and never modify the reported committed generation.
+
+This is an optimistic **generation-token** guard, not a cryptographic
+snapshot identity proof; a hypothetical wraparound spanning billions
+of writes can reuse a token. It does not prevent noncooperating writers,
+path alias races, stale reads outside this API, malicious lock removal,
+or power loss. No libnx pair lock or physical FAT durability is
+established by this Linux-only test.
