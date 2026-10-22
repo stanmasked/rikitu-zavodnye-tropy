@@ -62,6 +62,20 @@ jobs:
       image: devkitpro/devkita64:20260219
     steps:
       - uses: actions/checkout@v4
+      - name: Record exact devkitPro and libnx inputs
+        run: |
+          set -euo pipefail
+          printf 'DEVKITPRO=%s\n' "$DEVKITPRO"
+          pacman -Q | grep -E '^(libnx|switch-dev|devkitA64|devkitARM) ' || true
+          test -f "$DEVKITPRO/libnx/include/switch/runtime/devices/fs_dev.h"
+          test -f "$DEVKITPRO/libnx/include/switch/services/fs.h"
+          libnx_archive="$(find "$DEVKITPRO" -type f -name libnx.a -print -quit)"
+          test -n "$libnx_archive"
+          sha256sum \
+            "$DEVKITPRO/libnx/include/switch/runtime/devices/fs_dev.h" \
+            "$DEVKITPRO/libnx/include/switch/services/fs.h" \
+            "$libnx_archive"
+
       - name: Configure toolchain and build
         run: |
           echo "$DEVKITPRO/devkitA64/bin" >> "$GITHUB_PATH"
