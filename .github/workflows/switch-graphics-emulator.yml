@@ -107,7 +107,9 @@ jobs:
   emulated-graphics:
     needs: compile
     runs-on: ubuntu-26.04
-    timeout-minutes: 20
+    # The full multi-boot suite exceeded 20 minutes on the PR runner;
+    # allow time for dependency setup plus all guest recovery checks.
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
