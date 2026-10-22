@@ -1,4 +1,5 @@
 #include "rikitu_campaign_save.h"
+#include "rikitu_slot_read.h"
 #include <stdio.h>
 #include <string.h>
 /* Restrict this new writer to .rkc paths, guarding legacy MAP01 .rks.
@@ -11,16 +12,7 @@ static int campaign_path(const char *p){
 }
 static int read_slot(const char *path,
                      uint8_t p[RIKITU_CAMPAIGN_SAVE_BYTES]){
-  FILE *f;
-  int extra;
-  size_t bytes;
-  if(!path||!p)return 0;
-  f=fopen(path,"rb");
-  if(!f)return 0;
-  bytes=fread(p,1,RIKITU_CAMPAIGN_SAVE_BYTES,f);
-  extra=fgetc(f);
-  if(fclose(f)!=0)return 0;
-  return bytes==RIKITU_CAMPAIGN_SAVE_BYTES && extra==EOF;
+  return rikitu_read_fixed_slot(path,p,RIKITU_CAMPAIGN_SAVE_BYTES);
 }
 static int check(const uint8_t p[RIKITU_CAMPAIGN_SAVE_BYTES],
                  uint32_t *generation){
@@ -35,11 +27,15 @@ int rikitu_campaign_save_load_pair(
     const char *a,const char *b,RikituCampaign *campaign){
   uint8_t x[RIKITU_CAMPAIGN_SAVE_BYTES],y[RIKITU_CAMPAIGN_SAVE_BYTES];
   uint32_t gx=0,gy=0;
-  int vx,vy;
+  int rx,ry,vx,vy;
   if(!campaign_path(a)||!campaign_path(b)||!campaign||
      strcmp(a,b)==0)return 0;
-  vx=read_slot(a,x)&&check(x,&gx);
-  vy=read_slot(b,y)&&check(y,&gy);
+  rx=read_slot(a,x);
+  if(rx==RIKITU_SLOT_READ_ERROR)return 0;
+  ry=read_slot(b,y);
+  if(ry==RIKITU_SLOT_READ_ERROR)return 0;
+  vx=rx==RIKITU_SLOT_READ_OK&&check(x,&gx);
+  vy=ry==RIKITU_SLOT_READ_OK&&check(y,&gy);
   if(!vx&&!vy)return 0;
   if(vy&&(!vx||newer(gy,gx)))
     return rikitu_campaign_save_decode(
@@ -52,14 +48,18 @@ int rikitu_campaign_save_store_pair(
   uint8_t x[RIKITU_CAMPAIGN_SAVE_BYTES],y[RIKITU_CAMPAIGN_SAVE_BYTES];
   uint8_t data[RIKITU_CAMPAIGN_SAVE_BYTES];
   uint32_t gx=0,gy=0,gen=1;
-  int vx,vy;
+  int rx,ry,vx,vy;
   const char *target;
   FILE *f;
   size_t n;
   if(!campaign_path(a)||!campaign_path(b)||!campaign||
      strcmp(a,b)==0||!rikitu_campaign_valid(campaign))return 0;
-  vx=read_slot(a,x)&&check(x,&gx);
-  vy=read_slot(b,y)&&check(y,&gy);
+  rx=read_slot(a,x);
+  if(rx==RIKITU_SLOT_READ_ERROR)return 0;
+  ry=read_slot(b,y);
+  if(ry==RIKITU_SLOT_READ_ERROR)return 0;
+  vx=rx==RIKITU_SLOT_READ_OK&&check(x,&gx);
+  vy=ry==RIKITU_SLOT_READ_OK&&check(y,&gy);
   if(vx&&vy){
     if(newer(gy,gx)){gen=gy+1;target=a;}
     else{gen=gx+1;target=b;}

@@ -2,8 +2,10 @@
  *
  * A directory deliberately occupies the next writer's slot path, so fopen
  * ("wb") fails deterministically while the other slot contains one valid
- * checkpoint. The writer must return failure; the source slot must remain
- * byte-identical and loadable; clearing the obstacle must allow a retry.
+ * checkpoint. The writer must return failure and the source slot must
+ * remain byte-identical. While the other slot is unreadable, load also fails
+ * closed because it cannot establish which generation is newest. Clearing
+ * the obstacle must allow recovery from the source slot and a writer retry.
  *
  * Both A-backed and B-backed orientations are covered for RKS1/RKC2/RKL3.
  * This models failure to open the target path, not a partial SD write,
@@ -96,9 +98,12 @@ static void test_rks(int valid_in_b){
   assert(!rikitu_save_store_pair(RKS_A,RKS_B,&s,&l));
   unchanged(valid,old,sizeof(old));
   seed_flower(&d,&loaded);
-  assert(rikitu_save_load_pair(RKS_A,RKS_B,&d,&loaded));
+  assert(!rikitu_save_load_pair(RKS_A,RKS_B,&d,&loaded));
   assert(d.reached_checkpoints==0 && d.hearts==3);
   unblock(blocked);
+  seed_flower(&d,&loaded);
+  assert(rikitu_save_load_pair(RKS_A,RKS_B,&d,&loaded));
+  assert(d.reached_checkpoints==0 && d.hearts==3);
   assert(rikitu_save_store_pair(RKS_A,RKS_B,&s,&l));
   unchanged(valid,old,sizeof(old));
   seed_flower(&d,&loaded);
@@ -123,9 +128,12 @@ static void test_rkc(int valid_in_b){
   assert(!rikitu_campaign_save_store_pair(RKC_A,RKC_B,&campaign));
   unchanged(valid,old,sizeof(old));
   memset(&loaded,0,sizeof(loaded));
+  assert(!rikitu_campaign_save_load_pair(RKC_A,RKC_B,&loaded));
+  assert(loaded.wallet==0 && loaded.level==0);
+  unblock(blocked);
+  memset(&loaded,0,sizeof(loaded));
   assert(rikitu_campaign_save_load_pair(RKC_A,RKC_B,&loaded));
   assert(loaded.wallet==157 && loaded.level==4);
-  unblock(blocked);
   assert(rikitu_campaign_save_store_pair(RKC_A,RKC_B,&campaign));
   unchanged(valid,old,sizeof(old));
   memset(&loaded,0,sizeof(loaded));
@@ -152,10 +160,14 @@ static void test_rkl(int valid_in_b){
   assert(!rikitu_level_save_store_pair(RKL_A,RKL_B,&s,&l,&campaign));
   unchanged(valid,old,sizeof(old));
   seed_bridge(&d,&loaded);
-  assert(rikitu_level_save_load_pair(RKL_A,RKL_B,&d,&loaded,&campaign));
+  assert(!rikitu_level_save_load_pair(RKL_A,RKL_B,&d,&loaded,&campaign));
   assert(d.reached_checkpoints==0 && d.hearts==3);
   assert(d.stage.coin_count==0);
   unblock(blocked);
+  seed_bridge(&d,&loaded);
+  assert(rikitu_level_save_load_pair(RKL_A,RKL_B,&d,&loaded,&campaign));
+  assert(d.reached_checkpoints==0 && d.hearts==3);
+  assert(d.stage.coin_count==0);
   assert(rikitu_level_save_store_pair(RKL_A,RKL_B,&s,&l,&campaign));
   unchanged(valid,old,sizeof(old));
   seed_bridge(&d,&loaded);
