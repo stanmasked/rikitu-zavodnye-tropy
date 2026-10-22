@@ -134,19 +134,31 @@ the diagnostic used Bash-only `set -o pipefail`. Commit
 `c31a2a1ad7d17977043a475cc468e5101b0786d1` explicitly selects Bash for that
 step in the four Switch workflows.
 
-The next attempt confirmed the pinned container's installed package versions
-before stopping on a bad package name: `libnx 4.12.0-1`, `devkitA64 r29.2-1`,
-and `devkitARM r67.1-1`. `switch-dev` is not a package name in this image.
-Commit `9eb6bbd82e78cabef92bf278c0d6ee13a0860f21` removes that nonexistent
-name from the strict query while retaining the checks for two libnx headers,
-the static archive, and their SHA-256 fingerprints. The new revision's jobs
-are queued; the actual header/archive hashes and successful end-to-end
-fingerprint step remain pending.
+The first retry stopped because `switch-dev` is not a package name in
+this image. Commit `9eb6bbd82e78cabef92bf278c0d6ee13a0860f21` removes that
+name from the strict query while retaining checks for the libnx headers,
+static archive, and their SHA-256 fingerprints.
 
-The successful NeXium runs support only the tested emulator scenarios. They
-do not establish physical Switch SDMC power-loss durability. Do not treat
-the public libnx source snapshot as the confirmed build contract until the
-fingerprint step completes successfully.
+The subsequent Stage126 guest build completed the fingerprint step and
+compiled the isolated QA NRO successfully in container
+`devkitpro/devkita64:20260219` (image digest
+`sha256:1fc388c3a0d34bd2045a6dadcb1020e069d5f876a187fd705de14b4440c00282`):
+
+- `libnx 4.12.0-1`
+- `devkitA64 r29.2-1`
+- `devkitARM r67.1-1`
+- `switch/runtime/devices/fs_dev.h` SHA-256:
+  `ff7559fda745935c6cbac0dfd8bd6c9f5b1b3b9f5f81ed3d97e14773e041b507`
+- `switch/services/fs.h` SHA-256:
+  `afdbd18ff86a2ded14d32261394b2cdbdc5f3ae5613c77d4dabeb82009c451d6`
+- `libnx.a` SHA-256:
+  `12a59cdfdceab83e39ee129b0275dd803e393e83f19de3922a3b6cc95c767edd`
+
+The run reported `PASS NRO0 header: program=196608 bytes, file=219333 bytes`.
+This establishes the pinned SDK inputs and a successful isolated QA NRO build,
+not successful runtime behavior on physical Switch hardware. The NeXium runs
+remain limited to their tested emulator scenarios and do not establish
+physical SDMC power-loss durability.
 
 ### 4. Replacement policy
 
