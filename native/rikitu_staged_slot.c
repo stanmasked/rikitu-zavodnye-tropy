@@ -27,7 +27,7 @@ int rikitu_staged_slot_path_is_canonical(const char *path){
   parent=(char*)malloc(parent_len+1u);
   if(!parent)goto done;
   memcpy(parent,path,parent_len);
-  parent[parent_len]='\\0';
+  parent[parent_len]='\0';
   resolved=realpath(parent,NULL);
   if(!resolved)goto done;
   base_len=strlen(base);
