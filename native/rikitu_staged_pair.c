@@ -90,12 +90,17 @@ static int pair_commit_internal(
        !S_ISREG(lock_stat.st_mode)||lock_stat.st_nlink!=1)goto done;
   }
   if(flock(fd,LOCK_EX)!=0)goto done;
-  /* Another process could have hard-linked our lock inode while
-   * flock() waited. Recheck after acquisition, before touching saves. */
+  /* An open descriptor can remain single-linked even if the lock path
+   * was renamed away and replaced during flock contention. Check that
+   * the current directory entry STILL names our locked inode. */
   {
-    struct stat locked_stat;
+    struct stat locked_stat,path_stat;
     if(fstat(fd,&locked_stat)!=0||
-       !S_ISREG(locked_stat.st_mode)||locked_stat.st_nlink!=1)goto done;
+       lstat(lock_path,&path_stat)!=0||
+       !S_ISREG(locked_stat.st_mode)||locked_stat.st_nlink!=1||
+       !S_ISREG(path_stat.st_mode)||path_stat.st_nlink!=1||
+       locked_stat.st_dev!=path_stat.st_dev||
+       locked_stat.st_ino!=path_stat.st_ino)goto done;
   }
   /* Selection is performed AFTER the lock, not on a stale earlier read.
    * Do not consider any .pending file a valid generation. */
