@@ -298,7 +298,7 @@ static void run_ambiguity_case(int family,int reversed,int scenario){
   }
   no_pending(a,b);
   clean_path(a);clean_path(b);
-  printf("PASS Stage115 family=%d reversed=%d ambiguity=%d\\n",
+  printf("PASS Stage115 family=%d reversed=%d ambiguity=%d\n",
          family,reversed,scenario);
 }
 int main(void){
