@@ -28,7 +28,7 @@ int rikitu_save_load_pair(const char *a,const char *b,
   uint8_t x[RIKITU_SAVE_BYTES],y[RIKITU_SAVE_BYTES];
   uint32_t gx=0,gy=0;
   int rx,ry,vx,vy;
-  if(!save_path(a)||!save_path(b)||!s||!l)return 0;
+  if(!save_path(a)||!save_path(b)||strcmp(a,b)==0||!s||!l)return 0;
   rx=read_slot(a,x);
   if(rx==RIKITU_SLOT_READ_ERROR)return 0;
   ry=read_slot(b,y);

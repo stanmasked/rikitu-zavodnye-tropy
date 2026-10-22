@@ -85,6 +85,12 @@ int main(void){
   assert(!rikitu_save_load_pair(FILE_A,FILE_B,&d,&r));
   /* Three successive saves alternate file slots; older stays recoverable. */
   assert(rikitu_save_store_pair(FILE_A,FILE_B,&s,&l));
+  /* A load API must not treat one file as a two-slot recovery pair. */
+  init(&d,&r);
+  d.hearts=3;
+  r.active_seconds=777.0f;
+  assert(!rikitu_save_load_pair(FILE_A,FILE_A,&d,&r));
+  assert(d.hearts==3 && near(r.active_seconds,777.0f));
   s.hearts=1;
   assert(rikitu_save_store_pair(FILE_A,FILE_B,&s,&l));
   init(&d,&r);
