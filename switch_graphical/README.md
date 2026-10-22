@@ -1711,8 +1711,10 @@ six unsafe pre-existing path types (hard-linked `.pending`,
 hard-linked `.pending.lock`, hard-linked `.pair.lock`, FIFO
 `.pending`, directory `.pending`, FIFO `.pair.lock`).
 Every rejection must preserve both live records and the obstruction,
-leave the generation output and encoder call count unchanged, and
-succeed after explicit cleanup of the obstructing path. Six additional
+leave the reported generation unchanged, and succeed after explicit
+cleanup of the obstructing path. A pair-lock obstruction rejects before
+encoding; a .pending/.pending.lock obstruction rejects after the in-memory
+encoder but before a filesystem commit. Six additional
 positive cases (three codecs, both orientations) confirm that an ordinary
 incomplete regular `.pending` can still be safely reused and produces
 the expected new generation. Production pair-loaders confirm the
@@ -1740,9 +1742,11 @@ not mistaken for absent files. It adds **24 regression scenarios per
 compiler**: real RKS1/RKC2/RKL3 codecs, both A/B orientations, and four
 obstructions: `.pending` symlink to a live save, dangling
 `.pending` symlink, `.pending.lock` FIFO, and `.pair.lock`
-directory. Refusals preserve the two live records, do not invoke the
-encoder, do not alter reported generation and preserve the obstructing
-path until explicit operator cleanup. After cleanup, each fixture
+directory. Refusals preserve the two live records, do not alter reported
+generation and preserve the obstructing path until explicit operator
+cleanup. Only the pair-lock-directory case rejects before encoding;
+the .pending-related cases reject after in-memory encoding but before
+any live-file write. After cleanup, each fixture
 successfully commits a new generation and checks the original pair
 loader.
 
@@ -1751,3 +1755,32 @@ Small local Linux-system-call smoke probes passed on GCC and Clang
 the full repository C99 suite or a Switch build; Stage118 integration
 is not eligible for merging until the full CI on its current head passes.
 No Switch/libnx or physical FAT/SDMC guarantee is claimed.
+
+## Stage119 — lock-path identity check after flock contention
+
+The Linux-only experimental pair-wide and per-target staged-save locks
+now verify **both** `fstat(opened_fd)` and `lstat(current_lock_path)`
+**after** obtaining `flock`. The two must still identify the same
+single-link regular inode (`st_dev` and `st_ino` both match). A lock
+renamed out of the way while a writer waited for another process can
+otherwise leave the waiting writer holding a different lock than any
+new writer opening the original pathname. This change fails closed
+without modifying either live slot if the lock path has changed.
+
+The native combined fixture adds **12 actual fork/flock races per
+compiler**: three genuine RKS1/RKC2/RKL3 codecs, both A/B newer-slot
+orientations, and replacement of either `.pair.lock` or
+`.pending.lock`. The parent holds the old inode locked; a forked
+child explicitly closes the inherited descriptor, signals readiness,
+and opens its own descriptor. The parent verifies that descriptor
+through Linux `/proc/<pid>/fd`, renames the old pathname, replaces
+it with a different inode, and releases its lock. The child must fail
+without changing live save bytes. A subsequent normal save after
+explicit cleanup must recover. This test distinguishes pair-level
+pre-encode refusals from staging-level post-encode refusals.
+
+Separate Linux lock-path swap smoke tests passed with strict C99 GCC
+and Clang, eight consecutive runs each. The integrated authentic-codec
+fixture and all full-project workflows still require CI confirmation.
+This is advisory flock on Linux, not a proof against malicious
+noncooperating writers, alias races or physical Switch/SDMC durability.
