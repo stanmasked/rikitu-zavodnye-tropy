@@ -674,6 +674,117 @@ static void run_lock_swap_case(int family,int newer_b,int pair_lock){
          family,newer_b?'B':'A',pair_lock?"pair":"pending");
 }
 #endif
+/* Stage120: reject alternate spellings of a slot path and reject A/B
+ * entries that are hard links to the same inode. These violate the
+ * two-slot stable-path contract and must fail before codec encoding. */
+enum { DOT_ALIAS=0,PARENT_SYMLINK_ALIAS=1 };
+static void run_noncanonical_path_case(int family,int alias_b,int kind){
+  char a[200],b[200],alias_path[260],alias_dir[100],lock_path[240];
+  const char *base_path,*leaf;
+  const char *arg_a,*arg_b;
+  uint8_t old[RIKITU_LEVEL_SAVE_BYTES],recent[RIKITU_LEVEL_SAVE_BYTES];
+  uint8_t successor[RIKITU_LEVEL_SAVE_BYTES];
+  uint32_t reported=0xf00df00du;
+  Context ctx;
+  struct stat st;
+  int len,called;
+  size_t n=bytes_for(family);
+  memset(&ctx,0,sizeof(ctx));
+  ctx.family=family;
+  assert(rikitu_campaign_init(&ctx.campaign,4));
+  ctx.campaign.wallet=157;
+  create_paths(family,a,b);
+  clean_path(a);clean_path(b);
+  generate(&ctx,0,1u,old);
+  generate(&ctx,1,2u,recent);
+  generate(&ctx,2,3u,successor);
+  write_bytes(a,old,n);
+  write_bytes(b,recent,n);
+  base_path=alias_b?b:a;
+  leaf=strrchr(base_path,'/');
+  assert(leaf&&leaf[1]);
+  if(kind==DOT_ALIAS){
+    len=snprintf(alias_path,sizeof(alias_path),"/tmp/./%s",leaf+1);
+    assert(len>0&&len<(int)sizeof(alias_path));
+  }else{
+    (void)unlink("/tmp/rikitu-stage120-parent-alias");
+    assert(symlink("/tmp","/tmp/rikitu-stage120-parent-alias")==0);
+    len=snprintf(alias_dir,sizeof(alias_dir),
+                 "/tmp/rikitu-stage120-parent-alias");
+    assert(len>0&&len<(int)sizeof(alias_dir));
+    len=snprintf(alias_path,sizeof(alias_path),"%s/%s",alias_dir,leaf+1);
+    assert(len>0&&len<(int)sizeof(alias_path));
+  }
+  arg_a=alias_b?a:alias_path;
+  arg_b=alias_b?alias_path:b;
+  len=snprintf(lock_path,sizeof(lock_path),"%s.pair.lock",a);
+  assert(len>0&&len<(int)sizeof(lock_path));
+  ctx.phase=2;
+  called=ctx.encode_calls;
+  assert(!rikitu_staged_pair_commit_if_current(
+      arg_a,arg_b,n,record_validate,record_encode,&ctx,2u,&reported));
+  assert(reported==0xf00df00du&&ctx.encode_calls==called);
+  assert_bytes(a,old,n);
+  assert_bytes(b,recent,n);
+  no_pending(a,b);
+  assert(lstat(lock_path,&st)!=0&&errno==ENOENT);
+  if(kind==PARENT_SYMLINK_ALIAS)
+    assert(unlink("/tmp/rikitu-stage120-parent-alias")==0);
+  reported=0;
+  assert(rikitu_staged_pair_commit_if_current(
+      a,b,n,record_validate,record_encode,&ctx,2u,&reported));
+  assert(reported==3u);
+  assert_bytes(a,successor,n);
+  assert_bytes(b,recent,n);
+  check_loader(&ctx,a,b,2);
+  no_pending(a,b);
+  clean_path(a);clean_path(b);
+  printf("PASS Stage120 alias family=%d slot=%c kind=%d\n",
+         family,alias_b?'B':'A',kind);
+}
+static void run_shared_inode_case(int family){
+  char a[200],b[200];
+  uint8_t old[RIKITU_LEVEL_SAVE_BYTES],recent[RIKITU_LEVEL_SAVE_BYTES];
+  uint8_t successor[RIKITU_LEVEL_SAVE_BYTES];
+  uint32_t reported=0xf00df00du;
+  Context ctx;
+  struct stat sa,sb;
+  int called;
+  size_t n=bytes_for(family);
+  memset(&ctx,0,sizeof(ctx));
+  ctx.family=family;
+  assert(rikitu_campaign_init(&ctx.campaign,4));
+  ctx.campaign.wallet=157;
+  create_paths(family,a,b);
+  clean_path(a);clean_path(b);
+  generate(&ctx,0,1u,old);
+  generate(&ctx,1,2u,recent);
+  generate(&ctx,2,3u,successor);
+  write_bytes(a,old,n);
+  assert(link(a,b)==0);
+  assert(lstat(a,&sa)==0&&lstat(b,&sb)==0);
+  assert(sa.st_dev==sb.st_dev&&sa.st_ino==sb.st_ino&&sa.st_nlink>=2);
+  ctx.phase=2;
+  called=ctx.encode_calls;
+  assert(!rikitu_staged_pair_commit_if_current(
+      a,b,n,record_validate,record_encode,&ctx,1u,&reported));
+  assert(reported==0xf00df00du&&ctx.encode_calls==called);
+  assert_bytes(a,old,n);
+  assert_bytes(b,old,n);
+  no_pending(a,b);
+  assert(unlink(b)==0);
+  write_bytes(b,recent,n);
+  reported=0;
+  assert(rikitu_staged_pair_commit_if_current(
+      a,b,n,record_validate,record_encode,&ctx,2u,&reported));
+  assert(reported==3u);
+  assert_bytes(a,successor,n);
+  assert_bytes(b,recent,n);
+  check_loader(&ctx,a,b,2);
+  no_pending(a,b);
+  clean_path(a);clean_path(b);
+  printf("PASS Stage120 shared-inode family=%d\n",family);
+}
 int main(void){
   int f,b,s;
   for(f=MAP;f<=LEVEL;f++)
@@ -712,5 +823,13 @@ int main(void){
         run_lock_swap_case(f,b,s);
   puts("PASS Stage119 12 real two-process lock-path replacement cases");
 #endif
+  for(f=MAP;f<=LEVEL;f++)
+    for(b=0;b<2;b++)
+      for(s=DOT_ALIAS;s<=PARENT_SYMLINK_ALIAS;s++)
+        run_noncanonical_path_case(f,b,s);
+  puts("PASS Stage120 12 noncanonical path-alias rejection/recovery cases");
+  for(f=MAP;f<=LEVEL;f++)
+    run_shared_inode_case(f);
+  puts("PASS Stage120 3 shared-inode A/B rejection/recovery cases");
   return 0;
 }
