@@ -11,7 +11,7 @@ static void fill(RikituCampaign *c){
   c->wallet=180;
 }
 int main(void){
-  RikituCampaign c,d;
+  RikituCampaign c,d,untouched;
   uint8_t bytes[RIKITU_CAMPAIGN_SAVE_BYTES];
   uint8_t scratch[RIKITU_CAMPAIGN_SAVE_BYTES];
   uint32_t generation=0;
@@ -57,6 +57,12 @@ int main(void){
   assert(!rikitu_campaign_save_store_pair(A,A,&c));
   assert(rikitu_campaign_save_store_pair(A,B,&c));
   assert(rikitu_campaign_save_load_pair(A,B,&d)&&d.wallet==180);
+  /* Duplicate paths must not masquerade as a two-slot recovery pair, and
+   * rejection must leave the caller's campaign byte-for-byte untouched. */
+  memset(&d,0x5c,sizeof(d));
+  memcpy(&untouched,&d,sizeof(d));
+  assert(!rikitu_campaign_save_load_pair(A,A,&d));
+  assert(memcmp(&d,&untouched,sizeof(d))==0);
   /* A valid Moki purchase persists earned wallet/hearts in slot B. */
   assert(rikitu_campaign_buy(&c).success);
   assert(c.wallet==60 && c.purchased_hearts==1 && c.max_hearts==4);
