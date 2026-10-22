@@ -241,6 +241,66 @@ static void run_case(int family,int initial_b,int scenario){
   printf("PASS Stage114 family=%d newer=%c case=%d guarded generations\n",
          family,initial_b?'B':'A',scenario);
 }
+/* Stage115: two valid A/B records can be inconclusive even when the
+ * caller's expected generation equals one of their decoded generations.
+ * Fail closed on conflicting equal-generation payloads and serial numbers
+ * exactly 2^31 apart; allow byte-identical duplicates. */
+enum { SPLIT=0, HALFWAY=1, DUPLICATE=2 };
+static void run_ambiguity_case(int family,int reversed,int scenario){
+  char a[200],b[200];
+  const char *first,*second;
+  uint8_t one[RIKITU_LEVEL_SAVE_BYTES],two[RIKITU_LEVEL_SAVE_BYTES];
+  uint8_t successor[RIKITU_LEVEL_SAVE_BYTES];
+  uint32_t ga=0,gb=0,reported=0xf00df00du;
+  Context ctx;
+  int called;
+  size_t n=bytes_for(family);
+  memset(&ctx,0,sizeof(ctx));
+  ctx.family=family;
+  assert(rikitu_campaign_init(&ctx.campaign,4));
+  ctx.campaign.wallet=157;
+  create_paths(family,a,b);
+  clean_path(a);clean_path(b);
+  generate(&ctx,0,8u,one);
+  if(scenario==HALFWAY)
+    generate(&ctx,1,0x80000008u,two);
+  else if(scenario==SPLIT)
+    generate(&ctx,1,8u,two);
+  else
+    memcpy(two,one,n);
+  generate(&ctx,2,9u,successor);
+  write_bytes(a,one,n);
+  write_bytes(b,two,n);
+  /* Both slots independently pass their authentic CRC/semantic decoder. */
+  assert(record_validate(one,n,&ctx,&ga));
+  assert(record_validate(two,n,&ctx,&gb));
+  assert(ga==8u);
+  assert(gb==(scenario==HALFWAY?0x80000008u:8u));
+  first=reversed?b:a;
+  second=reversed?a:b;
+  ctx.phase=2;
+  called=ctx.encode_calls;
+  if(scenario==DUPLICATE){
+    assert(rikitu_staged_pair_commit_if_current(
+      first,second,n,record_validate,record_encode,&ctx,
+      8u,&reported));
+    assert(reported==9u&&ctx.encode_calls==called+1);
+    assert_bytes(first,one,n);
+    assert_bytes(second,successor,n);
+    check_loader(&ctx,a,b,2);
+  }else{
+    assert(!rikitu_staged_pair_commit_if_current(
+      first,second,n,record_validate,record_encode,&ctx,
+      8u,&reported));
+    assert(reported==0xf00df00du&&ctx.encode_calls==called);
+    assert_bytes(a,one,n);
+    assert_bytes(b,two,n);
+  }
+  no_pending(a,b);
+  clean_path(a);clean_path(b);
+  printf("PASS Stage115 family=%d reversed=%d ambiguity=%d\\n",
+         family,reversed,scenario);
+}
 int main(void){
   int f,b,s;
   for(f=MAP;f<=LEVEL;f++)
@@ -248,5 +308,10 @@ int main(void){
       for(s=STANDARD;s<=EMPTY;s++)
         run_case(f,b,s);
   puts("PASS Stage114 18 stale-snapshot conflict/write protection cases");
+  for(f=MAP;f<=LEVEL;f++)
+    for(b=0;b<2;b++)
+      for(s=SPLIT;s<=DUPLICATE;s++)
+        run_ambiguity_case(f,b,s);
+  puts("PASS Stage115 18 ambiguous-generation fail-closed/duplicate cases");
   return 0;
 }
