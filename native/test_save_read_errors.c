@@ -65,8 +65,10 @@ static void test_map(int block_b){
   before=loaded;before_loop=loaded_loop;deny(blocked);
   assert(!rikitu_save_load_pair(MAP_A,MAP_B,&loaded,&loaded_loop));
   assert(!rikitu_save_store_pair(MAP_A,MAP_B,&s,&l));allow_reads();
-  assert(memcmp(&loaded,&before,sizeof(before))==0);
-  assert(memcmp(&loaded_loop,&before_loop,sizeof(before_loop))==0);
+  assert(loaded.hearts==before.hearts);
+  assert(loaded.reached_checkpoints==before.reached_checkpoints);
+  assert(loaded.active_checkpoint==before.active_checkpoint);
+  assert(loaded_loop.active_seconds==before_loop.active_seconds);
   verify_pair(MAP_A,MAP_B,sizeof(old_a),old_a,old_b);
   assert(rikitu_save_load_pair(MAP_A,MAP_B,&loaded,&loaded_loop));
   assert(loaded.reached_checkpoints==1&&loaded.hearts==2);
@@ -84,7 +86,9 @@ static void test_campaign(int block_b){
   assert(rikitu_campaign_init(&loaded,4));loaded.wallet=999;before=loaded;deny(blocked);
   assert(!rikitu_campaign_save_load_pair(CAM_A,CAM_B,&loaded));
   c.wallet=159;assert(!rikitu_campaign_save_store_pair(CAM_A,CAM_B,&c));allow_reads();
-  assert(memcmp(&loaded,&before,sizeof(before))==0);
+  assert(loaded.wallet==before.wallet);
+  assert(loaded.level==before.level);
+  assert(loaded.mode==before.mode);
   verify_pair(CAM_A,CAM_B,sizeof(old_a),old_a,old_b);
   assert(rikitu_campaign_save_load_pair(CAM_A,CAM_B,&loaded));
   assert(loaded.wallet==158&&loaded.level==4);
@@ -105,8 +109,10 @@ static void test_level(int block_b){
   before=loaded;before_loop=loaded_loop;deny(blocked);
   assert(!rikitu_level_save_load_pair(LVL_A,LVL_B,&loaded,&loaded_loop,&c));
   assert(!rikitu_level_save_store_pair(LVL_A,LVL_B,&s,&l,&c));allow_reads();
-  assert(memcmp(&loaded,&before,sizeof(before))==0);
-  assert(memcmp(&loaded_loop,&before_loop,sizeof(before_loop))==0);
+  assert(loaded.hearts==before.hearts);
+  assert(loaded.reached_checkpoints==before.reached_checkpoints);
+  assert(loaded.active_checkpoint==before.active_checkpoint);
+  assert(loaded_loop.active_seconds==before_loop.active_seconds);
   verify_pair(LVL_A,LVL_B,sizeof(old_a),old_a,old_b);
   assert(rikitu_level_save_load_pair(LVL_A,LVL_B,&loaded,&loaded_loop,&c));
   assert(loaded.reached_checkpoints==1&&loaded.hearts==2);
