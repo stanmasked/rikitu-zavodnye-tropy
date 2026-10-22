@@ -1809,6 +1809,15 @@ a noncanonical path. After correcting the path or replacing the hardlink
 with an independent backup, the same API must commit the next generation
 and the normal production pair loader must restore the expected state.
 
+Before committing this stage, local strict-C99 smoke harnesses against
+the experimental pair/slot helper logic passed under both GCC and Clang.
+They covered canonical-path rejection, hard-linked staging/lock files,
+shared-inode A/B rejection, stale-generation refusal, successful recovery,
+equal-generation conflicts, half-range ambiguity, generation wrap, and
+four real two-process lock-path replacement races. These narrow checks
+use a synthetic deterministic record codec; they are **not** the full
+authentic-codec regression fixture or GitHub Actions CI.
+
 This is a conservative Linux-host contract for the experimental API.
 It does not make hostile parent-directory replacement race-free and does
 not establish libnx, Switch, FAT/SDMC or power-loss durability. Production
