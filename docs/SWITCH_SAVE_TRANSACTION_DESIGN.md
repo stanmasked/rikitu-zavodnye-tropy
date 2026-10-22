@@ -12,6 +12,17 @@ Current production paths:
 - `native/rikitu_campaign_save_io.c` — RKC2
 - `native/rikitu_level_save_io.c` — RKL3
 
+Additional audit finding: the current `read_slot()` helpers return a single
+boolean for several materially different outcomes: a missing path, a permission
+or other open error, a short/read error, a close error, trailing bytes, or an
+invalid codec record. The store routines then treat a false result as an
+unusable slot and may choose slot A when both reads return false. That is not
+safe when the actual cause is an I/O/path error rather than a genuinely absent
+or corrupt record. The shared transaction API must use an explicit result
+classification (valid, absent/invalid, and I/O/path error) and fail closed on
+the third category before choosing a destination. A focused fault-injection
+test must prove that unreadable slots are never mistaken for empty slots.
+
 Each production store routine selects a target slot and opens it with `fopen(target, "wb")`. That truncates the selected file before the new record has been completely written and checked. The other slot is intended to remain as fallback, but the writer itself does not stage and verify the replacement.
 
 The experimental `native/rikitu_staged_slot.c` writes a sibling `.pending` file, closes it, checks exact-byte readback, then calls `rename()`. Its Linux path adds advisory locking and inode/path checks. The non-Linux path used by the Switch QA build does not yet have equivalent locking and path-identity protections.
