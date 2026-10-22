@@ -1,3 +1,4 @@
+#define _XOPEN_SOURCE 700
 #define _POSIX_C_SOURCE 200809L
 #include "rikitu_staged_slot.h"
 #include <stdio.h>
@@ -9,6 +10,39 @@
 #if defined(__linux__)
 #include <sys/file.h>
 #include <sys/stat.h>
+#endif
+
+#if defined(__linux__)
+int rikitu_staged_slot_path_is_canonical(const char *path){
+  const char *slash,*base;
+  char *parent=NULL,*resolved=NULL,*canonical=NULL;
+  size_t parent_len,base_len,total;
+  int ok=0;
+  if(!path||path[0]!='/'||strlen(path)>4095u)return 0;
+  slash=strrchr(path,'/');
+  if(!slash)return 0;
+  base=slash+1;
+  if(!base[0]||strcmp(base,".")==0||strcmp(base,"..")==0)return 0;
+  parent_len=slash==path?1u:(size_t)(slash-path);
+  parent=(char*)malloc(parent_len+1u);
+  if(!parent)goto done;
+  memcpy(parent,path,parent_len);
+  parent[parent_len]='\\0';
+  resolved=realpath(parent,NULL);
+  if(!resolved)goto done;
+  base_len=strlen(base);
+  total=strlen(resolved)+base_len+2u;
+  canonical=(char*)malloc(total);
+  if(!canonical)goto done;
+  if(strcmp(resolved,"/")==0)
+    (void)snprintf(canonical,total,"/%s",base);
+  else
+    (void)snprintf(canonical,total,"%s/%s",resolved,base);
+  ok=strcmp(path,canonical)==0;
+done:
+  free(parent);free(resolved);free(canonical);
+  return ok;
+}
 #endif
 
 /* Test-only prototype: same-directory staging + exact-byte readback
@@ -30,6 +64,9 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
   int ok=0,extra,close_ok,opened_tmp=0;
   FILE *f=NULL;
   if(!target||!target[0]||!record||!n||n>4096u)return 0;
+#if defined(__linux__)
+  if(!rikitu_staged_slot_path_is_canonical(target))return 0;
+#endif
   name_len=strlen(target);
   if(name_len>4095u-sizeof(suffix))return 0;
 #if defined(__linux__)
