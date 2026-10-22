@@ -33,6 +33,7 @@ static const char *const holds[3]={
 static const char *const marker="sdmc:/switch/RIKITU/stage131-phase.txt";
 static const char *const escaped_path="sdmc:/switch/RIKITU/../stage131-escape.rks";
 static const char *const escaped_target="sdmc:/switch/stage131-escape.rks";
+static const char *const nested_path="sdmc:/switch/RIKITU/nested/stage131-escape.rks";
 
 static size_t record_size(int family){
   return family==MAP?RIKITU_SAVE_BYTES:
@@ -192,9 +193,10 @@ static int latest_is_progress(int final_step){
 static int reject_traversal_path(void){
   RikituScene s;RikituLoop l;
   seed_flower(&s,&l);
-  /* The transaction API must reject raw traversal paths before any I/O. */
+  /* Reject parent traversal and nested components before any I/O. */
   return !rikitu_save_store_pair(escaped_path,paths[MAP][1],&s,&l)&&
-         absent(escaped_target);
+         !rikitu_save_store_pair(nested_path,paths[MAP][1],&s,&l)&&
+         absent(escaped_target)&&absent(nested_path);
 }
 static int seed_pairs(void){
   RikituScene s;RikituLoop l;RikituCampaign c;
