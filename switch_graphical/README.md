@@ -1822,3 +1822,34 @@ This is a conservative Linux-host contract for the experimental API.
 It does not make hostile parent-directory replacement race-free and does
 not establish libnx, Switch, FAT/SDMC or power-loss durability. Production
 gameplay and shipping Switch save I/O remain unchanged.
+
+## Stage121 — refuse swapped staging pathname on readback and cleanup
+
+A `.pending` file may be replaced *after* it was safely opened and
+validated but *before* its bytes are read back or renamed over a live
+save. Previously, readback reopened the pathname through `fopen`,
+which follows symlinks, and failure cleanup removed whatever file was
+currently named `.pending`.
+
+For the experimental Linux staged-slot helper, Stage121 records the
+opened `.pending` inode's device/inode identity. Readback now opens
+with `O_NOFOLLOW | O_NONBLOCK` and rejects a non-regular, multiply linked
+or differently identified inode; stream read errors also fail closed.
+Before rename, `lstat` must still identify the same original regular
+inode. On failure, best-effort cleanup only attempts to remove the
+original inode when the pathname still identifies it, rather than
+unlinking a known replacement. This cannot eliminate a hostile
+time-of-check/time-of-use race after the last pathname check.
+
+Twelve added deterministic tests use an instrumented `fwrite` call:
+three authentic RKS1/RKC2/RKL3 codecs, both A/B newest-slot
+orientations and two replacements (symlink to the backup or an
+independent regular inode). The old open file descriptor still receives
+the new data, while readback of the swapped pathname must fail without
+overwriting either live slot, deleting the injected path, or modifying
+the committed-generation output. The original game pair loader must
+restore the correct state after explicit cleanup and a successful retry.
+
+These Linux-only checks do not prove correctness on Switch/libnx,
+durability on FAT/SDMC, or atomic protection from non-cooperating
+adversarial path changes. Shipping saves and gameplay are unaffected.
