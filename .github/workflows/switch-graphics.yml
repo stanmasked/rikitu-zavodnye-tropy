@@ -108,6 +108,9 @@ on:
       - 'tests/test-mill-source.cjs'
       - 'native/rikitu_save.*'
       - 'native/rikitu_save_io.c'
+      - 'native/rikitu_staged_pair.c'
+      - 'native/rikitu_staged_slot.c'
+      - 'native/rikitu_slot_read.h'
       - 'native/test_save.c'
       - 'native/test_save_cold_process.c'
       - 'native/rikitu_combat_guest_qa.*'
@@ -233,6 +236,9 @@ on:
       - 'tests/test-mill-source.cjs'
       - 'native/rikitu_save.*'
       - 'native/rikitu_save_io.c'
+      - 'native/rikitu_staged_pair.c'
+      - 'native/rikitu_staged_slot.c'
+      - 'native/rikitu_slot_read.h'
       - 'native/test_save.c'
       - 'native/test_save_cold_process.c'
       - 'native/rikitu_combat_guest_qa.*'
@@ -308,11 +314,11 @@ jobs:
           /tmp/rikitu-combat-guest-clang
       - name: GCC dual-slot checkpoint persistence tests
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_save.c native/rikitu_save_io.c native/test_save.c -lm -o /tmp/rikitu-save-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_save.c native/rikitu_save_io.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_save.c -lm -o /tmp/rikitu-save-gcc
           /tmp/rikitu-save-gcc
       - name: Clang dual-slot checkpoint persistence tests
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_save.c native/rikitu_save_io.c native/test_save.c -lm -o /tmp/rikitu-save-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_save.c native/rikitu_save_io.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_save.c -lm -o /tmp/rikitu-save-clang
           /tmp/rikitu-save-clang
       - name: Browser MAP02 geometry and boss source parity
         run: node tests/test-mill-source.cjs
@@ -530,11 +536,11 @@ jobs:
           /tmp/rikitu-overlay-clang
       - name: GCC RKC2 campaign checkpoints and RKS1 isolation
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/test_campaign_save.c -lm -o /tmp/rikitu-rkc2-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_campaign_save.c -lm -o /tmp/rikitu-rkc2-gcc
           /tmp/rikitu-rkc2-gcc
       - name: Clang RKC2 campaign checkpoints and RKS1 isolation
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/test_campaign_save.c -lm -o /tmp/rikitu-rkc2-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_campaign_save.c -lm -o /tmp/rikitu-rkc2-clang
           /tmp/rikitu-rkc2-clang
       - name: Protect campaign and MAP01 saves during Y/X debug
         run: node tests/test-debug-save-isolation.cjs
@@ -548,93 +554,93 @@ jobs:
           /tmp/rikitu-levelsave-clang
       - name: GCC RKL3 two-slot crash recovery and legacy isolation
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/test_level_save_io.c -lm -o /tmp/rikitu-rkl3-io-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_level_save_io.c -lm -o /tmp/rikitu-rkl3-io-gcc
           /tmp/rikitu-rkl3-io-gcc
       - name: Clang RKL3 two-slot crash recovery and legacy isolation
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/test_level_save_io.c -lm -o /tmp/rikitu-rkl3-io-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_level_save_io.c -lm -o /tmp/rikitu-rkl3-io-clang
           /tmp/rikitu-rkl3-io-clang
       - name: Verify MAP02–16 checkpoint SD wiring and diagnostic isolation
         run: node tests/test-level-save-wiring.cjs
       - name: GCC real pickups checkpoint RKL3 reboot and replay
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/rikitu_grove.c native/test_level_resume_gameplay.c -lm -o /tmp/rikitu-resume-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/rikitu_grove.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_level_resume_gameplay.c -lm -o /tmp/rikitu-resume-gcc
           /tmp/rikitu-resume-gcc
       - name: Clang real pickups checkpoint RKL3 reboot and replay
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/rikitu_grove.c native/test_level_resume_gameplay.c -lm -o /tmp/rikitu-resume-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/rikitu_grove.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_level_resume_gameplay.c -lm -o /tmp/rikitu-resume-clang
           /tmp/rikitu-resume-clang
       - name: GCC RKL3 real checkpoint replay across MAP02-MAP16
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_flower.c native/rikitu_mill.c native/rikitu_grove.c native/rikitu_bridge.c native/rikitu_workshop.c native/rikitu_delivery.c native/rikitu_clock.c native/rikitu_orders.c native/rikitu_mist.c native/rikitu_cloud.c native/rikitu_crystal.c native/rikitu_mine.c native/rikitu_gardens.c native/rikitu_foundry.c native/rikitu_gallery.c native/rikitu_heart.c native/test_level_resume_all_maps.c -lm -o /tmp/rikitu-stage72-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_flower.c native/rikitu_mill.c native/rikitu_grove.c native/rikitu_bridge.c native/rikitu_workshop.c native/rikitu_delivery.c native/rikitu_clock.c native/rikitu_orders.c native/rikitu_mist.c native/rikitu_cloud.c native/rikitu_crystal.c native/rikitu_mine.c native/rikitu_gardens.c native/rikitu_foundry.c native/rikitu_gallery.c native/rikitu_heart.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_level_resume_all_maps.c -lm -o /tmp/rikitu-stage72-gcc
           /tmp/rikitu-stage72-gcc
       - name: Clang RKL3 real checkpoint replay across MAP02-MAP16
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_flower.c native/rikitu_mill.c native/rikitu_grove.c native/rikitu_bridge.c native/rikitu_workshop.c native/rikitu_delivery.c native/rikitu_clock.c native/rikitu_orders.c native/rikitu_mist.c native/rikitu_cloud.c native/rikitu_crystal.c native/rikitu_mine.c native/rikitu_gardens.c native/rikitu_foundry.c native/rikitu_gallery.c native/rikitu_heart.c native/test_level_resume_all_maps.c -lm -o /tmp/rikitu-stage72-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_flower.c native/rikitu_mill.c native/rikitu_grove.c native/rikitu_bridge.c native/rikitu_workshop.c native/rikitu_delivery.c native/rikitu_clock.c native/rikitu_orders.c native/rikitu_mist.c native/rikitu_cloud.c native/rikitu_crystal.c native/rikitu_mine.c native/rikitu_gardens.c native/rikitu_foundry.c native/rikitu_gallery.c native/rikitu_heart.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_level_resume_all_maps.c -lm -o /tmp/rikitu-stage72-clang
           /tmp/rikitu-stage72-clang
       - name: GCC MAP02 controller checkpoint pit respawn and RKL3 reboot
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/test_controller_checkpoint_reboot.c -lm -o /tmp/rikitu-stage73-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_controller_checkpoint_reboot.c -lm -o /tmp/rikitu-stage73-gcc
           /tmp/rikitu-stage73-gcc
       - name: Clang MAP02 controller checkpoint pit respawn and RKL3 reboot
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/test_controller_checkpoint_reboot.c -lm -o /tmp/rikitu-stage73-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mill.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_controller_checkpoint_reboot.c -lm -o /tmp/rikitu-stage73-clang
           /tmp/rikitu-stage73-clang
       - name: GCC MAP03 input route mushroom checkpoint and RKL3 restore
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_grove.c native/test_grove_controller_resume.c -lm -o /tmp/rikitu-stage74-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_grove.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_grove_controller_resume.c -lm -o /tmp/rikitu-stage74-gcc
           /tmp/rikitu-stage74-gcc
       - name: Clang MAP03 input route mushroom checkpoint and RKL3 restore
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_grove.c native/test_grove_controller_resume.c -lm -o /tmp/rikitu-stage74-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_grove.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_grove_controller_resume.c -lm -o /tmp/rikitu-stage74-clang
           /tmp/rikitu-stage74-clang
       - name: GCC MAP04 input lever checkpoint enemy and RKL3 recovery
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_bridge.c native/test_bridge_controller_resume.c -lm -o /tmp/rikitu-stage75-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_bridge.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_bridge_controller_resume.c -lm -o /tmp/rikitu-stage75-gcc
           /tmp/rikitu-stage75-gcc
       - name: Clang MAP04 input lever checkpoint enemy and RKL3 recovery
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_bridge.c native/test_bridge_controller_resume.c -lm -o /tmp/rikitu-stage75-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_bridge.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_bridge_controller_resume.c -lm -o /tmp/rikitu-stage75-clang
           /tmp/rikitu-stage75-clang
       - name: GCC MAP05 belt input checkpoint and RKL3 recovery
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_workshop.c native/test_workshop_controller_resume.c -lm -o /tmp/rikitu-stage76-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_workshop.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_workshop_controller_resume.c -lm -o /tmp/rikitu-stage76-gcc
           /tmp/rikitu-stage76-gcc
       - name: Clang MAP05 belt input checkpoint and RKL3 recovery
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_workshop.c native/test_workshop_controller_resume.c -lm -o /tmp/rikitu-stage76-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_workshop.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_workshop_controller_resume.c -lm -o /tmp/rikitu-stage76-clang
           /tmp/rikitu-stage76-clang
       - name: GCC MAP06 steam conveyor checkpoint and RKL3 recovery
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_delivery.c native/test_delivery_controller_resume.c -lm -o /tmp/rikitu-stage77-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_delivery.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_delivery_controller_resume.c -lm -o /tmp/rikitu-stage77-gcc
           /tmp/rikitu-stage77-gcc
       - name: Clang MAP06 steam conveyor checkpoint and RKL3 recovery
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_delivery.c native/test_delivery_controller_resume.c -lm -o /tmp/rikitu-stage77-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_delivery.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_delivery_controller_resume.c -lm -o /tmp/rikitu-stage77-clang
           /tmp/rikitu-stage77-clang
       - name: GCC MAP07 clock launch conveyor and RKL3 checkpoint recovery
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_clock.c native/test_clock_controller_resume.c -lm -o /tmp/rikitu-stage78-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_clock.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_clock_controller_resume.c -lm -o /tmp/rikitu-stage78-gcc
           /tmp/rikitu-stage78-gcc
       - name: Clang MAP07 clock launch conveyor and RKL3 checkpoint recovery
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_clock.c native/test_clock_controller_resume.c -lm -o /tmp/rikitu-stage78-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_clock.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_clock_controller_resume.c -lm -o /tmp/rikitu-stage78-clang
           /tmp/rikitu-stage78-clang
       - name: GCC MAP08 belt lever input checkpoint and RKL3 rollback
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_orders.c native/test_orders_controller_resume.c -lm -o /tmp/rikitu-stage79-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_orders.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_orders_controller_resume.c -lm -o /tmp/rikitu-stage79-gcc
           /tmp/rikitu-stage79-gcc
       - name: Clang MAP08 belt lever input checkpoint and RKL3 rollback
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_orders.c native/test_orders_controller_resume.c -lm -o /tmp/rikitu-stage79-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_orders.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_orders_controller_resume.c -lm -o /tmp/rikitu-stage79-clang
           /tmp/rikitu-stage79-clang
       - name: GCC MAP09 gust and RKL3 input recovery
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mist.c native/test_mist_controller_resume.c -lm -o /tmp/rikitu-stage80-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mist.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_mist_controller_resume.c -lm -o /tmp/rikitu-stage80-gcc
           /tmp/rikitu-stage80-gcc
       - name: Clang MAP09 gust and RKL3 input recovery
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mist.c native/test_mist_controller_resume.c -lm -o /tmp/rikitu-stage80-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_campaign.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_mist.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_mist_controller_resume.c -lm -o /tmp/rikitu-stage80-clang
           /tmp/rikitu-stage80-clang
       - name: GCC MAP09 full input route, fragments and gusts
         run: |
@@ -734,21 +740,21 @@ jobs:
           /tmp/rikitu-stage92-graphics-clang
       - name: GCC Stage94 real 16-level campaign transition/restart RKC2 chain
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_draw.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_flower.c native/rikitu_mill.c native/rikitu_grove.c native/rikitu_bridge.c native/rikitu_workshop.c native/rikitu_delivery.c native/rikitu_clock.c native/rikitu_orders.c native/rikitu_mist.c native/rikitu_cloud.c native/rikitu_crystal.c native/rikitu_mine.c native/rikitu_gardens.c native/rikitu_foundry.c native/rikitu_gallery.c native/rikitu_heart.c native/test_campaign_transition_save_chain.c -lm -o /tmp/rikitu-stage94-graphics-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_draw.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_flower.c native/rikitu_mill.c native/rikitu_grove.c native/rikitu_bridge.c native/rikitu_workshop.c native/rikitu_delivery.c native/rikitu_clock.c native/rikitu_orders.c native/rikitu_mist.c native/rikitu_cloud.c native/rikitu_crystal.c native/rikitu_mine.c native/rikitu_gardens.c native/rikitu_foundry.c native/rikitu_gallery.c native/rikitu_heart.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_campaign_transition_save_chain.c -lm -o /tmp/rikitu-stage94-graphics-gcc
           /tmp/rikitu-stage94-graphics-gcc
       - name: Clang Stage94 real 16-level campaign transition/restart RKC2 chain
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_draw.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_flower.c native/rikitu_mill.c native/rikitu_grove.c native/rikitu_bridge.c native/rikitu_workshop.c native/rikitu_delivery.c native/rikitu_clock.c native/rikitu_orders.c native/rikitu_mist.c native/rikitu_cloud.c native/rikitu_crystal.c native/rikitu_mine.c native/rikitu_gardens.c native/rikitu_foundry.c native/rikitu_gallery.c native/rikitu_heart.c native/test_campaign_transition_save_chain.c -lm -o /tmp/rikitu-stage94-graphics-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_draw.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_flower.c native/rikitu_mill.c native/rikitu_grove.c native/rikitu_bridge.c native/rikitu_workshop.c native/rikitu_delivery.c native/rikitu_clock.c native/rikitu_orders.c native/rikitu_mist.c native/rikitu_cloud.c native/rikitu_crystal.c native/rikitu_mine.c native/rikitu_gardens.c native/rikitu_foundry.c native/rikitu_gallery.c native/rikitu_heart.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_campaign_transition_save_chain.c -lm -o /tmp/rikitu-stage94-graphics-clang
           /tmp/rikitu-stage94-graphics-clang
       - name: GCC Stage95 RKS1 three independent host restarts
         run: |
-          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_save.c native/rikitu_save_io.c native/test_save_cold_process.c -lm -o /tmp/rikitu-stage95-graphics-gcc
+          gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_save.c native/rikitu_save_io.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_save_cold_process.c -lm -o /tmp/rikitu-stage95-graphics-gcc
           /tmp/rikitu-stage95-graphics-gcc seed /tmp/rikitu-stage95-graphics-gcc-a.rks /tmp/rikitu-stage95-graphics-gcc-b.rks
           /tmp/rikitu-stage95-graphics-gcc resume /tmp/rikitu-stage95-graphics-gcc-a.rks /tmp/rikitu-stage95-graphics-gcc-b.rks
           /tmp/rikitu-stage95-graphics-gcc verify /tmp/rikitu-stage95-graphics-gcc-a.rks /tmp/rikitu-stage95-graphics-gcc-b.rks
       - name: Clang Stage95 RKS1 three independent host restarts
         run: |
-          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_save.c native/rikitu_save_io.c native/test_save_cold_process.c -lm -o /tmp/rikitu-stage95-graphics-clang
+          clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_save.c native/rikitu_save_io.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_save_cold_process.c -lm -o /tmp/rikitu-stage95-graphics-clang
           /tmp/rikitu-stage95-graphics-clang seed /tmp/rikitu-stage95-graphics-clang-a.rks /tmp/rikitu-stage95-graphics-clang-b.rks
           /tmp/rikitu-stage95-graphics-clang resume /tmp/rikitu-stage95-graphics-clang-a.rks /tmp/rikitu-stage95-graphics-clang-b.rks
           /tmp/rikitu-stage95-graphics-clang verify /tmp/rikitu-stage95-graphics-clang-a.rks /tmp/rikitu-stage95-graphics-clang-b.rks

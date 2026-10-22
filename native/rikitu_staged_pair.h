@@ -2,9 +2,12 @@
 #define RIKITU_STAGED_PAIR_H
 #include <stddef.h>
 #include <stdint.h>
-/* Experimental Linux-host API. Serializes generation selection AND commit
- * for both slots, using one stable advisory pair lock. Does not replace
- * production RKS1/RKC2/RKL3 writers or run in shipping Switch NRO.
+/* Pair transaction API used by the production RKS1/RKC2/RKL3 writers.
+ * Linux uses a stable advisory pair lock plus canonical-path/inode guards.
+ * Switch uses a libnx mutex to serialize callers within this process and
+ * accepts only save paths under sdmc:/switch/RIKITU/. That mutex is not a
+ * cross-process lock. Neither backend claims physical SDMC power-loss
+ * durability; unverified targets fail closed.
  *
  * Callbacks must be pure validations/encodings of exactly 'size' bytes.
  * User can reject foreign RKL3 campaign identity in validate().
@@ -20,8 +23,8 @@ int rikitu_staged_pair_commit(
   RikituStagedValidate validate,RikituStagedEncode encode,
   void *context,uint32_t *committed_generation);
 
-/* Optimistic stale-snapshot guard (Linux host experiment only).
- * expected_generation must match the newest codec-VALID generation
+/* Optimistic stale-snapshot guard. expected_generation must match the
+ * newest codec-VALID generation
  * found INSIDE the exclusive pair lock. Use 0 when both slots are
  * missing/invalid. If a newer save exists, FAIL WITHOUT WRITING any
  * slot, even if the supplied snapshot would otherwise encode cleanly.

@@ -46,11 +46,12 @@ done:
 }
 #endif
 
-/* Test-only prototype: same-directory staging + exact-byte readback
- * before replacing target via rename(). If ANY preparatory step fails,
- * both production slot paths remain byte-identical. No fsync/dir-fsync:
- * this does NOT certify FAT/SDMC crash durability or rename atomicity.
- * The game does not yet call this helper.
+/* Same-directory staging + exact-byte readback used by the production
+ * pair transaction. If any preparatory step fails, the existing target and
+ * its backup slot remain untouched. No fsync/dir-fsync: this does NOT certify
+ * FAT/SDMC crash durability or rename atomicity. Linux additionally guards
+ * pending/target inodes; the Switch path is serialized by the pair API's
+ * in-process mutex and remains subject to the SDMC filesystem contract.
  */
 int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n){
   const char suffix[]=".pending";

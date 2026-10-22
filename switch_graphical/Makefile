@@ -39,7 +39,9 @@ include $(DEVKITPRO)/libnx/switch_rules
 #   NACP building is skipped as well.
 #---------------------------------------------------------------------------------
 # QA_MODE=1 builds a separate, asset-free NeXium combat test binary.
-ifeq ($(QA_MODE),7)
+ifeq ($(QA_MODE),8)
+TARGET       := rikitu_production_pair_qa_probe
+else ifeq ($(QA_MODE),7)
 TARGET       := rikitu_staged_faults_qa_probe
 else ifeq ($(QA_MODE),6)
 TARGET       := rikitu_staged_codecs_qa_probe
@@ -57,7 +59,9 @@ endif
 APP_TITLE := RIKITU 2D Scene Probe
 APP_AUTHOR := RIKITU LAB
 APP_VERSION := 0.1.0
-ifeq ($(QA_MODE),7)
+ifeq ($(QA_MODE),8)
+BUILD        := build_production_pair_qa
+else ifeq ($(QA_MODE),7)
 BUILD        := build_staged_faults_qa
 else ifeq ($(QA_MODE),6)
 BUILD        := build_staged_codecs_qa
@@ -116,20 +120,22 @@ export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
 
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
-ifeq ($(QA_MODE),7)
-CFILES := staged_faults_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_demo.c rikitu_flower.c rikitu_bridge.c rikitu_enemies.c rikitu_boss.c rikitu_campaign.c rikitu_save.c rikitu_campaign_save.c rikitu_level_save.c rikitu_staged_slot.c
+ifeq ($(QA_MODE),8)
+CFILES := staged_pair_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_draw.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c rikitu_boss.c rikitu_mill.c rikitu_save.c rikitu_save_io.c rikitu_grove.c rikitu_bridge.c rikitu_workshop.c rikitu_delivery.c rikitu_clock.c rikitu_orders.c rikitu_mist.c rikitu_cloud.c rikitu_crystal.c rikitu_mine.c rikitu_gardens.c rikitu_foundry.c rikitu_gallery.c rikitu_heart.c rikitu_campaign.c rikitu_campaign_save.c rikitu_campaign_save_io.c rikitu_level_save.c rikitu_level_save_io.c rikitu_staged_slot.c rikitu_staged_pair.c
+else ifeq ($(QA_MODE),7)
+CFILES := staged_faults_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_demo.c rikitu_flower.c rikitu_bridge.c rikitu_enemies.c rikitu_boss.c rikitu_campaign.c rikitu_campaign_save.c rikitu_campaign_save_io.c rikitu_level_save.c rikitu_level_save_io.c rikitu_save.c rikitu_save_io.c rikitu_staged_slot.c
 else ifeq ($(QA_MODE),6)
 CFILES := staged_codecs_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_demo.c rikitu_flower.c rikitu_bridge.c rikitu_enemies.c rikitu_boss.c rikitu_campaign.c rikitu_save.c rikitu_campaign_save.c rikitu_level_save.c rikitu_staged_slot.c
 else ifeq ($(QA_MODE),5)
 CFILES := staged_rename_qa_main.c rikitu_staged_slot.c
 else ifeq ($(QA_MODE),4)
-CFILES := campaign_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_demo.c rikitu_bridge.c rikitu_enemies.c rikitu_boss.c rikitu_campaign.c rikitu_campaign_save.c rikitu_campaign_save_io.c rikitu_level_save.c rikitu_level_save_io.c
+CFILES := campaign_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_demo.c rikitu_bridge.c rikitu_enemies.c rikitu_boss.c rikitu_campaign.c rikitu_campaign_save.c rikitu_campaign_save_io.c rikitu_level_save.c rikitu_level_save_io.c rikitu_staged_slot.c rikitu_staged_pair.c
 else ifeq ($(QA_MODE),2)
-CFILES := save_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c rikitu_boss.c rikitu_save.c rikitu_save_io.c
+CFILES := save_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c rikitu_boss.c rikitu_save.c rikitu_save_io.c rikitu_staged_slot.c rikitu_staged_pair.c
 else ifeq ($(QA_MODE),1)
 CFILES := combat_qa_main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_draw.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c rikitu_boss.c rikitu_combat_guest_qa.c rikitu_mill.c rikitu_mill_guest_qa.c rikitu_grove.c rikitu_grove_guest_qa.c rikitu_bridge.c rikitu_bridge_guest_qa.c rikitu_workshop.c rikitu_workshop_guest_qa.c rikitu_delivery.c rikitu_delivery_guest_qa.c
 else
-CFILES := main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_draw.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c rikitu_boss.c rikitu_mill.c rikitu_save.c rikitu_save_io.c rikitu_grove.c rikitu_bridge.c rikitu_workshop.c rikitu_delivery.c rikitu_clock.c rikitu_orders.c rikitu_mist.c rikitu_cloud.c rikitu_crystal.c rikitu_mine.c rikitu_gardens.c rikitu_foundry.c rikitu_gallery.c rikitu_heart.c rikitu_campaign.c rikitu_campaign_save.c rikitu_campaign_save_io.c rikitu_level_save.c rikitu_level_save_io.c
+CFILES := main.c rikitu_rules.c rikitu_loop.c rikitu_surfaces.c rikitu_stage.c rikitu_draw.c rikitu_demo.c rikitu_flower.c rikitu_enemies.c rikitu_boss.c rikitu_mill.c rikitu_save.c rikitu_save_io.c rikitu_grove.c rikitu_bridge.c rikitu_workshop.c rikitu_delivery.c rikitu_clock.c rikitu_orders.c rikitu_mist.c rikitu_cloud.c rikitu_crystal.c rikitu_mine.c rikitu_gardens.c rikitu_foundry.c rikitu_gallery.c rikitu_heart.c rikitu_campaign.c rikitu_campaign_save.c rikitu_campaign_save_io.c rikitu_level_save.c rikitu_level_save_io.c rikitu_staged_slot.c rikitu_staged_pair.c
 endif
 CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
 SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))

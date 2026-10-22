@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <sys/stat.h>
 /* File-level result before the format-specific CRC/codec check.
  * ERROR means inspection failed and callers must fail closed.
  * INVALID means absent or readable but not exactly one fixed-size record.
@@ -16,10 +17,20 @@ enum {
 static int rikitu_read_fixed_slot(const char *path, unsigned char *out,
                                   size_t size) {
   FILE *f;
+  struct stat st;
   size_t bytes;
   int extra, read_error, close_error;
   if (!path || !out || size == 0)
     return RIKITU_SLOT_READ_ERROR;
+  /* Directories and special files are path errors, not empty slots. Some
+   * stdio backends reject a directory at fopen() with platform-specific
+   * errno values, so classify it before opening the stream. */
+  if (stat(path, &st) == 0) {
+    if (!S_ISREG(st.st_mode))
+      return RIKITU_SLOT_READ_ERROR;
+  } else if (errno != ENOENT) {
+    return RIKITU_SLOT_READ_ERROR;
+  }
   errno = 0;
   f = fopen(path, "rb");
   if (!f)

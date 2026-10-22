@@ -1,5 +1,6 @@
 #include "rikitu_level_save.h"
 #include "rikitu_slot_read.h"
+#include "rikitu_staged_pair.h"
 #include <stdio.h>
 #include <string.h>
 static int allowed_path(const char *path){
@@ -56,41 +57,42 @@ int rikitu_level_save_load_pair(const char *a,const char *b,
   else{*scene=sx;*loop=lx;}
   return 1;
 }
+typedef struct RikituLevelWriteContext {
+  const RikituScene *scene;
+  const RikituLoop *loop;
+  const RikituCampaign *campaign;
+} RikituLevelWriteContext;
+static int staged_level_validate(const uint8_t *record,size_t size,
+                                 void *context,uint32_t *generation){
+  const RikituLevelWriteContext *write_context=
+      (const RikituLevelWriteContext*)context;
+  return size==RIKITU_LEVEL_SAVE_BYTES&&write_context&&
+         write_context->campaign&&
+         rikitu_level_save_inspect(record,size,generation)&&
+         belongs_to_campaign(record,write_context->campaign);
+}
+static int staged_level_encode(uint8_t *record,size_t size,
+                               uint32_t generation,void *context){
+  const RikituLevelWriteContext *write_context=
+      (const RikituLevelWriteContext*)context;
+  if(size!=RIKITU_LEVEL_SAVE_BYTES||!write_context||
+     !write_context->scene||!write_context->loop||
+     !write_context->campaign)return 0;
+  return rikitu_level_save_encode(record,write_context->scene,
+                                  write_context->loop,
+                                  write_context->campaign,generation);
+}
 int rikitu_level_save_store_pair(const char *a,const char *b,
                                   const RikituScene *scene,
                                   const RikituLoop *loop,
                                   const RikituCampaign *campaign){
-  uint8_t x[RIKITU_LEVEL_SAVE_BYTES],y[RIKITU_LEVEL_SAVE_BYTES];
-  uint8_t p[RIKITU_LEVEL_SAVE_BYTES];
-  uint32_t gx=0,gy=0,generation=1;
-  int rx,ry,vx=0,vy=0;
-  const char *path;
-  FILE *f;
-  size_t n;
+  RikituLevelWriteContext context;
   if(!allowed_path(a)||!allowed_path(b)||strcmp(a,b)==0||
      !scene||!loop||!campaign)return 0;
-  rx=read_slot(a,x);
-  if(rx==RIKITU_SLOT_READ_ERROR)return 0;
-  ry=read_slot(b,y);
-  if(ry==RIKITU_SLOT_READ_ERROR)return 0;
-  if(rx==RIKITU_SLOT_READ_OK)
-    vx=rikitu_level_save_inspect(x,sizeof(x),&gx) &&
-       belongs_to_campaign(x,campaign);
-  if(ry==RIKITU_SLOT_READ_OK)
-    vy=rikitu_level_save_inspect(y,sizeof(y),&gy) &&
-       belongs_to_campaign(y,campaign);
-  if(vx&&vy){
-    if(newer(gy,gx)){generation=gy+1;path=a;}
-    else{generation=gx+1;path=b;}
-  }else if(vx){generation=gx+1;path=b;}
-  else if(vy){generation=gy+1;path=a;}
-  else path=a;
-  if(!generation)generation=1;
-  if(!rikitu_level_save_encode(p,scene,loop,campaign,generation))
-    return 0;
-  f=fopen(path,"wb");
-  if(!f)return 0;
-  n=fwrite(p,1,sizeof(p),f);
-  if(n!=sizeof(p)||fflush(f)!=0){(void)fclose(f);return 0;}
-  return fclose(f)==0;
+  context.scene=scene;
+  context.loop=loop;
+  context.campaign=campaign;
+  return rikitu_staged_pair_commit(a,b,RIKITU_LEVEL_SAVE_BYTES,
+                                   staged_level_validate,
+                                   staged_level_encode,&context,NULL);
 }

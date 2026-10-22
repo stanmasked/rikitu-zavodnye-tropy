@@ -5,6 +5,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#if defined(__SWITCH__)
+#include <switch.h>
+#include "rikitu_slot_read.h"
+#endif
 #if defined(__linux__)
 #include <errno.h>
 #include <fcntl.h>
@@ -13,10 +17,11 @@
 #include <unistd.h>
 #endif
 
-/* This is a Linux-host proof of pair-wide sequencing, not a Switch
- * filesystem guarantee. A future libnx implementation must NOT fall
- * back to unlocked pair selection. Advisory flock protects cooperating
- * writers that use this API and stable canonical slot paths only.
+/* Linux uses an advisory pair lock and canonical POSIX paths. The Switch
+ * backend serializes callers within this process with a libnx mutex and
+ * restricts writes to the game's SDMC save directory. Neither backend
+ * claims physical SDMC power-loss durability; the Switch mutex is not a
+ * cross-process lock. Other targets fail closed.
  */
 #if defined(__linux__)
 /* Return 1 for codec-valid, 0 for absent/invalid regular records,
@@ -48,10 +53,57 @@ static int slot_generation(const char *path,uint8_t *buffer,size_t n,
   if(got!=n||tail!=EOF)return 0;
   return validate(buffer,n,context,generation)?1:0;
 }
+#endif
+
 static int newer(uint32_t a,uint32_t b){
   return a!=b && (uint32_t)(a-b)<0x80000000u;
 }
+
+#if defined(__SWITCH__)
+/* Switch SDMC does not expose the Linux flock/O_NOFOLLOW contract used by
+ * the host backend. Keep this backend deliberately narrow: only canonical
+ * save paths under the game's own directory are accepted, and all pair
+ * selection/commit calls in this process share one statically initialized
+ * libnx mutex. */
+static Mutex g_switch_pair_lock = 0;
+
+static int switch_slot_path_ok(const char *path){
+  static const char prefix[]="sdmc:/switch/RIKITU/";
+  const char *p,*slash,*suffix;
+  size_t n;
+  if(!path||strncmp(path,prefix,sizeof(prefix)-1u)!=0)return 0;
+  n=strlen(path);
+  if(n>1024u||n<=sizeof(prefix)-1u)return 0;
+  if(strchr(path,'\\')||strstr(path,"//"))return 0;
+  p=path+sizeof(prefix)-1u;
+  while(*p){
+    size_t segment_len;
+    slash=strchr(p,'/');
+    segment_len=slash?(size_t)(slash-p):strlen(p);
+    if(segment_len==0||
+       (segment_len==1u&&p[0]=='.')||
+       (segment_len==2u&&p[0]=='.'&&p[1]=='.'))return 0;
+    if(!slash)break;
+    p=slash+1;
+    if(!*p)return 0;
+  }
+  suffix=strrchr(path,'.');
+  if(!suffix|| (strcmp(suffix,".rks")!=0&&
+                strcmp(suffix,".rkc")!=0&&
+                strcmp(suffix,".rkl")!=0))return 0;
+  return 1;
+}
+
+static int switch_slot_generation(const char *path,uint8_t *buffer,size_t n,
+                                  RikituStagedValidate validate,
+                                  void *context,uint32_t *generation){
+  int read_result=rikitu_read_fixed_slot(path,buffer,n);
+  if(read_result==RIKITU_SLOT_READ_ERROR)return -1;
+  if(read_result!=RIKITU_SLOT_READ_OK)return 0;
+  return validate(buffer,n,context,generation)?1:0;
+}
 #endif
+
 static int pair_commit_internal(
   const char *a,const char *b,size_t n,
   RikituStagedValidate validate,RikituStagedEncode encode,
@@ -147,11 +199,53 @@ done:
   if(fd>=0){(void)flock(fd,LOCK_UN);(void)close(fd);}
   free(lock_path);free(x);free(y);free(out);
   return ok;
+#elif defined(__SWITCH__)
+  uint8_t *x=NULL,*y=NULL,*out=NULL;
+  uint32_t ga=0,gb=0,gen=1,latest=0;
+  const char *target=NULL;
+  const char *ext_a,*ext_b;
+  int va=0,vb=0,ok=0,locked=0;
+  if(!a||!b||!a[0]||!b[0]||strcmp(a,b)==0||
+     !switch_slot_path_ok(a)||!switch_slot_path_ok(b)||
+     !validate||!encode||!n||n>4096u)return 0;
+  ext_a=strrchr(a,'.');ext_b=strrchr(b,'.');
+  if(!ext_a||!ext_b||strcmp(ext_a,ext_b)!=0)return 0;
+  x=(uint8_t*)malloc(n);
+  y=(uint8_t*)malloc(n);
+  out=(uint8_t*)malloc(n);
+  if(!x||!y||!out)goto switch_done;
+  mutexLock(&g_switch_pair_lock);
+  locked=1;
+  /* Inspect both live slots under the same in-process lock used for commit.
+   * A path/read error is distinct from a missing or invalid record. */
+  va=switch_slot_generation(a,x,n,validate,context,&ga);
+  if(va<0)goto switch_done;
+  vb=switch_slot_generation(b,y,n,validate,context,&gb);
+  if(vb<0)goto switch_done;
+  if(enforce_expected&&va&&vb&&
+     ((ga==gb&&memcmp(x,y,n)!=0)||
+      (uint32_t)(ga-gb)==0x80000000u))goto switch_done;
+  if(va&&vb){
+    if(newer(gb,ga)){latest=gb;gen=gb+1u;target=a;}
+    else{latest=ga;gen=ga+1u;target=b;}
+  }else if(va){latest=ga;gen=ga+1u;target=b;}
+  else if(vb){latest=gb;gen=gb+1u;target=a;}
+  else target=a;
+  if(enforce_expected&&latest!=expected_generation)goto switch_done;
+  if(!gen)gen=1;
+  if(!encode(out,n,gen,context))goto switch_done;
+  if(!rikitu_staged_slot_commit(target,out,n))goto switch_done;
+  if(committed_generation)*committed_generation=gen;
+  ok=1;
+switch_done:
+  if(locked)mutexUnlock(&g_switch_pair_lock);
+  free(x);free(y);free(out);
+  return ok;
 #else
   (void)a;(void)b;(void)n;(void)validate;(void)encode;
   (void)context;(void)committed_generation;
   (void)enforce_expected;(void)expected_generation;
-  /* Fail closed until a target-platform pair lock is independently proven. */
+  /* Fail closed on unverified platforms. */
   return 0;
 #endif
 }

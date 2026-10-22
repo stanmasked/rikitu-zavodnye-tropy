@@ -11,6 +11,9 @@
 #include "rikitu_bridge.h"
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdarg.h>
+#include <sys/types.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -24,11 +27,29 @@
 static const char *denied_path;
 static int deny_read;
 extern FILE *__real_fopen(const char *,const char *);
+extern int __real_open(const char *,int,...);
 FILE *__wrap_fopen(const char *path,const char *mode){
   if(deny_read&&path&&mode&&strcmp(path,denied_path)==0&&strcmp(mode,"rb")==0){
     errno=EACCES;return NULL;
   }
   return __real_fopen(path,mode);
+}
+int __wrap_open(const char *path,int flags,...){
+  mode_t mode=0;
+  int has_mode=(flags&O_CREAT)!=0;
+  if(has_mode){
+    va_list args;
+    va_start(args,flags);
+    mode=(mode_t)va_arg(args,int);
+    va_end(args);
+  }
+  if(deny_read&&path&&strcmp(path,denied_path)==0&&
+     (flags&O_ACCMODE)==O_RDONLY){
+    errno=EACCES;
+    return -1;
+  }
+  if(has_mode)return __real_open(path,flags,mode);
+  return __real_open(path,flags);
 }
 static void read_exact(const char *path,uint8_t *out,size_t n){
   FILE *f=__real_fopen(path,"rb");assert(f);
