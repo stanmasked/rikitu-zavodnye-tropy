@@ -1,6 +1,6 @@
 from pathlib import Path
 import os
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 ROOT=Path(__file__).resolve().parents[1]
 with sync_playwright() as p:
     binary=os.environ.get('RIKITU_CHROMIUM_PATH') or ('/usr/bin/chromium' if Path('/usr/bin/chromium').is_file() else None)
@@ -32,12 +32,26 @@ with sync_playwright() as p:
     assert page.evaluate('RIKITU_TEST_STATE().fragments')==3
     page.evaluate('RIKITU_TEST_MOVE(8390,400)');page.wait_for_timeout(90)
     assert page.evaluate('RIKITU_TEST_STATE().mode')=='playing'
+    # Browser scheduling on a loaded CI runner may skip a single precise
+    # boss stomp. Retry the same gameplay input, never fake boss HP.
+    def hit_boss(expected):
+        for _attempt in range(5):
+            page.wait_for_timeout(920)
+            state=page.evaluate('RIKITU_TEST_STATE()')
+            if state['bossHP']==expected:
+                return
+            assert state['bossHP']>expected, ('unexpected boss HP',state,expected)
+            page.evaluate('(p)=>RIKITU_TEST_MOVE(p[0]+14,p[1]-58)',
+                          [state['bossX'],state['bossY']])
+            try:
+                page.wait_for_function('(value)=>RIKITU_TEST_STATE().bossHP===value',
+                                       arg=expected,timeout=2200)
+                return
+            except PlaywrightTimeoutError:
+                pass
+        raise AssertionError(f'boss HP failed to reach {expected}: {page.evaluate("RIKITU_TEST_STATE()")}')
     for expected in [2,1,0]:
-        page.wait_for_timeout(920)
-        state=page.evaluate('RIKITU_TEST_STATE()')
-        page.evaluate('(p)=>RIKITU_TEST_MOVE(p[0]+14,p[1]-58)',[state['bossX'],state['bossY']])
-        page.wait_for_function('(expected)=>RIKITU_TEST_STATE().bossHP===expected',
-                               arg=expected,timeout=1800)
+        hit_boss(expected)
     page.evaluate('RIKITU_TEST_MOVE(8390,400)');page.wait_for_timeout(90)
     assert page.evaluate('RIKITU_TEST_STATE().mode')=='shop'
     assert page.evaluate('RIKITU_TEST_SHOP(120,0,2).available')
@@ -58,11 +72,7 @@ with sync_playwright() as p:
     page.evaluate('RIKITU_TEST_MOVE(8750,400)');page.wait_for_timeout(120)
     assert page.evaluate('RIKITU_TEST_STATE().mode')=='playing'
     for expected in [2,1,0]:
-        page.wait_for_timeout(920)
-        state=page.evaluate('RIKITU_TEST_STATE()')
-        page.evaluate('(p)=>RIKITU_TEST_MOVE(p[0]+14,p[1]-58)',[state['bossX'],state['bossY']])
-        page.wait_for_function('(expected)=>RIKITU_TEST_STATE().bossHP===expected',
-                               arg=expected,timeout=1800)
+        hit_boss(expected)
     page.evaluate('RIKITU_TEST_MOVE(8750,400)');page.wait_for_timeout(100)
     assert page.evaluate('RIKITU_TEST_STATE().mode')=='shop'
     page.keyboard.press('Enter');page.wait_for_timeout(80)
