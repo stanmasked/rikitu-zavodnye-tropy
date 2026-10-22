@@ -59,11 +59,17 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
        !S_ISREG(lock_stat.st_mode)||lock_stat.st_nlink!=1)goto done;
   }
   if(flock(lock_fd,LOCK_EX)!=0)goto done;
-  /* The inode might have gained hard links during lock contention. */
+  /* Validate both the locked descriptor and its current pathname:
+   * a lock renamed during contention can otherwise split writers
+   * across different advisory-lock inodes. */
   {
-    struct stat locked_stat;
+    struct stat locked_stat,path_stat;
     if(fstat(lock_fd,&locked_stat)!=0||
-       !S_ISREG(locked_stat.st_mode)||locked_stat.st_nlink!=1)goto done;
+       lstat(lock_path,&path_stat)!=0||
+       !S_ISREG(locked_stat.st_mode)||locked_stat.st_nlink!=1||
+       !S_ISREG(path_stat.st_mode)||path_stat.st_nlink!=1||
+       locked_stat.st_dev!=path_stat.st_dev||
+       locked_stat.st_ino!=path_stat.st_ino)goto done;
   }
 #endif
   /* On POSIX hosts, a pre-existing .pending symlink must not be
