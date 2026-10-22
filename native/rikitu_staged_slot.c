@@ -8,6 +8,7 @@
 #include <unistd.h>
 #if defined(__linux__)
 #include <sys/file.h>
+#include <sys/stat.h>
 #endif
 
 /* Test-only prototype: same-directory staging + exact-byte readback
@@ -48,8 +49,15 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
   if(!lock_path)goto done;
   memcpy(lock_path,target,name_len);
   memcpy(lock_path+name_len,lock_suffix,sizeof(lock_suffix));
-  lock_fd=open(lock_path,O_RDWR|O_CREAT|O_NOFOLLOW,0600);
+  lock_fd=open(lock_path,O_RDWR|O_CREAT|O_NOFOLLOW|O_NONBLOCK,0600);
   if(lock_fd<0)goto done;
+  /* A pre-existing FIFO/device or hard link to a live save cannot
+   * serve as a trusted persistent lock inode. */
+  {
+    struct stat lock_stat;
+    if(fstat(lock_fd,&lock_stat)!=0||
+       !S_ISREG(lock_stat.st_mode)||lock_stat.st_nlink!=1)goto done;
+  }
   if(flock(lock_fd,LOCK_EX)!=0)goto done;
 #endif
   /* On POSIX hosts, a pre-existing .pending symlink must not be
@@ -57,7 +65,24 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
    * O_NOFOLLOW checks this atomically with open, unlike an lstat check.
    * Non-POSIX/libnx builds retain the prior experimental fallback until
    * their filesystem exposes a tested equivalent. */
-#if defined(O_NOFOLLOW)
+#if defined(__linux__)
+  {
+    struct stat stage_stat;
+    /* O_TRUNC here would already destroy a live save hard-linked from
+     * .pending. Validate the opened inode BEFORE truncating anything. */
+    int fd=open(tmp,O_WRONLY|O_CREAT|O_NOFOLLOW|O_NONBLOCK,0600);
+    if(fd<0)goto done;
+    if(fstat(fd,&stage_stat)!=0||
+       !S_ISREG(stage_stat.st_mode)||stage_stat.st_nlink!=1){
+      (void)close(fd);
+      goto done;
+    }
+    if(ftruncate(fd,0)!=0){(void)close(fd);goto done;}
+    opened_tmp=1;
+    f=fdopen(fd,"wb");
+    if(!f){(void)close(fd);goto done;}
+  }
+#elif defined(O_NOFOLLOW)
   {
     int fd=open(tmp,O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW,0600);
     if(fd<0)goto done;
