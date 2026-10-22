@@ -142,10 +142,10 @@ static void no_pending(const char *a,const char *b){
   char path[240];
   int n=snprintf(path,sizeof(path),"%s.pending",a);
   assert(n>0&&n<(int)sizeof(path));
-  assert(stat(path,&st)!=0&&errno==ENOENT);
+  assert(lstat(path,&st)!=0&&errno==ENOENT);
   n=snprintf(path,sizeof(path),"%s.pending",b);
   assert(n>0&&n<(int)sizeof(path));
-  assert(stat(path,&st)!=0&&errno==ENOENT);
+  assert(lstat(path,&st)!=0&&errno==ENOENT);
 }
 static void reject_stale(Context *ctx,const char *a,const char *b,
                          uint32_t stale_generation){
@@ -470,6 +470,74 @@ static void run_stale_pending_regular_case(int family,int newer_b){
   printf("PASS Stage117 recovery family=%d newer=%c\n",
          family,newer_b?'B':'A');
 }
+/* Stage118: reject non-regular stage/lock paths and preserve them.
+ * lstat-based no_pending() also detects dangling .pending symlinks. */
+enum { PENDING_LINK=0,PENDING_DANGLING_LINK=1,
+       PENDING_LOCK_FIFO=2,PAIR_LOCK_DIRECTORY=3 };
+static void run_extra_obstruction_case(int family,int newer_b,int kind){
+  char a[200],b[200],obstruction[240],missing[240];
+  const char *recent_path,*target,*base,*suffix;
+  uint8_t old[RIKITU_LEVEL_SAVE_BYTES],recent[RIKITU_LEVEL_SAVE_BYTES];
+  uint8_t successor[RIKITU_LEVEL_SAVE_BYTES];
+  uint32_t reported=0xf00df00du;
+  Context ctx;
+  struct stat st;
+  int called,len;
+  size_t n=bytes_for(family);
+  memset(&ctx,0,sizeof(ctx));
+  ctx.family=family;
+  assert(rikitu_campaign_init(&ctx.campaign,4));
+  ctx.campaign.wallet=157;
+  create_paths(family,a,b);
+  clean_path(a);clean_path(b);
+  recent_path=newer_b?b:a;
+  target=newer_b?a:b;
+  generate(&ctx,0,1u,old);
+  generate(&ctx,1,2u,recent);
+  generate(&ctx,2,3u,successor);
+  write_bytes(target,old,n);
+  write_bytes(recent_path,recent,n);
+  base=kind==PAIR_LOCK_DIRECTORY?a:target;
+  suffix=kind<=PENDING_DANGLING_LINK?".pending":
+         kind==PENDING_LOCK_FIFO?".pending.lock":".pair.lock";
+  len=snprintf(obstruction,sizeof(obstruction),"%s%s",base,suffix);
+  assert(len>0&&len<(int)sizeof(obstruction));
+  if(kind==PENDING_LINK)assert(symlink(recent_path,obstruction)==0);
+  else if(kind==PENDING_DANGLING_LINK){
+    len=snprintf(missing,sizeof(missing),"%s.absent",target);
+    assert(len>0&&len<(int)sizeof(missing));
+    assert(lstat(missing,&st)!=0&&errno==ENOENT);
+    assert(symlink(missing,obstruction)==0);
+  }else if(kind==PENDING_LOCK_FIFO)
+    assert(mkfifo(obstruction,0600)==0);
+  else assert(mkdir(obstruction,0700)==0);
+  ctx.phase=2;
+  called=ctx.encode_calls;
+  assert(!rikitu_staged_pair_commit_if_current(
+      b,a,n,record_validate,record_encode,&ctx,2u,&reported));
+  assert(reported==0xf00df00du);
+  assert(ctx.encode_calls==called);
+  assert_bytes(target,old,n);
+  assert_bytes(recent_path,recent,n);
+  assert(lstat(obstruction,&st)==0);
+  if(kind<=PENDING_DANGLING_LINK)assert(S_ISLNK(st.st_mode));
+  else if(kind==PENDING_LOCK_FIFO)assert(S_ISFIFO(st.st_mode));
+  else assert(S_ISDIR(st.st_mode));
+  if(kind==PAIR_LOCK_DIRECTORY)assert(rmdir(obstruction)==0);
+  else assert(unlink(obstruction)==0);
+  no_pending(a,b);
+  reported=0;
+  assert(rikitu_staged_pair_commit_if_current(
+      a,b,n,record_validate,record_encode,&ctx,2u,&reported));
+  assert(reported==3u);
+  assert_bytes(target,successor,n);
+  assert_bytes(recent_path,recent,n);
+  check_loader(&ctx,a,b,2);
+  no_pending(a,b);
+  clean_path(a);clean_path(b);
+  printf("PASS Stage118 family=%d newer=%c kind=%d\n",
+         family,newer_b?'B':'A',kind);
+}
 int main(void){
   int f,b,s;
   for(f=MAP;f<=LEVEL;f++)
@@ -496,5 +564,10 @@ int main(void){
     for(b=0;b<2;b++)
       run_stale_pending_regular_case(f,b);
   puts("PASS Stage117 6 ordinary stale .pending recovery cases");
+  for(f=MAP;f<=LEVEL;f++)
+    for(b=0;b<2;b++)
+      for(s=PENDING_LINK;s<=PAIR_LOCK_DIRECTORY;s++)
+        run_extra_obstruction_case(f,b,s);
+  puts("PASS Stage118 24 symlink/FIFO/directory obstruction cases");
   return 0;
 }
