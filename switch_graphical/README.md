@@ -1784,3 +1784,32 @@ and Clang, eight consecutive runs each. The integrated authentic-codec
 fixture and all full-project workflows still require CI confirmation.
 This is advisory flock on Linux, not a proof against malicious
 noncooperating writers, alias races or physical Switch/SDMC durability.
+
+## Stage120 — enforce canonical slot paths and independent A/B inodes
+
+The Linux-host experimental writer now rejects a slot path unless it is
+absolute and its parent directory resolves to the exact spelling supplied.
+This rejects dot-segment aliases (for example, `/tmp/./save.rks`),
+duplicate-slash variants, relative paths, and parent-directory symlink
+aliases before opening the pair lock. The standalone staged-slot helper
+applies the same guard before creating its per-target lock.
+
+The pair writer also refuses A/B names that currently resolve to the
+same regular-file inode via hard links. A/B must represent two independent
+directory entries and may not silently collapse to a single underlying
+file. The rejection happens before codec validation/encoding and leaves
+the two names and bytes untouched.
+
+The combined native fixture adds **15 authentic-codec cases**: three
+formats across both slot orientations and two alias forms (dot-segment
+and parent symlink), plus one shared-inode case per format. Each refusal
+must preserve the existing records, leave the committed-generation output
+and encoder call count unchanged, and avoid creating the pair lock for
+a noncanonical path. After correcting the path or replacing the hardlink
+with an independent backup, the same API must commit the next generation
+and the normal production pair loader must restore the expected state.
+
+This is a conservative Linux-host contract for the experimental API.
+It does not make hostile parent-directory replacement race-free and does
+not establish libnx, Switch, FAT/SDMC or power-loss durability. Production
+gameplay and shipping Switch save I/O remain unchanged.
