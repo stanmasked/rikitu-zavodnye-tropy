@@ -405,7 +405,10 @@ static void run_staging_inode_case(int family,int newer_b,int kind){
   assert(!rikitu_staged_pair_commit_if_current(
       b,a,n,record_validate,record_encode,&ctx,2u,&reported));
   assert(reported==0xf00df00du);
-  assert(ctx.encode_calls==called);
+  /* Pair lock rejects before encoding. Target staging guards reject
+   * after the codec has produced in-memory bytes, but before commit. */
+  assert(ctx.encode_calls==called+
+    ((kind==PAIR_LOCK_HARDLINK||kind==PAIR_LOCK_FIFO)?0:1));
   assert_bytes(target,old,n);
   assert_bytes(recent_path,recent,n);
   assert(lstat(obstruction,&st)==0);
@@ -516,7 +519,9 @@ static void run_extra_obstruction_case(int family,int newer_b,int kind){
   assert(!rikitu_staged_pair_commit_if_current(
       b,a,n,record_validate,record_encode,&ctx,2u,&reported));
   assert(reported==0xf00df00du);
-  assert(ctx.encode_calls==called);
+  /* Unsafe .pair.lock rejects pre-encode; all .pending-related
+   * obstructions reject in the later staged writer. */
+  assert(ctx.encode_calls==called+(kind==PAIR_LOCK_DIRECTORY?0:1));
   assert_bytes(target,old,n);
   assert_bytes(recent_path,recent,n);
   assert(lstat(obstruction,&st)==0);
