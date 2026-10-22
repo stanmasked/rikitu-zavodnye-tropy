@@ -1632,3 +1632,32 @@ of writes can reuse a token. It does not prevent noncooperating writers,
 path alias races, stale reads outside this API, malicious lock removal,
 or power loss. No libnx pair lock or physical FAT durability is
 established by this Linux-only test.
+
+## Stage115 — reject ambiguous valid A/B pairs before a guarded commit
+
+The **experimental Linux-only** guarded writer rejects a pair before
+encoding or staging if both slots decode successfully but provide no
+unambiguous ordering:
+
+- Equal generation with different record bytes (split-brain saves).
+- Generations exactly `0x80000000` apart, where serial-number
+  comparison cannot establish which is newer.
+
+This check is performed under the same stable pair-wide advisory lock
+and applies only to `rikitu_staged_pair_commit_if_current`. The older
+unguarded experimental API and the shipping Switch save writer remain
+unchanged. Byte-identical copies with the same generation are
+permitted, since either copy represents the same snapshot.
+
+The extended Stage114/115 test invokes authentic RKS1, RKC2, and RKL3
+validators/encoders and verifies **18 additional scenarios per compiler**:
+both argument orders for each of the three formats, with the two
+ambiguous cases rejected without calling encode, creating `.pending`,
+mutating live saves, or changing committed-generation output; the
+identical-duplicate case must successfully promote the next generation.
+
+The rejection is intentionally conservative. A caller facing an
+ambiguous pair must provide user-controlled repair or a separate
+reconciliation policy, not silently pick a winner. This does not add
+cryptographic identity, prove libnx locking, or establish SDMC/FAT
+power-loss durability. CI must pass before promoting this branch.
