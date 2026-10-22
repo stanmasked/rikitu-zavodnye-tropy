@@ -77,6 +77,9 @@ def verify_files(root: Path, phase: str) -> None:
     escaped_target = root / "sdmc" / "switch" / "stage131-escape.rks"
     if escaped_target.exists() or escaped_target.is_symlink():
         raise AssertionError(f"{phase}: traversal target was unexpectedly created")
+    nested_dir = base / "nested"
+    if nested_dir.exists() or nested_dir.is_symlink():
+        raise AssertionError(f"{phase}: forbidden nested save directory was created")
     a_generation, b_generation = GENERATIONS[phase]
     hashes: dict[str, str] = {}
     for family in FAMILIES:
@@ -210,7 +213,28 @@ def selftest() -> None:
                         path.write_bytes(fake_record(family, generation))
             (base / "stage131-phase.txt").write_text(PHASE_MARKER[phase])
             verify_files(root, phase)
-        print("PASS Stage131 checker selftest: five phases and all three record formats")
+            if phase == "advance":
+                # Prove the continuity check rejects a valid-CRC record whose
+                # uninspected gameplay byte changes without changing generation.
+                path = base / "stage131-map-b.rks"
+                mutated = bytearray(path.read_bytes())
+                mutated[20] ^= 0x5A
+                mutated[-4:] = (
+                    zlib.crc32(mutated[:-4]) & 0xFFFFFFFF
+                ).to_bytes(4, "little")
+                path.write_bytes(mutated)
+                (base / "stage131-phase.txt").write_text(PHASE_MARKER["block"])
+                try:
+                    verify_files(root, "block")
+                except AssertionError as exc:
+                    if "obstructed transaction changed live slot bytes" not in str(exc):
+                        raise
+                else:
+                    raise AssertionError("checker accepted CRC-valid slot mutation")
+                path.write_bytes(fake_record("map", 2))
+                (base / "stage131-phase.txt").write_text(PHASE_MARKER["advance"])
+                print("PASS Stage131 checker selftest: rejects CRC-valid slot mutation")
+        print("PASS Stage131 checker selftest: five phases, all three formats, adversarial hash check")
 
 
 def main() -> None:
