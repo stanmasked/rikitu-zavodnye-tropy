@@ -34,17 +34,18 @@ static int newer(uint32_t a,uint32_t b){
   return a!=b && (uint32_t)(a-b)<0x80000000u;
 }
 #endif
-int rikitu_staged_pair_commit(
+static int pair_commit_internal(
   const char *a,const char *b,size_t n,
   RikituStagedValidate validate,RikituStagedEncode encode,
-  void *context,uint32_t *committed_generation){
+  void *context,int enforce_expected,uint32_t expected_generation,
+  uint32_t *committed_generation){
 #if defined(__linux__)
   const char suffix[]=".pair.lock";
   const char *base;
   char *lock_path=NULL;
   uint8_t *x=NULL,*y=NULL,*out=NULL;
   size_t len;
-  uint32_t ga=0,gb=0,gen=1;
+  uint32_t ga=0,gb=0,gen=1,latest=0;
   const char *target=NULL;
   int fd=-1,va,vb,ok=0;
   if(!a||!b||!a[0]||!b[0]||strcmp(a,b)==0||
@@ -68,11 +69,15 @@ int rikitu_staged_pair_commit(
   va=slot_generation(a,x,n,validate,context,&ga);
   vb=slot_generation(b,y,n,validate,context,&gb);
   if(va&&vb){
-    if(newer(gb,ga)){gen=gb+1u;target=a;}
-    else{gen=ga+1u;target=b;}
-  }else if(va){gen=ga+1u;target=b;}
-  else if(vb){gen=gb+1u;target=a;}
+    if(newer(gb,ga)){latest=gb;gen=gb+1u;target=a;}
+    else{latest=ga;gen=ga+1u;target=b;}
+  }else if(va){latest=ga;gen=ga+1u;target=b;}
+  else if(vb){latest=gb;gen=gb+1u;target=a;}
   else target=a;
+  /* A stale writer must not promote an old gameplay snapshot to a
+   * higher generation. Compare while the pair lock is held, BEFORE
+   * invoking encode() or ever touching .pending / a live slot. */
+  if(enforce_expected&&latest!=expected_generation)goto done;
   if(!gen)gen=1;
   if(!encode(out,n,gen,context))goto done;
   if(!rikitu_staged_slot_commit(target,out,n))goto done;
@@ -86,7 +91,24 @@ done:
 #else
   (void)a;(void)b;(void)n;(void)validate;(void)encode;
   (void)context;(void)committed_generation;
+  (void)enforce_expected;(void)expected_generation;
   /* Fail closed until a target-platform pair lock is independently proven. */
   return 0;
 #endif
+}
+
+int rikitu_staged_pair_commit(
+  const char *a,const char *b,size_t n,
+  RikituStagedValidate validate,RikituStagedEncode encode,
+  void *context,uint32_t *committed_generation){
+  return pair_commit_internal(a,b,n,validate,encode,context,
+                              0,0,committed_generation);
+}
+int rikitu_staged_pair_commit_if_current(
+  const char *a,const char *b,size_t n,
+  RikituStagedValidate validate,RikituStagedEncode encode,
+  void *context,uint32_t expected_generation,
+  uint32_t *committed_generation){
+  return pair_commit_internal(a,b,n,validate,encode,context,
+                              1,expected_generation,committed_generation);
 }
