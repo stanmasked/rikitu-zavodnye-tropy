@@ -13,6 +13,7 @@
  */
 #define _POSIX_C_SOURCE 200809L
 #include "rikitu_staged_pair.h"
+#include "rikitu_staged_slot.h"
 #include "rikitu_save.h"
 #include "rikitu_campaign_save.h"
 #include "rikitu_level_save.h"
@@ -680,6 +681,7 @@ static void run_lock_swap_case(int family,int newer_b,int pair_lock){
 enum { DOT_ALIAS=0,PARENT_SYMLINK_ALIAS=1 };
 static void run_noncanonical_path_case(int family,int alias_b,int kind){
   char a[200],b[200],alias_path[260],alias_dir[100],lock_path[240];
+  char staged_lock[300];
   const char *base_path,*leaf;
   const char *arg_a,*arg_b;
   uint8_t old[RIKITU_LEVEL_SAVE_BYTES],recent[RIKITU_LEVEL_SAVE_BYTES];
@@ -728,6 +730,16 @@ static void run_noncanonical_path_case(int family,int alias_b,int kind){
   assert_bytes(b,recent,n);
   no_pending(a,b);
   assert(lstat(lock_path,&st)!=0&&errno==ENOENT);
+  /* The standalone staged-slot API must enforce the same path contract,
+   * not only when called through the pair wrapper. */
+  called=ctx.encode_calls;
+  assert(!rikitu_staged_slot_commit(alias_path,successor,n));
+  assert(ctx.encode_calls==called);
+  assert_bytes(a,old,n);
+  assert_bytes(b,recent,n);
+  len=snprintf(staged_lock,sizeof(staged_lock),"%s.pending.lock",alias_path);
+  assert(len>0&&len<(int)sizeof(staged_lock));
+  assert(lstat(staged_lock,&st)!=0&&errno==ENOENT);
   if(kind==PARENT_SYMLINK_ALIAS)
     assert(unlink("/tmp/rikitu-stage120-parent-alias")==0);
   reported=0;
