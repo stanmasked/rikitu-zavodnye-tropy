@@ -93,6 +93,13 @@ static void test_map(int block_b){
   verify_pair(MAP_A,MAP_B,sizeof(old_a),old_a,old_b);
   assert(rikitu_save_load_pair(MAP_A,MAP_B,&loaded,&loaded_loop));
   assert(loaded.reached_checkpoints==1&&loaded.hearts==2);
+  /* One valid RKS1 file is not a two-slot recovery pair. */
+  loaded.hearts=1;loaded.reached_checkpoints=2;loaded_loop.active_seconds=777.0f;
+  before=loaded;before_loop=loaded_loop;
+  assert(!rikitu_save_load_pair(MAP_A,MAP_A,&loaded,&loaded_loop));
+  assert(loaded.hearts==before.hearts&&
+         loaded.reached_checkpoints==before.reached_checkpoints&&
+         loaded_loop.active_seconds==before_loop.active_seconds);
   (void)remove(MAP_A);(void)remove(MAP_B);
 }
 static void test_campaign(int block_b){
@@ -113,6 +120,11 @@ static void test_campaign(int block_b){
   verify_pair(CAM_A,CAM_B,sizeof(old_a),old_a,old_b);
   assert(rikitu_campaign_save_load_pair(CAM_A,CAM_B,&loaded));
   assert(loaded.wallet==158&&loaded.level==4);
+  /* Reject duplicate RKC2 slot paths without mutating the campaign. */
+  loaded.wallet=999;before=loaded;
+  assert(!rikitu_campaign_save_load_pair(CAM_A,CAM_A,&loaded));
+  assert(loaded.wallet==before.wallet&&loaded.level==before.level&&
+         loaded.mode==before.mode);
   (void)remove(CAM_A);(void)remove(CAM_B);
 }
 static void test_level(int block_b){
@@ -138,6 +150,13 @@ static void test_level(int block_b){
   assert(rikitu_level_save_load_pair(LVL_A,LVL_B,&loaded,&loaded_loop,&c));
   assert(loaded.reached_checkpoints==1&&loaded.hearts==2);
   assert(loaded.stage.coin_count==1&&loaded.stage.coins[0]==1);
+  /* Reject duplicate RKL3 slot paths without mutating scene/loop state. */
+  loaded.hearts=1;loaded.reached_checkpoints=2;loaded_loop.active_seconds=777.0f;
+  before=loaded;before_loop=loaded_loop;
+  assert(!rikitu_level_save_load_pair(LVL_A,LVL_A,&loaded,&loaded_loop,&c));
+  assert(loaded.hearts==before.hearts&&
+         loaded.reached_checkpoints==before.reached_checkpoints&&
+         loaded_loop.active_seconds==before_loop.active_seconds);
   (void)remove(LVL_A);(void)remove(LVL_B);
 }
 int main(void){
