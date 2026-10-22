@@ -68,6 +68,42 @@ Reference for the libnx fsdev implementation and API surface:
 
 Pin or record the exact libnx/devkitPro revision before treating implementation details from a moving upstream branch as the contract.
 
+### Source audit: libnx snapshot, not yet the build contract
+
+I inspected the public `switchbrew/libnx` source at commit
+`b156b4774fb2df7b93402169509266da7547fc4c` on 2026-10-22:
+
+- In [`fsdev_rename`](https://github.com/switchbrew/libnx/blob/b156b4774fb2df7b93402169509266da7547fc4c/nx/source/runtime/devices/fs_dev.c),
+  libnx determines the source entry type and dispatches regular files to
+  `fsFsRenameFile`. It does not explicitly unlink the destination first.
+  This wrapper does **not** prove whether the underlying HOS filesystem
+  replaces an existing destination; that remains a runtime/platform question.
+- `fsdevCommitDevice("sdmc")` returns the result of
+  `fsFsCommit(&device->fs)`. The [header](https://github.com/switchbrew/libnx/blob/b156b4774fb2df7b93402169509266da7547fc4c/nx/include/switch/runtime/devices/fs_dev.h)
+  says commit is not automatic at unmount and should be used after file
+  writes. The current `switch_graphical/source/main.c` shutdown path can
+  unmount SDMC but contains no explicit `fsdevCommitDevice` call.
+  A commit failure after rename is therefore a distinct, ambiguous
+  post-replacement outcome; it must not be reported as though the previous
+  target were certainly unchanged.
+- `fsFileFlush` returns a native `Result`, and libnx's `fsdev_fsync`
+  translates that result into the POSIX return value. In contrast,
+  `fsFileClose` returns `void`; the inspected `fsdev_close` cannot
+  propagate a native close result through `fclose`. For ordinary buffered
+  writers, `fflush` drains stdio data through `fsdev_write`, whose normal
+  path uses `fsFileWrite`; it does not itself request
+  `fsFileFlush`. Therefore `fflush`/ `fclose` success alone must not be
+  treated as a filesystem-commit guarantee.
+- The Switch build workflows use the container tag
+  `devkitpro/devkita64:20260219`, but current logs do not record the
+  installed `libnx` package version. Before treating this source snapshot
+  as the build contract, record the installed devkitPro/libnx package
+  versions in CI and bind the audit to that exact version.
+
+These are source-level findings, not proof of physical SDMC behavior. Keep
+the existing-target rename and `fsdevCommitDevice` result checks as
+separate QA cases, and do not claim power-loss durability from NeXium alone.
+
 ### 4. Replacement policy
 
 Do not implement an unlink-first fallback merely because replacement rename fails. If the target filesystem cannot replace an existing destination, design a separate two-slot-safe rotation protocol that always retains the newest valid slot across every interruption boundary. That protocol requires its own tests before integration.
