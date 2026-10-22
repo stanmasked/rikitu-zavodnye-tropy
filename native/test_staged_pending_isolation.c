@@ -154,6 +154,7 @@ static void run_case(int family,int backup_b,int mode){
   }else{
     assert(mkdir(pending,0700)==0);
     assert(!rikitu_staged_slot_commit(older,gen3,n));
+    { struct stat st; assert(stat(pending,&st)==0 && S_ISDIR(st.st_mode)); }
     assert_record(older,gen1,n);
     assert_record(newer,gen2,n);
     assert_load(family,a,b,2);
