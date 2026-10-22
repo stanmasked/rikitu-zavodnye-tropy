@@ -77,6 +77,9 @@ def verify_files(root: Path, phase: str) -> None:
     escaped_target = root / "sdmc" / "switch" / "stage131-escape.rks"
     if escaped_target.exists() or escaped_target.is_symlink():
         raise AssertionError(f"{phase}: traversal target was unexpectedly created")
+    escaped_pending = root / "sdmc" / "switch" / "stage131-escape.rks.pending"
+    if escaped_pending.exists() or escaped_pending.is_symlink():
+        raise AssertionError(f"{phase}: traversal attempt left sidecar {escaped_pending.name}")
     nested_dir = base / "nested"
     if nested_dir.exists() or nested_dir.is_symlink():
         raise AssertionError(f"{phase}: forbidden nested save directory was created")

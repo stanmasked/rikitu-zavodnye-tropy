@@ -92,7 +92,10 @@ static int read_marker(char out[64]){
 static int all_absent(void){
   int f,b;
   char pending[128];
-  if(!absent(marker)||!absent(escaped_target)||!absent(nested_dir)||
+  if(!absent(marker)||!absent(escaped_target)||
+     !absent("sdmc:/switch/stage131-escape.rks.pending")||
+     !absent(nested_dir)||!absent(nested_path)||
+     !absent("sdmc:/switch/RIKITU/nested/stage131-escape.rks.pending")||
      !absent(wrong_ext_a)||!absent(wrong_ext_b)||
      !absent("sdmc:/switch/RIKITU/stage131-map-mislabel-a.rkc.pending")||
      !absent("sdmc:/switch/RIKITU/stage131-map-mislabel-b.rkc.pending"))return 0;
@@ -216,8 +219,12 @@ static int reject_traversal_path(void){
        !read_exact(paths[f][b],before[f][b],record_size(f)))return 0;
   }
   /* On later cold starts, A is valid; a single file must not masquerade
-   * as a two-slot recovery pair. */
-  if(rikitu_save_load_pair(paths[MAP][0],paths[MAP][0],&s,&l))return 0;
+   * as a two-slot recovery pair. Rejection must preserve caller state. */
+  s.hearts=1;s.reached_checkpoints=2;l.active_seconds=777.0f;
+  if(rikitu_save_load_pair(paths[MAP][0],paths[MAP][0],&s,&l)||
+     s.hearts!=1||s.reached_checkpoints!=2||l.active_seconds!=777.0f)
+    return 0;
+  seed_flower(&s,&l);
   if(rikitu_save_store_pair(escaped_path,paths[MAP][1],&s,&l)||
      rikitu_save_store_pair(nested_path,paths[MAP][1],&s,&l)||
      rikitu_save_store_pair(wrong_ext_a,wrong_ext_b,&s,&l)||
@@ -239,7 +246,10 @@ static int reject_traversal_path(void){
     if(snprintf(pending,sizeof(pending),"%s.pending",paths[f][b])<0||
        !absent(pending))return 0;
   }
-  if(!absent(escaped_target)||!absent(nested_path)||
+  if(!absent(escaped_target)||
+     !absent("sdmc:/switch/stage131-escape.rks.pending")||
+     !absent(nested_path)||
+     !absent("sdmc:/switch/RIKITU/nested/stage131-escape.rks.pending")||
      !absent(wrong_ext_a)||!absent(wrong_ext_b)||
      !absent("sdmc:/switch/RIKITU/stage131-map-mislabel-a.rkc.pending")||
      !absent("sdmc:/switch/RIKITU/stage131-map-mislabel-b.rkc.pending"))
