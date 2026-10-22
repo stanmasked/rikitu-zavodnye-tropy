@@ -68,6 +68,14 @@ static int pair_commit_internal(
    * Do not consider any .pending file a valid generation. */
   va=slot_generation(a,x,n,validate,context,&ga);
   vb=slot_generation(b,y,n,validate,context,&gb);
+  /* A guarded writer cannot safely select the winner of split-brain
+   * records with the SAME generation but DIFFERENT contents, nor can
+   * serial arithmetic order generations exactly 2^31 apart. Leave
+   * both slots untouched and require explicit caller reconciliation.
+   * Preserve the legacy experimental unguarded API's selection. */
+  if(enforce_expected&&va&&vb&&
+     ((ga==gb&&memcmp(x,y,n)!=0)||
+      (uint32_t)(ga-gb)==0x80000000u))goto done;
   if(va&&vb){
     if(newer(gb,ga)){latest=gb;gen=gb+1u;target=a;}
     else{latest=ga;gen=ga+1u;target=b;}
