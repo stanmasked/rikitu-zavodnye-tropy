@@ -21,6 +21,14 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdint.h>
+#if defined(__linux__)
+#include <dirent.h>
+#include <fcntl.h>
+#include <signal.h>
+#include <sys/file.h>
+#include <sys/wait.h>
+#include <time.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -543,6 +551,129 @@ static void run_extra_obstruction_case(int family,int newer_b,int kind){
   printf("PASS Stage118 family=%d newer=%c kind=%d\n",
          family,newer_b?'B':'A',kind);
 }
+#if defined(__linux__)
+/* Stage119: hold an actual Linux flock in the parent, wait until a
+ * child has opened the SAME inode, then rename the pathname and place
+ * a fresh inode at its original name. The child must refuse to write
+ * when flock finally succeeds on its now-stale descriptor. */
+static int child_has_inode(pid_t pid,const struct stat *expected){
+  char dirname[80],path[160];
+  DIR *d;
+  struct dirent *e;
+  struct stat st;
+  int found=0,len;
+  len=snprintf(dirname,sizeof(dirname),"/proc/%ld/fd",(long)pid);
+  assert(len>0&&len<(int)sizeof(dirname));
+  d=opendir(dirname);
+  if(!d)return 0;
+  while((e=readdir(d))!=NULL){
+    if(e->d_name[0]=='.')continue;
+    len=snprintf(path,sizeof(path),"%s/%s",dirname,e->d_name);
+    if(len<0||len>=(int)sizeof(path))continue;
+    if(stat(path,&st)==0&&st.st_dev==expected->st_dev&&
+       st.st_ino==expected->st_ino){found=1;break;}
+  }
+  assert(closedir(d)==0);
+  return found;
+}
+static void run_lock_swap_case(int family,int newer_b,int pair_lock){
+  char a[200],b[200],lock_path[240],rotated[280];
+  const char *newest,*target,*base;
+  uint8_t old[RIKITU_LEVEL_SAVE_BYTES],recent[RIKITU_LEVEL_SAVE_BYTES];
+  uint8_t successor[RIKITU_LEVEL_SAVE_BYTES];
+  uint32_t reported=0;
+  Context ctx;
+  struct stat locked_stat;
+  struct timespec interval={0,1000000L};
+  int held,replace_fd,ready[2],len,found=0,status,attempt;
+  char signal_byte;
+  pid_t child;
+  size_t n=bytes_for(family);
+  memset(&ctx,0,sizeof(ctx));
+  ctx.family=family;
+  assert(rikitu_campaign_init(&ctx.campaign,4));
+  ctx.campaign.wallet=157;
+  create_paths(family,a,b);
+  clean_path(a);clean_path(b);
+  newest=newer_b?b:a;
+  target=newer_b?a:b;
+  generate(&ctx,0,1u,old);
+  generate(&ctx,1,2u,recent);
+  generate(&ctx,2,3u,successor);
+  write_bytes(target,old,n);
+  write_bytes(newest,recent,n);
+  base=pair_lock?a:target;
+  len=snprintf(lock_path,sizeof(lock_path),"%s%s",base,
+               pair_lock?".pair.lock":".pending.lock");
+  assert(len>0&&len<(int)sizeof(lock_path));
+  len=snprintf(rotated,sizeof(rotated),"%s.oldinode",lock_path);
+  assert(len>0&&len<(int)sizeof(rotated));
+  (void)unlink(rotated);
+  held=open(lock_path,O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW,0600);
+  assert(held>=0);
+  assert(fstat(held,&locked_stat)==0);
+  assert(flock(held,LOCK_EX)==0);
+  assert(pipe(ready)==0);
+  child=fork();
+  assert(child>=0);
+  if(child==0){
+    int result,before;
+    uint32_t child_reported=0xf00df00du;
+    /* Close the inherited OFD *before* reporting readiness. Otherwise
+     * /proc scanning could see this inherited descriptor rather than
+     * the new descriptor that is really blocked on flock. */
+    (void)close(held);
+    (void)close(ready[0]);
+    if(write(ready[1],"R",1)!=1)_exit(10);
+    (void)close(ready[1]);
+    ctx.phase=2;
+    before=ctx.encode_calls;
+    result=rikitu_staged_pair_commit_if_current(
+      b,a,n,record_validate,record_encode,&ctx,2u,&child_reported);
+    if(result||child_reported!=0xf00df00du||
+       ctx.encode_calls!=before+(pair_lock?0:1))_exit(11);
+    _exit(0);
+  }
+  (void)close(ready[1]);
+  assert(read(ready[0],&signal_byte,1)==1&&signal_byte=='R');
+  (void)close(ready[0]);
+  for(attempt=0;attempt<3000;attempt++){
+    if(child_has_inode(child,&locked_stat)){found=1;break;}
+    (void)nanosleep(&interval,NULL);
+  }
+  if(!found){
+    (void)kill(child,SIGKILL);
+    (void)waitpid(child,&status,0);
+    assert(found&&"child never opened the blocked lock inode");
+  }
+  assert(rename(lock_path,rotated)==0);
+  replace_fd=open(lock_path,O_RDWR|O_CREAT|O_EXCL|O_NOFOLLOW,0600);
+  assert(replace_fd>=0);
+  assert(close(replace_fd)==0);
+  assert(flock(held,LOCK_UN)==0);
+  assert(close(held)==0);
+  assert(waitpid(child,&status,0)==child);
+  assert(WIFEXITED(status)&&WEXITSTATUS(status)==0);
+  assert_bytes(target,old,n);
+  assert_bytes(newest,recent,n);
+  no_pending(a,b);
+  /* Explicit operator cleanup after child exit permits a normal
+   * guarded save; production code never unlinks its lock files. */
+  assert(unlink(lock_path)==0);
+  assert(unlink(rotated)==0);
+  ctx.phase=2;
+  assert(rikitu_staged_pair_commit_if_current(
+    a,b,n,record_validate,record_encode,&ctx,2u,&reported));
+  assert(reported==3u);
+  assert_bytes(target,successor,n);
+  assert_bytes(newest,recent,n);
+  check_loader(&ctx,a,b,2);
+  no_pending(a,b);
+  clean_path(a);clean_path(b);
+  printf("PASS Stage119 family=%d newer=%c lock=%s\n",
+         family,newer_b?'B':'A',pair_lock?"pair":"pending");
+}
+#endif
 int main(void){
   int f,b,s;
   for(f=MAP;f<=LEVEL;f++)
@@ -574,5 +705,12 @@ int main(void){
       for(s=PENDING_LINK;s<=PAIR_LOCK_DIRECTORY;s++)
         run_extra_obstruction_case(f,b,s);
   puts("PASS Stage118 24 symlink/FIFO/directory obstruction cases");
+#if defined(__linux__)
+  for(f=MAP;f<=LEVEL;f++)
+    for(b=0;b<2;b++)
+      for(s=0;s<2;s++)
+        run_lock_swap_case(f,b,s);
+  puts("PASS Stage119 12 real two-process lock-path replacement cases");
+#endif
   return 0;
 }
