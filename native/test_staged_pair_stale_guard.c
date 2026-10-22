@@ -797,6 +797,98 @@ static void run_shared_inode_case(int family){
   clean_path(a);clean_path(b);
   printf("PASS Stage120 shared-inode family=%d\n",family);
 }
+#if defined(__linux__)
+/* Test-only linker interposition: swap .pending after its fd has been
+ * safely opened but just before the staged writer calls fwrite().
+ * The original fd still receives the encoded bytes, while the named
+ * path is now a foreign symlink or a different regular-file inode. */
+static int injected_mode=0,injected_fired=0;
+static char injected_pending[240],injected_rotated[280],injected_live[200];
+size_t __real_fwrite(const void *ptr,size_t size,size_t count,FILE *stream);
+size_t __wrap_fwrite(const void *ptr,size_t size,size_t count,FILE *stream){
+  if(injected_mode&&!injected_fired){
+    int fd;
+    static const char foreign_bytes[]="FOREIGN";
+    assert(rename(injected_pending,injected_rotated)==0);
+    if(injected_mode==1){
+      assert(symlink(injected_live,injected_pending)==0);
+    }else{
+      fd=open(injected_pending,O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW,0600);
+      assert(fd>=0);
+      assert(write(fd,foreign_bytes,sizeof(foreign_bytes))==
+             (ssize_t)sizeof(foreign_bytes));
+      assert(close(fd)==0);
+    }
+    injected_fired=1;
+  }
+  return __real_fwrite(ptr,size,count,stream);
+}
+static void run_pending_path_swap_case(int family,int newer_b,int mode){
+  char a[200],b[200];
+  const char *newer,*target;
+  uint8_t old[RIKITU_LEVEL_SAVE_BYTES],recent[RIKITU_LEVEL_SAVE_BYTES];
+  uint8_t successor[RIKITU_LEVEL_SAVE_BYTES];
+  uint32_t reported=0xf00df00du;
+  Context ctx;
+  struct stat st;
+  int called,len;
+  size_t n=bytes_for(family);
+  memset(&ctx,0,sizeof(ctx));
+  ctx.family=family;
+  assert(rikitu_campaign_init(&ctx.campaign,4));
+  ctx.campaign.wallet=157;
+  create_paths(family,a,b);
+  clean_path(a);clean_path(b);
+  newer=newer_b?b:a;
+  target=newer_b?a:b;
+  generate(&ctx,0,1u,old);
+  generate(&ctx,1,2u,recent);
+  generate(&ctx,2,3u,successor);
+  write_bytes(target,old,n);
+  write_bytes(newer,recent,n);
+  len=snprintf(injected_pending,sizeof(injected_pending),"%s.pending",target);
+  assert(len>0&&len<(int)sizeof(injected_pending));
+  len=snprintf(injected_rotated,sizeof(injected_rotated),"%s.moved",
+               injected_pending);
+  assert(len>0&&len<(int)sizeof(injected_rotated));
+  len=snprintf(injected_live,sizeof(injected_live),"%s",newer);
+  assert(len>0&&len<(int)sizeof(injected_live));
+  (void)unlink(injected_rotated);
+  ctx.phase=2;
+  called=ctx.encode_calls;
+  injected_fired=0;
+  injected_mode=mode;
+  assert(!rikitu_staged_pair_commit_if_current(
+      a,b,n,record_validate,record_encode,&ctx,2u,&reported));
+  injected_mode=0;
+  assert(injected_fired);
+  assert(ctx.encode_calls==called+1);
+  assert(reported==0xf00df00du);
+  assert_bytes(target,old,n);
+  assert_bytes(newer,recent,n);
+  assert_bytes(injected_rotated,successor,n);
+  assert(lstat(injected_pending,&st)==0);
+  if(mode==1)assert(S_ISLNK(st.st_mode));
+  else{
+    assert(S_ISREG(st.st_mode));
+    assert(st.st_size==8);
+  }
+  assert(unlink(injected_pending)==0);
+  assert(unlink(injected_rotated)==0);
+  no_pending(a,b);
+  reported=0;
+  assert(rikitu_staged_pair_commit_if_current(
+      a,b,n,record_validate,record_encode,&ctx,2u,&reported));
+  assert(reported==3u);
+  assert_bytes(target,successor,n);
+  assert_bytes(newer,recent,n);
+  check_loader(&ctx,a,b,2);
+  no_pending(a,b);
+  clean_path(a);clean_path(b);
+  printf("PASS Stage121 family=%d newer=%c swap=%d\n",
+         family,newer_b?'B':'A',mode);
+}
+#endif
 int main(void){
   int f,b,s;
   for(f=MAP;f<=LEVEL;f++)
@@ -843,5 +935,12 @@ int main(void){
   for(f=MAP;f<=LEVEL;f++)
     run_shared_inode_case(f);
   puts("PASS Stage120 3 shared-inode A/B rejection/recovery cases");
+#if defined(__linux__)
+  for(f=MAP;f<=LEVEL;f++)
+    for(b=0;b<2;b++)
+      for(s=1;s<=2;s++)
+        run_pending_path_swap_case(f,b,s);
+  puts("PASS Stage121 12 pending-path swap refusal/recovery cases");
+#endif
   return 0;
 }
