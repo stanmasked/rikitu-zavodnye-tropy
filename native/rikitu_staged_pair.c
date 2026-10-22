@@ -67,6 +67,8 @@ static int pair_commit_internal(
   const char *target=NULL;
   int fd=-1,va,vb,ok=0;
   if(!a||!b||!a[0]||!b[0]||strcmp(a,b)==0||
+     !rikitu_staged_slot_path_is_canonical(a)||
+     !rikitu_staged_slot_path_is_canonical(b)||
      !validate||!encode||!n||n>4096u)return 0;
   /* Lexicographic ordering ensures the same lock when caller swaps A/B.
    * Paths must identify the same files without aliases/symlink redirection. */
@@ -101,6 +103,15 @@ static int pair_commit_internal(
        !S_ISREG(path_stat.st_mode)||path_stat.st_nlink!=1||
        locked_stat.st_dev!=path_stat.st_dev||
        locked_stat.st_ino!=path_stat.st_ino)goto done;
+  }
+  /* Two different names must not be hard links to one live slot:
+   * that would defeat the two-independent-copies recovery contract. */
+  {
+    struct stat stat_a,stat_b;
+    if(lstat(a,&stat_a)==0&&lstat(b,&stat_b)==0&&
+       S_ISREG(stat_a.st_mode)&&S_ISREG(stat_b.st_mode)&&
+       stat_a.st_dev==stat_b.st_dev&&stat_a.st_ino==stat_b.st_ino)
+      goto done;
   }
   /* Selection is performed AFTER the lock, not on a stale earlier read.
    * Do not consider any .pending file a valid generation. */
