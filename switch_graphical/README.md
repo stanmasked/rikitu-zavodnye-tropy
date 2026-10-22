@@ -1524,3 +1524,45 @@ equivalent lock guarantee yet on Switch/libnx, and the fallback there
 remains the prior experimental behaviour. Physical SD power loss,
 FAT metadata ordering, fsync durability and multi-device usage remain
 unproven. Production game saves still do not use the helper.
+
+
+## Stage112 — coordinated A/B selection and staging (experimental Linux only)
+
+The new, **unshipped** `native/rikitu_staged_pair.{h,c}` API takes
+one persistent advisory `flock` on a lexicographically canonical
+`<first-slot>.pair.lock` name **before** it reads the live A/B pair.
+It validates their real codec-specific records under that lock, selects
+the older/invalid destination and next wrap-safe generation using the
+same selection rules as the production writer, encodes a fresh record
+and delegates its commit to the previously tested staged writer.
+The lock stays held until both generation election and commit finish,
+whether successfully, with an error, or when the writer process dies.
+The lockfile remains present to avoid competing lock inodes.
+
+The callback contract enables genuine RKS1, RKC2 and RKL3 codecs.
+A level-save caller is responsible for **campaign identity validation**
+during election (not merely CRC) so a foreign chapter or wallet cannot
+take priority. The experimental function does not yet replace game save
+writers or modify game save formats. On non-Linux hosts, the function
+**fails closed** rather than silently selecting slots without locking.
+
+The new Linux host test starts from TWO valid files (gen1 and gen2).
+The first writer stops in its encoder while holding the pair lock; a
+second independent process calls the function with **reversed A/B
+arguments**, which must still map to the same canonical lock. The
+second process cannot begin its encoder or change either live file
+until the first is resumed or SIGKILLed. After a resumed first write,
+the second re-elects generation 4 into the other live slot while
+preserving generation 3. After SIGKILL before the first commit,
+the second elects generation 3 and preserves the original gen2.
+The production loaders must restore the distinctive second-writer
+gameplay state in all cases. Both original orientations and all
+three formats yield 12 independent process races per compiler.
+
+Limitations remain significant: advisory locking only protects
+**cooperating Linux processes using canonical identical paths**;
+other writers or manual filesystem edits may bypass it. The helper
+does not establish atomic snapshot consistency for readers, storage
+durability or device cache flush ordering; no libnx/physical Switch
+pair-wide lock implementation has been validated, so **production
+Switch saving remains unchanged**.
