@@ -172,7 +172,9 @@ int main(void){
 
   /* Stage132: a CRC-valid but semantically impossible record with the
    * right campaign identity and a much higher generation must not outrank
-   * the last fully restorable checkpoint during a production write. */
+   * the last fully restorable checkpoint during a production write.
+   * Exercise both A/B orientations because each selects a different branch
+   * in the pair writer when exactly one slot is fully decodable. */
   {
     RikituScene invalid_scene,loaded;
     RikituLoop invalid_loop,loaded_loop;
@@ -181,39 +183,45 @@ int main(void){
     uint8_t observed[RIKITU_LEVEL_SAVE_BYTES];
     uint32_t generation=0;
     FILE *f;
-    clean();
-    chapter(&c3,3,120); /* Odd-numbered level: no boss exists. */
-    fresh(&s,&l,&c3);
-    checkpoint(&s,&l,1,3);
-    assert(rikitu_level_save_encode(good,&s,&l,&c3,10));
-    memcpy(invalid,good,sizeof(invalid));
-    invalid[9]=1; /* CRC-valid but impossible non-boss HP. */
-    put32le(invalid+32,500);
-    put32le(invalid+60,record_crc32(invalid,60));
-    assert(rikitu_level_save_inspect(invalid,sizeof(invalid),&generation)&&
-           generation==500);
-    fresh(&invalid_scene,&invalid_loop,&c3);
-    assert(!rikitu_level_save_decode(&invalid_scene,&invalid_loop,&c3,
-                                     invalid,sizeof(invalid),NULL));
-    f=fopen(LVL_A,"wb");assert(f);
-    assert(fwrite(good,1,sizeof(good),f)==sizeof(good));
-    assert(fclose(f)==0);
-    f=fopen(LVL_B,"wb");assert(f);
-    assert(fwrite(invalid,1,sizeof(invalid),f)==sizeof(invalid));
-    assert(fclose(f)==0);
+    int orientation;
+    for(orientation=0;orientation<2;orientation++){
+      const char *good_path=orientation==0?LVL_A:LVL_B;
+      const char *invalid_path=orientation==0?LVL_B:LVL_A;
+      clean();
+      chapter(&c3,3,120); /* Odd-numbered level: no boss exists. */
+      fresh(&s,&l,&c3);
+      checkpoint(&s,&l,1,3);
+      assert(rikitu_level_save_encode(good,&s,&l,&c3,10));
+      memcpy(invalid,good,sizeof(invalid));
+      invalid[9]=1; /* CRC-valid but impossible non-boss HP. */
+      put32le(invalid+32,500);
+      put32le(invalid+60,record_crc32(invalid,60));
+      assert(rikitu_level_save_inspect(invalid,sizeof(invalid),&generation)&&
+             generation==500);
+      fresh(&invalid_scene,&invalid_loop,&c3);
+      assert(!rikitu_level_save_decode(&invalid_scene,&invalid_loop,&c3,
+                                       invalid,sizeof(invalid),NULL));
+      f=fopen(good_path,"wb");assert(f);
+      assert(fwrite(good,1,sizeof(good),f)==sizeof(good));
+      assert(fclose(f)==0);
+      f=fopen(invalid_path,"wb");assert(f);
+      assert(fwrite(invalid,1,sizeof(invalid),f)==sizeof(invalid));
+      assert(fclose(f)==0);
 
-    checkpoint(&s,&l,2,2);
-    assert(rikitu_level_save_store_pair(LVL_A,LVL_B,&s,&l,&c3));
-    snapshot(LVL_A,observed,sizeof(observed));
-    assert(memcmp(observed,good,sizeof(good))==0);
-    snapshot(LVL_B,observed,sizeof(observed));
-    assert(rikitu_level_save_inspect(observed,sizeof(observed),&generation)&&
-           generation==11);
-    fresh(&loaded,&loaded_loop,&c3);
-    assert(rikitu_level_save_load_pair(LVL_A,LVL_B,&loaded,&loaded_loop,&c3));
-    assert(loaded.reached_checkpoints==2&&loaded.hearts==2&&
-           loaded.stage.coin_count==2);
-    puts("PASS Stage132 RKL3 semantic validation preserves the last good backup");
+      checkpoint(&s,&l,2,2);
+      assert(rikitu_level_save_store_pair(LVL_A,LVL_B,&s,&l,&c3));
+      snapshot(good_path,observed,sizeof(observed));
+      assert(memcmp(observed,good,sizeof(good))==0);
+      snapshot(invalid_path,observed,sizeof(observed));
+      assert(rikitu_level_save_inspect(observed,sizeof(observed),
+                                       &generation)&&generation==11);
+      fresh(&loaded,&loaded_loop,&c3);
+      assert(rikitu_level_save_load_pair(LVL_A,LVL_B,&loaded,&loaded_loop,&c3));
+      assert(loaded.reached_checkpoints==2&&loaded.hearts==2&&
+             loaded.stage.coin_count==2);
+      printf("PASS Stage132 RKL3 semantic validation valid-slot=%c\n",
+             orientation==0?'A':'B');
+    }
   }
   clean();
   return 0;
