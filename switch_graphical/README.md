@@ -1722,3 +1722,32 @@ The protection is **not** a solution to adversarial races during the
 check/truncate/rename sequence or to aliasing via parent directories,
 and does not establish any guarantees for Switch/libnx or FAT/SDMC.
 The production Switch writer and game content remain unchanged.
+
+## Stage118 — lock inode recheck and dangling-pending regressions
+
+Both experimental Linux lock paths now verify the **same opened
+descriptor** again after acquiring the advisory `flock`. A file that
+was regular and single-linked before a contended lock may have gained
+another hard link while the process waited. Such an inode must fail
+closed before generation selection or staging begins. This is not a
+complete defense against malicious path replacement or hard-link races
+after the second check; the lock scheme continues to assume cooperating
+writers and stable canonical paths.
+
+The native Stage114-118 fixture now uses `lstat` rather than `stat`
+to assert that no `.pending` entry remains, so dangling symlinks are
+not mistaken for absent files. It adds **24 regression scenarios per
+compiler**: real RKS1/RKC2/RKL3 codecs, both A/B orientations, and four
+obstructions: `.pending` symlink to a live save, dangling
+`.pending` symlink, `.pending.lock` FIFO, and `.pair.lock`
+directory. Refusals preserve the two live records, do not invoke the
+encoder, do not alter reported generation and preserve the obstructing
+path until explicit operator cleanup. After cleanup, each fixture
+successfully commits a new generation and checks the original pair
+loader.
+
+Small local Linux-system-call smoke probes passed on GCC and Clang
+(9 cases per compiler). These verify host OS behavior only, **not**
+the full repository C99 suite or a Switch build; Stage118 integration
+is not eligible for merging until the full CI on its current head passes.
+No Switch/libnx or physical FAT/SDMC guarantee is claimed.
