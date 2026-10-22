@@ -35,6 +35,8 @@ static const char *const escaped_path="sdmc:/switch/RIKITU/../stage131-escape.rk
 static const char *const escaped_target="sdmc:/switch/stage131-escape.rks";
 static const char *const nested_dir="sdmc:/switch/RIKITU/nested";
 static const char *const nested_path="sdmc:/switch/RIKITU/nested/stage131-escape.rks";
+static const char *const wrong_ext_a="sdmc:/switch/RIKITU/stage131-map-mislabel-a.rkc";
+static const char *const wrong_ext_b="sdmc:/switch/RIKITU/stage131-map-mislabel-b.rkc";
 
 static size_t record_size(int family){
   return family==MAP?RIKITU_SAVE_BYTES:
@@ -90,7 +92,8 @@ static int read_marker(char out[64]){
 static int all_absent(void){
   int f,b;
   char pending[128];
-  if(!absent(marker)||!absent(escaped_target)||!absent(nested_dir))return 0;
+  if(!absent(marker)||!absent(escaped_target)||!absent(nested_dir)||
+     !absent(wrong_ext_a)||!absent(wrong_ext_b))return 0;
   for(f=MAP;f<=LEVEL;f++){
     if(!absent(holds[f]))return 0;
     for(b=0;b<2;b++){
@@ -199,8 +202,10 @@ static int reject_traversal_path(void){
   if(mkdir(nested_dir,0777)!=0)return 0;
   if(rikitu_save_store_pair(escaped_path,paths[MAP][1],&s,&l)||
      rikitu_save_store_pair(nested_path,paths[MAP][1],&s,&l)||
-     !absent(escaped_target)||!absent(nested_path))
-    return 0; /* Leave evidence behind if either guard fails. */
+     rikitu_save_store_pair(wrong_ext_a,wrong_ext_b,&s,&l)||
+     !absent(escaped_target)||!absent(nested_path)||
+     !absent(wrong_ext_a)||!absent(wrong_ext_b))
+    return 0; /* Leave evidence behind if any guard fails. */
   return rmdir(nested_dir)==0;
 }
 static int seed_pairs(void){
