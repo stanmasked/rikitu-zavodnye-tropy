@@ -1712,8 +1712,11 @@ hard-linked `.pending.lock`, hard-linked `.pair.lock`, FIFO
 `.pending`, directory `.pending`, FIFO `.pair.lock`).
 Every rejection must preserve both live records and the obstruction,
 leave the generation output and encoder call count unchanged, and
-succeed after explicit cleanup of the obstructing path. Production
-pair-loaders confirm the recovered game state.
+succeed after explicit cleanup of the obstructing path. Six additional
+positive cases (three codecs, both orientations) confirm that an ordinary
+incomplete regular `.pending` can still be safely reused and produces
+the expected new generation. Production pair-loaders confirm the
+recovered game state.
 
 The protection is **not** a solution to adversarial races during the
 check/truncate/rename sequence or to aliasing via parent directories,
