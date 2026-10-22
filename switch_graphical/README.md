@@ -1409,3 +1409,32 @@ The six combined family/orientation cases run separately on strict GCC
 and Clang. These tests do not link the experimental writer into the
 shipping Switch save paths and do not prove physical SD power-cut
 durability, directory sync or real-hardware FAT rename atomicity.
+
+
+## Stage108 — host process abort before/after staged rename
+
+The Linux-only native `test_staged_sigkill_boundaries.c` tests the
+real RKS1/RKC2/RKL3 encoders and production pair LOADERS alongside the
+*optional, unshipped* staged helper. For both slot orientations and
+all three formats, forked writers receive an actual `SIGKILL` at two
+separately controlled boundaries:
+
+* **Half-written pending:** the child writes and flushes half a
+  `.pending` record, stops at a linker-instrumented `fwrite`,
+  and the parent kills it. Both live slots remain **byte-identical**,
+  the production loader selects genuine gen2, and the next staged
+  write replaces the abandoned pending with a valid gen3.
+* **After successful rename:** the child renames gen3 over an existing
+  gen1, stops before its `rename` call returns, and is killed. The
+  loader selects gen3 and gen2 remains an intact fallback; another
+  staged gen4 update overwrites gen2 while preserving gen3.
+
+Twelve process-kill scenarios run independently under GCC and Clang,
+with a timeout and strict C99/POSIX compilation. No wrappers or writer
+integration are compiled into Switch game NROs.
+
+This is **not** a simulation of interrupted SD power, FAT hardware
+recovery, metadata writeback, fsync durability, or safe multiprocess
+concurrency. The test uses the Linux runner's process and filesystem
+semantics; firmware and physical SD need separate qualification before
+production adoption.
