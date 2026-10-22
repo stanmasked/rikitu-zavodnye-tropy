@@ -93,7 +93,9 @@ static int all_absent(void){
   int f,b;
   char pending[128];
   if(!absent(marker)||!absent(escaped_target)||!absent(nested_dir)||
-     !absent(wrong_ext_a)||!absent(wrong_ext_b))return 0;
+     !absent(wrong_ext_a)||!absent(wrong_ext_b)||
+     !absent("sdmc:/switch/RIKITU/stage131-map-mislabel-a.rkc.pending")||
+     !absent("sdmc:/switch/RIKITU/stage131-map-mislabel-b.rkc.pending"))return 0;
   for(f=MAP;f<=LEVEL;f++){
     if(!absent(holds[f]))return 0;
     for(b=0;b<2;b++){
@@ -196,18 +198,51 @@ static int latest_is_progress(int final_step){
 }
 static int reject_traversal_path(void){
   RikituScene s;RikituLoop l;
+  RikituCampaign c;
+  uint8_t before[3][2][RIKITU_LEVEL_SAVE_BYTES];
+  int existed[3][2];
+  int f,b;
+  char pending[128];
   seed_flower(&s,&l);
   /* Make the nested parent writable first: a rejected write must prove
    * path validation, not merely fail because its parent is missing. */
   if(mkdir(nested_dir,0777)!=0)return 0;
-  /* On phases with a valid A slot, a single file must not masquerade as
-   * a two-slot recovery pair. The host regression covers output immutability. */
+  /* Snapshot every live format before testing wrong-format writers. The
+   * host audit checks phase generations too; this local comparison proves
+   * that rejected calls themselves do not mutate any slot. */
+  for(f=MAP;f<=LEVEL;f++)for(b=0;b<2;b++){
+    existed[f][b]=!absent(paths[f][b]);
+    if(existed[f][b]&&
+       !read_exact(paths[f][b],before[f][b],record_size(f)))return 0;
+  }
+  /* On later cold starts, A is valid; a single file must not masquerade
+   * as a two-slot recovery pair. */
   if(rikitu_save_load_pair(paths[MAP][0],paths[MAP][0],&s,&l))return 0;
   if(rikitu_save_store_pair(escaped_path,paths[MAP][1],&s,&l)||
      rikitu_save_store_pair(nested_path,paths[MAP][1],&s,&l)||
      rikitu_save_store_pair(wrong_ext_a,wrong_ext_b,&s,&l)||
-     !absent(escaped_target)||!absent(nested_path)||
-     !absent(wrong_ext_a)||!absent(wrong_ext_b))
+     rikitu_save_store_pair(paths[LEVEL][0],paths[LEVEL][1],&s,&l))
+    return 0;
+  if(!rikitu_campaign_init(&c,4))return 0;
+  c.wallet=157;
+  if(rikitu_campaign_save_store_pair(paths[MAP][0],paths[MAP][1],&c)||
+     rikitu_campaign_save_store_pair(paths[LEVEL][0],paths[LEVEL][1],&c))
+    return 0;
+  seed_bridge(&s,&l);
+  if(rikitu_level_save_store_pair(paths[MAP][0],paths[MAP][1],&s,&l,&c)||
+     rikitu_level_save_store_pair(paths[CAMPAIGN][0],paths[CAMPAIGN][1],&s,&l,&c))
+    return 0;
+  for(f=MAP;f<=LEVEL;f++)for(b=0;b<2;b++){
+    if(existed[f][b]){
+      if(!bytes_equal(paths[f][b],before[f][b],record_size(f)))return 0;
+    }else if(!absent(paths[f][b]))return 0;
+    if(snprintf(pending,sizeof(pending),"%s.pending",paths[f][b])<0||
+       !absent(pending))return 0;
+  }
+  if(!absent(escaped_target)||!absent(nested_path)||
+     !absent(wrong_ext_a)||!absent(wrong_ext_b)||
+     !absent("sdmc:/switch/RIKITU/stage131-map-mislabel-a.rkc.pending")||
+     !absent("sdmc:/switch/RIKITU/stage131-map-mislabel-b.rkc.pending"))
     return 0; /* Leave evidence behind if any guard fails. */
   return rmdir(nested_dir)==0;
 }

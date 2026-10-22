@@ -88,6 +88,11 @@ def verify_files(root: Path, phase: str) -> None:
             raise AssertionError(
                 f"{phase}: RKS1 writer touched a non-RKS slot: {wrong_ext.name}"
             )
+        pending = base / (wrong_ext.name + ".pending")
+        if pending.exists() or pending.is_symlink():
+            raise AssertionError(
+                f"{phase}: wrong-extension attempt left sidecar {pending.name}"
+            )
     a_generation, b_generation = GENERATIONS[phase]
     hashes: dict[str, str] = {}
     for family in FAMILIES:
