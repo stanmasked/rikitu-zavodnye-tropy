@@ -1,8 +1,11 @@
+#define _POSIX_C_SOURCE 200809L
 #include "rikitu_staged_slot.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 /* Test-only prototype: same-directory staging + exact-byte readback
  * before replacing target via rename(). If ANY preparatory step fails,
@@ -25,9 +28,24 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
   if(!tmp||!readback)goto done;
   memcpy(tmp,target,name_len);
   memcpy(tmp+name_len,suffix,sizeof(suffix));
+  /* On POSIX hosts, a pre-existing .pending symlink must not be
+   * followed: truncating its referent could destroy the only valid save.
+   * O_NOFOLLOW checks this atomically with open, unlike an lstat check.
+   * Non-POSIX/libnx builds retain the prior experimental fallback until
+   * their filesystem exposes a tested equivalent. */
+#if defined(O_NOFOLLOW)
+  {
+    int fd=open(tmp,O_WRONLY|O_CREAT|O_TRUNC|O_NOFOLLOW,0600);
+    if(fd<0)goto done;
+    opened_tmp=1;
+    f=fdopen(fd,"wb");
+    if(!f){(void)close(fd);goto done;}
+  }
+#else
   f=fopen(tmp,"wb");
   if(!f)goto done;
   opened_tmp=1;
+#endif
   if(fwrite(record,1,n,f)!=n||fflush(f)!=0){
     (void)fclose(f);f=NULL;
     goto done;
