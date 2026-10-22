@@ -19,4 +19,18 @@ int rikitu_staged_pair_commit(
   const char *slot_a,const char *slot_b,size_t size,
   RikituStagedValidate validate,RikituStagedEncode encode,
   void *context,uint32_t *committed_generation);
+
+/* Optimistic stale-snapshot guard (Linux host experiment only).
+ * expected_generation must match the newest codec-VALID generation
+ * found INSIDE the exclusive pair lock. Use 0 when both slots are
+ * missing/invalid. If a newer save exists, FAIL WITHOUT WRITING any
+ * slot, even if the supplied snapshot would otherwise encode cleanly.
+ * Caller must reload/merge before retrying; do not blindly advance
+ * expected_generation. Returns committed generation only on success.
+ */
+int rikitu_staged_pair_commit_if_current(
+  const char *slot_a,const char *slot_b,size_t size,
+  RikituStagedValidate validate,RikituStagedEncode encode,
+  void *context,uint32_t expected_generation,
+  uint32_t *committed_generation);
 #endif
