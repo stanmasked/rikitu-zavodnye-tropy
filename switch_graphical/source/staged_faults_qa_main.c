@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "rikitu_staged_slot.h"
 #include "rikitu_save.h"
 #include "rikitu_campaign_save.h"
