@@ -7,6 +7,7 @@ This is emulator evidence, not a physical Switch power-loss guarantee.
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -77,6 +78,7 @@ def verify_files(root: Path, phase: str) -> None:
     if escaped_target.exists() or escaped_target.is_symlink():
         raise AssertionError(f"{phase}: traversal target was unexpectedly created")
     a_generation, b_generation = GENERATIONS[phase]
+    hashes: dict[str, str] = {}
     for family in FAMILIES:
         for slot, generation in (("a", a_generation), ("b", b_generation)):
             path = base / f"stage131-{family}-{slot}.{EXT[family]}"
@@ -86,9 +88,10 @@ def verify_files(root: Path, phase: str) -> None:
             else:
                 data = path.read_bytes()
                 check_record(data, family, generation)
+                hashes[path.name] = hashlib.sha256(data).hexdigest()
                 print(
                     f"PASS Stage131 {phase} {family} {slot}: gen={generation} "
-                    f"sha256={hashlib.sha256(data).hexdigest()[:12]}"
+                    f"sha256={hashes[path.name][:12]}"
                 )
             pending = base / (path.name + ".pending")
             if pending.exists() or pending.is_symlink():
@@ -96,7 +99,58 @@ def verify_files(root: Path, phase: str) -> None:
         hold = base / f"stage131-{family}-a.hold"
         if hold.exists() or hold.is_symlink():
             raise AssertionError(f"{phase}: backup was not restored: {hold.name}")
-    print(f"PASS Stage131 {phase}: production save-pair state and sidecar audit")
+
+    # Hash continuity proves that an interrupted/blocked transaction did not
+    # rewrite either live record. Codec validity alone would miss changes to
+    # otherwise-valid gameplay fields. The manifest lives outside guest SDMC.
+    manifest_path = root / "stage131-slot-hashes.json"
+    if phase == "seed":
+        if manifest_path.exists():
+            raise AssertionError("seed: stale hash manifest in a supposedly fresh root")
+        manifest: dict[str, dict[str, str]] = {}
+    else:
+        if not manifest_path.is_file():
+            raise AssertionError(f"{phase}: missing prior hash manifest")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+
+    if phase == "seed":
+        manifest["seed"] = hashes
+    elif phase == "advance":
+        previous = manifest.get("seed")
+        if not previous:
+            raise AssertionError("advance: seed hashes are missing")
+        for family in FAMILIES:
+            name = f"stage131-{family}-a.{EXT[family]}"
+            if hashes.get(name) != previous.get(name):
+                raise AssertionError(f"advance: older A slot changed: {name}")
+        manifest["advance"] = hashes
+    elif phase == "block":
+        previous = manifest.get("advance")
+        if not previous or hashes != previous:
+            raise AssertionError("block: obstructed transaction changed live slot bytes")
+        manifest["block"] = hashes
+    elif phase == "recover":
+        previous = manifest.get("advance")
+        if not previous:
+            raise AssertionError("recover: advance hashes are missing")
+        for family in FAMILIES:
+            a_name = f"stage131-{family}-a.{EXT[family]}"
+            b_name = f"stage131-{family}-b.{EXT[family]}"
+            if hashes.get(b_name) != previous.get(b_name):
+                raise AssertionError(f"recover: surviving B backup changed: {b_name}")
+            if hashes.get(a_name) == previous.get(a_name):
+                raise AssertionError(f"recover: A slot was not advanced to generation 3: {a_name}")
+        manifest["recover"] = hashes
+    elif phase == "verify":
+        previous = manifest.get("recover")
+        if not previous or hashes != previous:
+            raise AssertionError("verify: cold-start verification changed committed bytes")
+        manifest["verify"] = hashes
+
+    manifest_path.write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    print(f"PASS Stage131 {phase}: production save-pair state, hash continuity and sidecars")
 
 
 def verify_image(path: Path, phase: str) -> None:
