@@ -30,7 +30,6 @@
 enum { MAP=0, CAMPAIGN=1, LEVEL=2, MID_WRITE=1, AFTER_RENAME=2 };
 static volatile sig_atomic_t child_hook=0;
 extern size_t __real_fwrite(const void *,size_t,size_t,FILE *);
-extern int __real_fflush(FILE *);
 extern int __real_rename(const char *,const char *);
 
 size_t __wrap_fwrite(const void *src,size_t size,size_t count,FILE *out){
@@ -39,7 +38,7 @@ size_t __wrap_fwrite(const void *src,size_t size,size_t count,FILE *out){
   assert(size==1 && count>=32);
   half=count/2;
   assert(__real_fwrite(src,1,half,out)==half);
-  assert(__real_fflush(out)==0); /* Ensure partial pending reaches host FS. */
+  assert(fflush(out)==0); /* Ensure partial pending reaches host FS. */
   assert(raise(SIGSTOP)==0);     /* Parent sends SIGKILL before resumption. */
   _exit(80);                    /* Should never execute. */
 }
