@@ -1661,3 +1661,29 @@ ambiguous pair must provide user-controlled repair or a separate
 reconciliation policy, not silently pick a winner. This does not add
 cryptographic identity, prove libnx locking, or establish SDMC/FAT
 power-loss durability. CI must pass before promoting this branch.
+
+## Stage116 — reject unsafe live-slot paths without losing the backup
+
+The experimental Linux-only pair writer now distinguishes a genuinely
+missing/codec-invalid regular slot from a filesystem/path read error.
+It opens each live slot with `O_NOFOLLOW|O_NONBLOCK`, uses `fstat` to
+require a regular file, and checks stream errors and close status.
+A symlink, directory, FIFO, device, or unexpected read/open error
+fails the pair commit closed **inside the pair-wide lock** without
+staging a new record. Missing (`ENOENT`) and codec-invalid regular
+records retain the existing recovery behavior.
+
+The Stage114/115/116 native test exercises 18 additional cases
+per GCC/Clang compiler: all RKS1/RKC2/RKL3 families, both A/B
+orientations and symlink/directory/FIFO obstructions. Rejected
+operations preserve the valid partner slot, the unsafe path type,
+the encoder call count and committed-generation output. After
+explicit cleanup and restoration of the backup record, the same
+guarded API must commit normally and production pair loaders must
+recover the expected state.
+
+This protects cooperating Linux-host code against pre-existing unsafe
+live-slot types; it does not eliminate races with malicious or
+non-cooperating processes that replace paths during the operation,
+enforce hard-link/canonical-path identity, or prove any libnx or
+physical SD card properties. The Switch shipping path is untouched.
