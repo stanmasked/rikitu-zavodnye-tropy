@@ -3,6 +3,14 @@
 #include "rikitu_staged_pair.h"
 #include <stdio.h>
 #include <string.h>
+/* RKS1 is the map/checkpoint format; never let this codec overwrite
+ * an RKC2 campaign or RKL3 level slot through a misrouted caller. */
+static int save_path(const char *path){
+  size_t n;
+  if(!path)return 0;
+  n=strlen(path);
+  return n>4&&strcmp(path+n-4,".rks")==0;
+}
 /* Read one independently checksummed fixed-size slot. */
 static int read_slot(const char *path,uint8_t out[RIKITU_SAVE_BYTES]){
   return rikitu_read_fixed_slot(path,out,RIKITU_SAVE_BYTES);
@@ -20,7 +28,7 @@ int rikitu_save_load_pair(const char *a,const char *b,
   uint8_t x[RIKITU_SAVE_BYTES],y[RIKITU_SAVE_BYTES];
   uint32_t gx=0,gy=0;
   int rx,ry,vx,vy;
-  if(!a||!b||!s||!l)return 0;
+  if(!save_path(a)||!save_path(b)||!s||!l)return 0;
   rx=read_slot(a,x);
   if(rx==RIKITU_SLOT_READ_ERROR)return 0;
   ry=read_slot(b,y);
@@ -56,7 +64,7 @@ static int staged_save_encode(uint8_t *record,size_t size,uint32_t generation,
 int rikitu_save_store_pair(const char *a,const char *b,
                            const RikituScene *s,const RikituLoop *l){
   RikituSaveWriteContext context;
-  if(!a||!b||!s||!l||strcmp(a,b)==0)return 0;
+  if(!save_path(a)||!save_path(b)||!s||!l||strcmp(a,b)==0)return 0;
   context.scene=s;
   context.loop=l;
   return rikitu_staged_pair_commit(a,b,RIKITU_SAVE_BYTES,
