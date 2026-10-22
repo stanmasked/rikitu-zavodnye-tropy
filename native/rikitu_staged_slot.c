@@ -6,6 +6,9 @@
 #include <stdint.h>
 #include <fcntl.h>
 #include <unistd.h>
+#if defined(__linux__)
+#include <sys/file.h>
+#endif
 
 /* Test-only prototype: same-directory staging + exact-byte readback
  * before replacing target via rename(). If ANY preparatory step fails,
@@ -15,6 +18,11 @@
  */
 int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n){
   const char suffix[]=".pending";
+#if defined(__linux__)
+  const char lock_suffix[]=".pending.lock";
+  char *lock_path=NULL;
+  int lock_fd=-1;
+#endif
   char *tmp=NULL;
   uint8_t *readback=NULL;
   size_t name_len,read_n;
@@ -23,11 +31,27 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
   if(!target||!target[0]||!record||!n||n>4096u)return 0;
   name_len=strlen(target);
   if(name_len>4095u-sizeof(suffix))return 0;
+#if defined(__linux__)
+  if(name_len>4095u-sizeof(lock_suffix))return 0;
+#endif
   tmp=(char*)malloc(name_len+sizeof(suffix));
   readback=(uint8_t*)malloc(n);
   if(!tmp||!readback)goto done;
   memcpy(tmp,target,name_len);
   memcpy(tmp+name_len,suffix,sizeof(suffix));
+#if defined(__linux__)
+  /* Serialize all writers of this one target BEFORE touching .pending.
+   * The lock inode is persistent: unlinking it would allow two different
+   * inodes, and hence two simultaneous apparent owners. This is a
+   * Linux-host protection only; Switch/libnx is not certified here. */
+  lock_path=(char*)malloc(name_len+sizeof(lock_suffix));
+  if(!lock_path)goto done;
+  memcpy(lock_path,target,name_len);
+  memcpy(lock_path+name_len,lock_suffix,sizeof(lock_suffix));
+  lock_fd=open(lock_path,O_RDWR|O_CREAT|O_NOFOLLOW,0600);
+  if(lock_fd<0)goto done;
+  if(flock(lock_fd,LOCK_EX)!=0)goto done;
+#endif
   /* On POSIX hosts, a pre-existing .pending symlink must not be
    * followed: truncating its referent could destroy the only valid save.
    * O_NOFOLLOW checks this atomically with open, unlike an lstat check.
@@ -66,6 +90,11 @@ done:
   if(f)(void)fclose(f);
   /* Never delete a pre-existing directory/path when fopen failed. */
   if(!ok&&tmp&&opened_tmp)(void)remove(tmp);
+#if defined(__linux__)
+  if(lock_fd>=0){(void)flock(lock_fd,LOCK_UN);(void)close(lock_fd);}
+  /* Intentionally preserve .pending.lock for future concurrent writers. */
+  free(lock_path);
+#endif
   free(readback);
   free(tmp);
   return ok;
