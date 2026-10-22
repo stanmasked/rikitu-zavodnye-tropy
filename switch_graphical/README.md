@@ -1886,3 +1886,38 @@ codec bytes and rename-over-existing on its virtual SDMC. It **cannot**
 certify power-loss durability, FS flush/atomicity on physical FAT/SD,
 malicious writer exclusion, or readiness to replace production saves.
 Keep the shipping writer unchanged pending hardware and recovery QA.
+
+## Stage126 — interrupted real-codec staging and fault recovery (private guest)
+
+Stage126 extends the separate, non-shipping guest proof with **QA_MODE=7**
+and six independent NeXium cold starts sharing one isolated virtual SDMC
+root. Its six files are `stage126-{map,campaign,level}-{a,b}` and cannot
+write the production `map01`, `campaign` or `level` slot names.
+
+1. **Seed:** create real CRC-protected generation 1 in A and generation 2
+   in B for each of RKS1, RKC2 and RKL3.
+2. **Partial:** simulate interruption before the rename by writing only
+   the first half of generation 3 to each A-side `.pending` pathname.
+   Both live files must remain byte-identical to the seed state.
+3. **Observe:** cold-read genuine gen1/gen2 from both live files, ignore
+   the stale partial data, and complete a normal staged gen3 write to A.
+   Its replaced `.pending` pathname must disappear.
+4. **Block:** make B's `.pending` a directory, attempt a gen4 staged
+   write and demand failure with both live records unchanged and the
+   directory still present.
+5. **Recover:** explicitly remove all three obstruction directories,
+   commit gen4 into B and keep gen3 A intact.
+6. **Verify:** cold-read and decode gen3 A/gen4 B without further writes.
+
+An independent Python checker validates the magic, record size, generation,
+CRC32, expected campaign wallet/chapter and each `.pending` file type.
+It retains SHA-256 fingerprints between **seed→partial**, **observe→block**
+and **recover→verify**, proving no live-slot bytes changed across those
+steps. It also tests its own rejection of short partial data and corrupted
+live CRC.
+
+The test creates an *intentional* partial file and directory obstruction
+to model filesystem-visible interrupted states. It **does not** abruptly
+power off a physical console or force a real mid-instruction process kill.
+It verifies continued recovery in NeXium, not physical FAT/SDMC ordering,
+flush or atomicity under power loss. Production writers remain unchanged.
