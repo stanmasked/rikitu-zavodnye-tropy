@@ -59,6 +59,12 @@ int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n)
        !S_ISREG(lock_stat.st_mode)||lock_stat.st_nlink!=1)goto done;
   }
   if(flock(lock_fd,LOCK_EX)!=0)goto done;
+  /* The inode might have gained hard links during lock contention. */
+  {
+    struct stat locked_stat;
+    if(fstat(lock_fd,&locked_stat)!=0||
+       !S_ISREG(locked_stat.st_mode)||locked_stat.st_nlink!=1)goto done;
+  }
 #endif
   /* On POSIX hosts, a pre-existing .pending symlink must not be
    * followed: truncating its referent could destroy the only valid save.
