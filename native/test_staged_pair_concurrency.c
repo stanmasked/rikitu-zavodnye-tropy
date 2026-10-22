@@ -226,8 +226,9 @@ static void run_case(int family,int newer_b,int killed){
   }else{
     assert(kill(first,SIGCONT)==0);
     wait_child(first,0);
+    /* Second writer may already have advanced the opposite live slot.
+     * Only check the completed two-writer state after joining both. */
     assert_file(older,first3,n);
-    assert_file(backup,initial2,n);
   }
   wait_child(second,0);
   assert(stat(marker,&st)==0);
