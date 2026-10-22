@@ -431,6 +431,45 @@ static void run_staging_inode_case(int family,int newer_b,int kind){
   printf("PASS Stage117 family=%d newer=%c kind=%d\n",
          family,newer_b?'B':'A',kind);
 }
+/* Stage117 positive recovery: a left-over ordinary .pending file is
+ * safe to truncate in place after inode inspection. */
+static void run_stale_pending_regular_case(int family,int newer_b){
+  char a[200],b[200],pending[240];
+  const char *recent_path,*target;
+  uint8_t old[RIKITU_LEVEL_SAVE_BYTES],recent[RIKITU_LEVEL_SAVE_BYTES];
+  uint8_t successor[RIKITU_LEVEL_SAVE_BYTES];
+  uint32_t reported=0;
+  Context ctx;
+  int len;
+  size_t n=bytes_for(family);
+  memset(&ctx,0,sizeof(ctx));
+  ctx.family=family;
+  assert(rikitu_campaign_init(&ctx.campaign,4));
+  ctx.campaign.wallet=157;
+  create_paths(family,a,b);
+  clean_path(a);clean_path(b);
+  recent_path=newer_b?b:a;
+  target=newer_b?a:b;
+  generate(&ctx,0,1u,old);
+  generate(&ctx,1,2u,recent);
+  generate(&ctx,2,3u,successor);
+  write_bytes(target,old,n);
+  write_bytes(recent_path,recent,n);
+  len=snprintf(pending,sizeof(pending),"%s.pending",target);
+  assert(len>0&&len<(int)sizeof(pending));
+  write_bytes(pending,(const uint8_t*)"incomplete",10u);
+  ctx.phase=2;
+  assert(rikitu_staged_pair_commit_if_current(
+      a,b,n,record_validate,record_encode,&ctx,2u,&reported));
+  assert(reported==3u);
+  assert_bytes(target,successor,n);
+  assert_bytes(recent_path,recent,n);
+  check_loader(&ctx,a,b,2);
+  no_pending(a,b);
+  clean_path(a);clean_path(b);
+  printf("PASS Stage117 recovery family=%d newer=%c\n",
+         family,newer_b?'B':'A');
+}
 int main(void){
   int f,b,s;
   for(f=MAP;f<=LEVEL;f++)
@@ -453,5 +492,9 @@ int main(void){
       for(s=PENDING_HARDLINK;s<=PAIR_LOCK_FIFO;s++)
         run_staging_inode_case(f,b,s);
   puts("PASS Stage117 36 staging/lock inode refusal and recovery cases");
+  for(f=MAP;f<=LEVEL;f++)
+    for(b=0;b<2;b++)
+      run_stale_pending_regular_case(f,b);
+  puts("PASS Stage117 6 ordinary stale .pending recovery cases");
   return 0;
 }
