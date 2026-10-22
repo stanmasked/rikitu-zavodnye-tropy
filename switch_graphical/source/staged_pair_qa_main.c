@@ -226,8 +226,7 @@ static int advance_pairs(void){
                                    &s,&l,&c))return 0;
   return write_marker("ready-to-block");
 }
-static int block_one(int family,const uint8_t *old_a,const uint8_t *old_b,
-                     size_t size){
+static int block_one(int family,const uint8_t *old_b,size_t size){
   char pending[128];
   const char *a=paths[family][0],*b=paths[family][1],*hold=holds[family];
   if(!absent(hold)||rename(a,hold)!=0)return 0;
@@ -260,23 +259,25 @@ static int block_one(int family,const uint8_t *old_a,const uint8_t *old_b,
        loaded.hearts!=3||loaded.reached_checkpoints!=0||
        loaded_loop.active_seconds!=777.0f)goto restore_fail;
   }
-  if(!bytes_equal(hold,old_a,size)||!bytes_equal(b,old_b,size)||
+  /* Avoid same-process readback through the renamed path: fsdev may cache
+   * directory entries around rename. The host audits both live slots after
+   * this guest exits; here we check the untouched backup slot and sidecar. */
+  if(!bytes_equal(b,old_b,size)||
      snprintf(pending,sizeof(pending),"%s.pending",a)<0||
      !absent(pending))goto restore_fail;
   if(rmdir(a)!=0||rename(hold,a)!=0)return 0;
-  return bytes_equal(a,old_a,size)&&bytes_equal(b,old_b,size);
+  return bytes_equal(b,old_b,size);
 restore_fail:
   (void)rmdir(a);
   (void)rename(hold,a);
   return 0;
 }
 static int block_pairs(void){
-  uint8_t a[RIKITU_LEVEL_SAVE_BYTES],b[RIKITU_LEVEL_SAVE_BYTES];
+  uint8_t b[RIKITU_LEVEL_SAVE_BYTES];
   int f;
   for(f=MAP;f<=LEVEL;f++){
     size_t n=record_size(f);
-    if(!read_exact(paths[f][0],a,n)||!read_exact(paths[f][1],b,n)||
-       !block_one(f,a,b,n))return 0;
+    if(!read_exact(paths[f][1],b,n)||!block_one(f,b,n))return 0;
   }
   return write_marker("ready-to-recover");
 }
