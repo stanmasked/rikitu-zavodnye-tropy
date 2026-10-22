@@ -1460,3 +1460,30 @@ Twelve family/orientation/case scenarios run with strict GCC and Clang.
 These checks do not establish cross-process writer safety, FAT/SDMC
 power-loss guarantees, fsync durability or resistance to malicious
 filesystem path races. The shipping game does not call this helper.
+
+
+## Stage110 — fail closed on existing pending symlinks (POSIX host)
+
+Stage110 strengthens the **experimental**, unshipped staged-slot helper:
+when `O_NOFOLLOW` is available, it opens the sibling `.pending` using
+`open(O_NOFOLLOW | O_CREAT | O_TRUNC | O_WRONLY)` and `fdopen`, rather
+than following a symlink in `fopen("wb")`. A pre-existing symlink
+pointing at either live save must fail without truncating its target
+or deleting the symlink. The main writer still verifies staged bytes
+and calls `rename` only after successful readback.
+
+The host test creates actual symlinks targeting the older or newer
+live slot, under both A/B orientations, for all three genuine game
+save formats (12 cases). On failure, both live records remain
+byte-for-byte unchanged and the production loader selects gen2.
+After the operator removes the symlink, a normal staged gen3 retry
+succeeds and the production loader selects gen3. GCC/Clang must both
+pass the whole matrix.
+
+**Platform scope:** only builds exposing `O_NOFOLLOW` receive the
+atomic *nofollow-on-open* behavior. Builds without this flag retain
+the previous experimental `fopen` fallback; the Switch/libnx guest
+does not establish equivalent symlink resistance. Concurrent-writer
+races, rename power-cut atomicity, fsync and FAT durability are
+separate unresolved issues. The shipping game's save code has not
+been changed.
