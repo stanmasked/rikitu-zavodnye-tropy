@@ -80,6 +80,14 @@ def verify_files(root: Path, phase: str) -> None:
     nested_dir = base / "nested"
     if nested_dir.exists() or nested_dir.is_symlink():
         raise AssertionError(f"{phase}: forbidden nested save directory was created")
+    for wrong_ext in (
+        base / "stage131-map-mislabel-a.rkc",
+        base / "stage131-map-mislabel-b.rkc",
+    ):
+        if wrong_ext.exists() or wrong_ext.is_symlink():
+            raise AssertionError(
+                f"{phase}: RKS1 writer touched a non-RKS slot: {wrong_ext.name}"
+            )
     a_generation, b_generation = GENERATIONS[phase]
     hashes: dict[str, str] = {}
     for family in FAMILIES:
