@@ -301,6 +301,63 @@ static void run_ambiguity_case(int family,int reversed,int scenario){
   printf("PASS Stage115 family=%d reversed=%d ambiguity=%d\n",
          family,reversed,scenario);
 }
+/* Stage116: deny live slot symlinks, directories, and FIFOs, instead of
+ * silently classifying read/path errors as an absent or corrupt backup.
+ * After explicit cleanup, ordinary guarded saves must still succeed. */
+enum { SLOT_LINK=0, SLOT_DIRECTORY=1, SLOT_FIFO=2 };
+static void run_path_guard_case(int family,int bad_b,int kind){
+  char a[200],b[200];
+  const char *bad,*good;
+  uint8_t old[RIKITU_LEVEL_SAVE_BYTES],recent[RIKITU_LEVEL_SAVE_BYTES];
+  uint8_t successor[RIKITU_LEVEL_SAVE_BYTES];
+  uint32_t reported=0xf00df00du;
+  struct stat st;
+  Context ctx;
+  int called;
+  size_t n=bytes_for(family);
+  memset(&ctx,0,sizeof(ctx));
+  ctx.family=family;
+  assert(rikitu_campaign_init(&ctx.campaign,4));
+  ctx.campaign.wallet=157;
+  create_paths(family,a,b);
+  clean_path(a);clean_path(b);
+  bad=bad_b?b:a;
+  good=bad_b?a:b;
+  generate(&ctx,0,1u,old);
+  generate(&ctx,1,2u,recent);
+  generate(&ctx,2,3u,successor);
+  write_bytes(good,recent,n);
+  if(kind==SLOT_LINK)assert(symlink(good,bad)==0);
+  else if(kind==SLOT_DIRECTORY)assert(mkdir(bad,0700)==0);
+  else assert(mkfifo(bad,0600)==0);
+  assert(lstat(bad,&st)==0);
+  ctx.phase=2;
+  called=ctx.encode_calls;
+  assert(!rikitu_staged_pair_commit_if_current(
+    b,a,n,record_validate,record_encode,&ctx,2u,&reported));
+  assert(reported==0xf00df00du);
+  assert(ctx.encode_calls==called);
+  assert_bytes(good,recent,n);
+  assert(lstat(bad,&st)==0);
+  if(kind==SLOT_LINK)assert(S_ISLNK(st.st_mode));
+  else if(kind==SLOT_DIRECTORY)assert(S_ISDIR(st.st_mode));
+  else assert(S_ISFIFO(st.st_mode));
+  no_pending(a,b);
+  if(kind==SLOT_DIRECTORY)assert(rmdir(bad)==0);
+  else assert(unlink(bad)==0);
+  write_bytes(bad,old,n);
+  reported=0;
+  assert(rikitu_staged_pair_commit_if_current(
+    a,b,n,record_validate,record_encode,&ctx,2u,&reported));
+  assert(reported==3u);
+  assert_bytes(good,recent,n);
+  assert_bytes(bad,successor,n);
+  check_loader(&ctx,a,b,2);
+  no_pending(a,b);
+  clean_path(a);clean_path(b);
+  printf("PASS Stage116 family=%d unsafe=%c kind=%d\n",
+         family,bad_b?'B':'A',kind);
+}
 int main(void){
   int f,b,s;
   for(f=MAP;f<=LEVEL;f++)
@@ -313,5 +370,10 @@ int main(void){
       for(s=SPLIT;s<=DUPLICATE;s++)
         run_ambiguity_case(f,b,s);
   puts("PASS Stage115 18 ambiguous-generation fail-closed/duplicate cases");
+  for(f=MAP;f<=LEVEL;f++)
+    for(b=0;b<2;b++)
+      for(s=SLOT_LINK;s<=SLOT_FIFO;s++)
+        run_path_guard_case(f,b,s);
+  puts("PASS Stage116 18 unsafe-slot path refusal and recovery cases");
   return 0;
 }
