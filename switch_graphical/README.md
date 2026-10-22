@@ -1853,3 +1853,36 @@ restore the correct state after explicit cleanup and a successful retry.
 These Linux-only checks do not prove correctness on Switch/libnx,
 durability on FAT/SDMC, or atomic protection from non-cooperating
 adversarial path changes. Shipping saves and gameplay are unaffected.
+
+## Stage125 — real-codec staged SDMC guest validation, isolated probe
+
+After Stage114–121 merged, the `main` post-merge CI completed green
+(browser/C99, graphical Switch NRO, and NeXium). The shipping game still
+uses the existing RKS1/RKC2/RKL3 paired writers; the experimental
+Linux-host pair writer does not run under libnx.
+
+Stage125 adds a **separate, non-shipping QA_MODE=6 Switch NRO** and
+dedicated PR workflow. It exercises `rikitu_staged_slot_commit`
+with all three real codecs (RKS1 44 bytes, RKC2 32 bytes, RKL3 64 bytes),
+on six **private stage125-prefixed files**, never the game's normal
+`map01-*`, `campaign-*` or `level-*` slot paths.
+
+Three independent NeXium starts reuse a private SDMC root:
+
+1. Seed: generate genuine gen1 records into slot A; place gen1 in slot B,
+   then overwrite B with a genuine gen2 record via same-directory staging.
+2. Advance: cold-read and codec-decode all six gen1/gen2 records; stage
+   genuine gen3 over A in each family.
+3. Verify: cold-read and codec-decode gen3 A and gen2 B, with **no write**.
+
+Each run displays four status markers and the host checker verifies exact
+format, length, generation, CRC32, family-specific campaign identity and
+absence of `.pending` residue after guest exit. A selftest intentionally
+corrupts the CRC and requires rejection. The test deliberately does not
+attempt to use the Linux `flock` pair implementation in libnx.
+
+A successful NeXium run can establish actual guest behavior for authentic
+codec bytes and rename-over-existing on its virtual SDMC. It **cannot**
+certify power-loss durability, FS flush/atomicity on physical FAT/SD,
+malicious writer exclusion, or readiness to replace production saves.
+Keep the shipping writer unchanged pending hardware and recovery QA.
