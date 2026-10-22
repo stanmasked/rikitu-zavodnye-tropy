@@ -12,16 +12,16 @@ Current production paths:
 - `native/rikitu_campaign_save_io.c` — RKC2
 - `native/rikitu_level_save_io.c` — RKL3
 
-Additional audit finding: the current `read_slot()` helpers return a single
-boolean for several materially different outcomes: a missing path, a permission
-or other open error, a short/read error, a close error, trailing bytes, or an
-invalid codec record. The store routines then treat a false result as an
-unusable slot and may choose slot A when both reads return false. That is not
-safe when the actual cause is an I/O/path error rather than a genuinely absent
-or corrupt record. The shared transaction API must use an explicit result
-classification (valid, absent/invalid, and I/O/path error) and fail closed on
-the third category before choosing a destination. A focused fault-injection
-test must prove that unreadable slots are never mistaken for empty slots.
+Stage130 implements this classification in Draft PR
+[114](https://github.com/stanmasked/rikitu-zavodnye-tropy/pull/114): the shared
+reader distinguishes inspection errors from absent/malformed fixed-size
+records, and all three production load/store paths fail closed on an I/O error.
+Its host test injects read-only `EACCES` while allowing write access, checks
+both A/B orientations for RKS1, RKC2 and RKL3, and asserts that failed loads
+leave caller state unchanged and failed stores preserve both slots byte for
+byte. This is still a Draft PR; GCC/Clang CI has not yet completed, so the
+change is not considered validated or merged. The host injection does not
+prove physical Switch SDMC durability.
 
 Each production store routine selects a target slot and opens it with `fopen(target, "wb")`. That truncates the selected file before the new record has been completely written and checked. The other slot is intended to remain as fallback, but the writer itself does not stage and verify the replacement.
 
@@ -130,23 +130,23 @@ recommended packages:
 
 The first Stage128 attempt to fingerprint the build environment failed before
 compilation because the devkitPro container's default shell was `sh`, while
-the diagnostic used Bash-only `set -o pipefail`. This was a workflow-script
-compatibility error, not evidence of a libnx or save-code failure. Commit
+the diagnostic used Bash-only `set -o pipefail`. Commit
 `c31a2a1ad7d17977043a475cc468e5101b0786d1` explicitly selects Bash for that
-step in the four Switch workflows. Follow-up commit
-`9059d3b0173dea42475680d6c5b9b7af65e062eb` queries the pinned container's
-`dkp-pacman` database directly for the installed `libnx`, `switch-dev`,
-`devkitA64`, and `devkitARM` versions before hashing the libnx headers and
-archive.
+step in the four Switch workflows.
 
-The latest fingerprint checks are queued as of this document revision. The
-exact installed package versions and libnx header/archive SHA-256 values are
-still pending successful logs. Do not treat the public libnx source snapshot
-as the confirmed build contract until these fingerprints are captured.
+The next attempt confirmed the pinned container's installed package versions
+before stopping on a bad package name: `libnx 4.12.0-1`, `devkitA64 r29.2-1`,
+and `devkitARM r67.1-1`. `switch-dev` is not a package name in this image.
+Commit `9eb6bbd82e78cabef92bf278c0d6ee13a0860f21` removes that nonexistent
+name from the strict query while retaining the checks for two libnx headers,
+the static archive, and their SHA-256 fingerprints. The new revision's jobs
+are queued; the actual header/archive hashes and successful end-to-end
+fingerprint step remain pending.
 
 The successful NeXium runs support only the tested emulator scenarios. They
-do not establish physical Switch SDMC power-loss durability. The package
-fingerprint itself is not yet verified.
+do not establish physical Switch SDMC power-loss durability. Do not treat
+the public libnx source snapshot as the confirmed build contract until the
+fingerprint step completes successfully.
 
 ### 4. Replacement policy
 
