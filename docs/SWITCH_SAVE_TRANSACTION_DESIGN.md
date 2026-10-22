@@ -133,13 +133,16 @@ compilation because the devkitPro container's default shell was `sh`, while
 the diagnostic used Bash-only `set -o pipefail`. This was a workflow-script
 compatibility error, not evidence of a libnx or save-code failure. Commit
 `c31a2a1ad7d17977043a475cc468e5101b0786d1` explicitly selects Bash for that
-step in the four Switch workflows.
+step in the four Switch workflows. Follow-up commit
+`9059d3b0173dea42475680d6c5b9b7af65e062eb` queries the pinned container's
+`dkp-pacman` database directly for the installed `libnx`, `switch-dev`,
+`devkitA64`, and `devkitARM` versions before hashing the libnx headers and
+archive.
 
-The subsequent run set is queued as of this document revision. The exact
-installed devkitPro package versions and libnx header/archive SHA-256 values
-are still pending successful logs. Do not treat the public libnx source
-snapshot as the confirmed build contract until these fingerprints are
-captured.
+The latest fingerprint checks are queued as of this document revision. The
+exact installed package versions and libnx header/archive SHA-256 values are
+still pending successful logs. Do not treat the public libnx source snapshot
+as the confirmed build contract until these fingerprints are captured.
 
 The successful NeXium runs support only the tested emulator scenarios. They
 do not establish physical Switch SDMC power-loss durability. The package
