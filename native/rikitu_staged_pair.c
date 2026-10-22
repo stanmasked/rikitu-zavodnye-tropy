@@ -76,6 +76,10 @@ static int switch_slot_path_ok(const char *path){
   if(n>1024u||n<=sizeof(prefix)-1u)return 0;
   if(strchr(path,'\\')||strstr(path,"//"))return 0;
   p=path+sizeof(prefix)-1u;
+  /* Every production slot is a direct child of RIKITU/. Reject nested
+   * components so an SDMC symlink directory cannot redirect a save outside
+   * the private save folder on host-backed emulator filesystems. */
+  if(strchr(p,'/'))return 0;
   while(*p){
     size_t segment_len;
     slash=strchr(p,'/');
