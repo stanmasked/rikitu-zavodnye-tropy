@@ -1,0 +1,97 @@
+name: RIKITU Stage125 real-codec staged SDMC guest
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage125-staged-codecs.yml'
+      - 'native/rikitu_staged_slot.*'
+      - 'native/rikitu_save.*'
+      - 'native/rikitu_campaign_save.*'
+      - 'native/rikitu_level_save.*'
+      - 'switch_graphical/Makefile'
+      - 'switch_graphical/source/staged_codecs_qa_main.c'
+      - 'tests/run_nexium_graphical.sh'
+      - 'tests/run_nexium_retry_display.sh'
+      - 'tests/check_staged_codecs_guest.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: stage125-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: true
+jobs:
+  build-guest:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:20260219
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit real-codec guest checker selftest
+        run: python3 tests/check_staged_codecs_guest.py --selftest
+      - name: Compile isolated Stage125 Switch NRO
+        run: |
+          PATH="$DEVKITPRO/devkitA64/bin:$DEVKITPRO/tools/bin:$PATH" make -C switch_graphical QA_MODE=6 -j2
+          python3 tests/check_nro.py switch_graphical/rikitu_staged_codecs_qa_probe.nro
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stage125-staged-codecs-probe
+          path: switch_graphical/rikitu_staged_codecs_qa_probe.nro
+          if-no-files-found: error
+  guest-proof:
+    needs: build-guest
+    runs-on: ubuntu-26.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: stage125-staged-codecs-probe
+          path: staged-nro
+      - name: Install NeXium headless requirements
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y curl jq xvfb xauth xdotool imagemagick python3-pil \
+            libgtk-3-0t64 libasound2t64 libudev1 libxkbcommon0 \
+            libxkbcommon-x11-0 libx11-xcb1 libxcb-cursor0 \
+            libxcb-xinerama0 libxcb-xfixes0 libxcb-randr0 \
+            libxcb-render0 libxcb-shape0 libxcb-xkb1 \
+            libvulkan1 mesa-vulkan-drivers
+      - name: Download NeXium nightly
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          json="$(curl -fsSL --retry 3 -H "Authorization: Bearer $GH_TOKEN" \
+            -H 'Accept: application/vnd.github+json' \
+            https://api.github.com/repos/nexium-emu/nexium-nightly/releases/tags/nightly)"
+          url="$(printf '%s' "$json" | jq -r '.assets[] | select(.name == "nexium-linux-x86_64.tar.gz") | .browser_download_url')"
+          test -n "$url"
+          curl -fL --retry 3 "$url" -o /tmp/nexium.tar.gz
+          mkdir -p /tmp/nexium
+          tar -xzf /tmp/nexium.tar.gz -C /tmp/nexium
+          bin="$(find /tmp/nexium -type f -executable \( -name 'nexium-gui' -o -name 'nexium' \) -print -quit)"
+          test -n "$bin"
+          echo "NEXIUM_BIN=$bin" >> "$GITHUB_ENV"
+      - name: Three independent guest starts audit RKS1/RKC2/RKL3 staged replacement
+        run: |
+          set -euo pipefail
+          icd="$(find /usr/share/vulkan/icd.d -maxdepth 1 -name 'lvp_icd*.json' -print -quit)"
+          test -n "$icd"
+          export VK_ICD_FILENAMES="$icd"
+          export NRO_PATH="$GITHUB_WORKSPACE/staged-nro/rikitu_staged_codecs_qa_probe.nro"
+          export NEXIUM_DATA_ROOT="$GITHUB_WORKSPACE/evidence/stage125-sd-root"
+          export RIKITU_QA_MODE=6
+          mkdir -p "$NEXIUM_DATA_ROOT/sdmc" /tmp/rikitu-xdg-runtime
+          chmod 700 /tmp/rikitu-xdg-runtime
+          export XDG_RUNTIME_DIR=/tmp/rikitu-xdg-runtime
+          for phase in seed advance verify; do
+            export RIKITU_QA_PHASE="$phase"
+            export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage125-$phase"
+            bash tests/run_nexium_retry_display.sh
+          done
+      - name: Upload guest screenshots and SDMC bytes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage125-nexium-guest-evidence
+          path: evidence/
+          if-no-files-found: warn
