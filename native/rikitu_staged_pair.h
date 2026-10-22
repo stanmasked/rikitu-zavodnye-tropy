@@ -25,6 +25,9 @@ int rikitu_staged_pair_commit(
  * found INSIDE the exclusive pair lock. Use 0 when both slots are
  * missing/invalid. If a newer save exists, FAIL WITHOUT WRITING any
  * slot, even if the supplied snapshot would otherwise encode cleanly.
+ * Ambiguous pairs (same generation with different valid bytes, or
+ * generations separated by exactly 2^31) fail closed without writes.
+ * Identical duplicate records at the same generation are permitted.
  * Caller must reload/merge before retrying; do not blindly advance
  * expected_generation. Returns committed generation only on success.
  */

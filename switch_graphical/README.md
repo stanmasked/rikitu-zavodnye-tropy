@@ -1632,3 +1632,224 @@ of writes can reuse a token. It does not prevent noncooperating writers,
 path alias races, stale reads outside this API, malicious lock removal,
 or power loss. No libnx pair lock or physical FAT durability is
 established by this Linux-only test.
+
+## Stage115 — reject ambiguous valid A/B pairs before a guarded commit
+
+The **experimental Linux-only** guarded writer rejects a pair before
+encoding or staging if both slots decode successfully but provide no
+unambiguous ordering:
+
+- Equal generation with different record bytes (split-brain saves).
+- Generations exactly `0x80000000` apart, where serial-number
+  comparison cannot establish which is newer.
+
+This check is performed under the same stable pair-wide advisory lock
+and applies only to `rikitu_staged_pair_commit_if_current`. The older
+unguarded experimental API and the shipping Switch save writer remain
+unchanged. Byte-identical copies with the same generation are
+permitted, since either copy represents the same snapshot.
+
+The extended Stage114/115 test invokes authentic RKS1, RKC2, and RKL3
+validators/encoders and verifies **18 additional scenarios per compiler**:
+both argument orders for each of the three formats, with the two
+ambiguous cases rejected without calling encode, creating `.pending`,
+mutating live saves, or changing committed-generation output; the
+identical-duplicate case must successfully promote the next generation.
+
+The rejection is intentionally conservative. A caller facing an
+ambiguous pair must provide user-controlled repair or a separate
+reconciliation policy, not silently pick a winner. This does not add
+cryptographic identity, prove libnx locking, or establish SDMC/FAT
+power-loss durability. CI must pass before promoting this branch.
+
+## Stage116 — reject unsafe live-slot paths without losing the backup
+
+The experimental Linux-only pair writer now distinguishes a genuinely
+missing/codec-invalid regular slot from a filesystem/path read error.
+It opens each live slot with `O_NOFOLLOW|O_NONBLOCK`, uses `fstat` to
+require a regular file, and checks stream errors and close status.
+A symlink, directory, FIFO, device, or unexpected read/open error
+fails the pair commit closed **inside the pair-wide lock** without
+staging a new record. Missing (`ENOENT`) and codec-invalid regular
+records retain the existing recovery behavior.
+
+The Stage114/115/116 native test exercises 18 additional cases
+per GCC/Clang compiler: all RKS1/RKC2/RKL3 families, both A/B
+orientations and symlink/directory/FIFO obstructions. Rejected
+operations preserve the valid partner slot, the unsafe path type,
+the encoder call count and committed-generation output. After
+explicit cleanup and restoration of the backup record, the same
+guarded API must commit normally and production pair loaders must
+recover the expected state.
+
+This protects cooperating Linux-host code against pre-existing unsafe
+live-slot types; it does not eliminate races with malicious or
+non-cooperating processes that replace paths during the operation,
+enforce hard-link/canonical-path identity, or prove any libnx or
+physical SD card properties. The Switch shipping path is untouched.
+
+## Stage117 — protect staging and lock inodes before truncation (Linux experiment)
+
+A pre-existing `.pending` path could be a **hard link** to a live,
+valid save. `open(..., O_TRUNC)` would then destroy that live save's
+bytes before the staged writer had any opportunity to refuse the
+operation. Symlink-only checks are insufficient: `O_NOFOLLOW`
+does not reject hard links.
+
+The Linux-only staged-slot helper now opens `.pending` *without*
+`O_TRUNC`, uses `fstat` on the opened file descriptor to require
+an ordinary regular file with `st_nlink == 1`, and only then calls
+`ftruncate(fd, 0)`. Pre-existing single-link regular `.pending`
+files may still be reused after interrupted writes. The
+`.pending.lock` and stable `.pair.lock` descriptors must likewise
+represent single-link regular files before they are locked. Opening
+potential FIFOs with `O_NONBLOCK` prevents indefinite waiting.
+
+The Stage114-117 combined Linux test adds **36 cases per compiler**:
+three authentic save codecs, both A/B newer-slot orientations, and
+six unsafe pre-existing path types (hard-linked `.pending`,
+hard-linked `.pending.lock`, hard-linked `.pair.lock`, FIFO
+`.pending`, directory `.pending`, FIFO `.pair.lock`).
+Every rejection must preserve both live records and the obstruction,
+leave the reported generation unchanged, and succeed after explicit
+cleanup of the obstructing path. A pair-lock obstruction rejects before
+encoding; a .pending/.pending.lock obstruction rejects after the in-memory
+encoder but before a filesystem commit. Six additional
+positive cases (three codecs, both orientations) confirm that an ordinary
+incomplete regular `.pending` can still be safely reused and produces
+the expected new generation. Production pair-loaders confirm the
+recovered game state.
+
+The protection is **not** a solution to adversarial races during the
+check/truncate/rename sequence or to aliasing via parent directories,
+and does not establish any guarantees for Switch/libnx or FAT/SDMC.
+The production Switch writer and game content remain unchanged.
+
+## Stage118 — lock inode recheck and dangling-pending regressions
+
+Both experimental Linux lock paths now verify the **same opened
+descriptor** again after acquiring the advisory `flock`. A file that
+was regular and single-linked before a contended lock may have gained
+another hard link while the process waited. Such an inode must fail
+closed before generation selection or staging begins. This is not a
+complete defense against malicious path replacement or hard-link races
+after the second check; the lock scheme continues to assume cooperating
+writers and stable canonical paths.
+
+The native Stage114-118 fixture now uses `lstat` rather than `stat`
+to assert that no `.pending` entry remains, so dangling symlinks are
+not mistaken for absent files. It adds **24 regression scenarios per
+compiler**: real RKS1/RKC2/RKL3 codecs, both A/B orientations, and four
+obstructions: `.pending` symlink to a live save, dangling
+`.pending` symlink, `.pending.lock` FIFO, and `.pair.lock`
+directory. Refusals preserve the two live records, do not alter reported
+generation and preserve the obstructing path until explicit operator
+cleanup. Only the pair-lock-directory case rejects before encoding;
+the .pending-related cases reject after in-memory encoding but before
+any live-file write. After cleanup, each fixture
+successfully commits a new generation and checks the original pair
+loader.
+
+Small local Linux-system-call smoke probes passed on GCC and Clang
+(9 cases per compiler). These verify host OS behavior only, **not**
+the full repository C99 suite or a Switch build; Stage118 integration
+is not eligible for merging until the full CI on its current head passes.
+No Switch/libnx or physical FAT/SDMC guarantee is claimed.
+
+## Stage119 — lock-path identity check after flock contention
+
+The Linux-only experimental pair-wide and per-target staged-save locks
+now verify **both** `fstat(opened_fd)` and `lstat(current_lock_path)`
+**after** obtaining `flock`. The two must still identify the same
+single-link regular inode (`st_dev` and `st_ino` both match). A lock
+renamed out of the way while a writer waited for another process can
+otherwise leave the waiting writer holding a different lock than any
+new writer opening the original pathname. This change fails closed
+without modifying either live slot if the lock path has changed.
+
+The native combined fixture adds **12 actual fork/flock races per
+compiler**: three genuine RKS1/RKC2/RKL3 codecs, both A/B newer-slot
+orientations, and replacement of either `.pair.lock` or
+`.pending.lock`. The parent holds the old inode locked; a forked
+child explicitly closes the inherited descriptor, signals readiness,
+and opens its own descriptor. The parent verifies that descriptor
+through Linux `/proc/<pid>/fd`, renames the old pathname, replaces
+it with a different inode, and releases its lock. The child must fail
+without changing live save bytes. A subsequent normal save after
+explicit cleanup must recover. This test distinguishes pair-level
+pre-encode refusals from staging-level post-encode refusals.
+
+Separate Linux lock-path swap smoke tests passed with strict C99 GCC
+and Clang, eight consecutive runs each. The integrated authentic-codec
+fixture and all full-project workflows still require CI confirmation.
+This is advisory flock on Linux, not a proof against malicious
+noncooperating writers, alias races or physical Switch/SDMC durability.
+
+## Stage120 — enforce canonical slot paths and independent A/B inodes
+
+The Linux-host experimental writer now rejects a slot path unless it is
+absolute and its parent directory resolves to the exact spelling supplied.
+This rejects dot-segment aliases (for example, `/tmp/./save.rks`),
+duplicate-slash variants, relative paths, and parent-directory symlink
+aliases before opening the pair lock. The standalone staged-slot helper
+applies the same guard before creating its per-target lock.
+
+The pair writer also refuses A/B names that currently resolve to the
+same regular-file inode via hard links. A/B must represent two independent
+directory entries and may not silently collapse to a single underlying
+file. The rejection happens before codec validation/encoding and leaves
+the two names and bytes untouched.
+
+The combined native fixture adds **15 authentic-codec cases**: three
+formats across both slot orientations and two alias forms (dot-segment
+and parent symlink), plus one shared-inode case per format. Each refusal
+must preserve the existing records, leave the committed-generation output
+and encoder call count unchanged, and avoid creating the pair lock for
+a noncanonical path. After correcting the path or replacing the hardlink
+with an independent backup, the same API must commit the next generation
+and the normal production pair loader must restore the expected state.
+
+Before committing this stage, local strict-C99 smoke harnesses against
+the experimental pair/slot helper logic passed under both GCC and Clang.
+They covered canonical-path rejection, hard-linked staging/lock files,
+shared-inode A/B rejection, stale-generation refusal, successful recovery,
+equal-generation conflicts, half-range ambiguity, generation wrap, and
+four real two-process lock-path replacement races. These narrow checks
+use a synthetic deterministic record codec; they are **not** the full
+authentic-codec regression fixture or GitHub Actions CI.
+
+This is a conservative Linux-host contract for the experimental API.
+It does not make hostile parent-directory replacement race-free and does
+not establish libnx, Switch, FAT/SDMC or power-loss durability. Production
+gameplay and shipping Switch save I/O remain unchanged.
+
+## Stage121 — refuse swapped staging pathname on readback and cleanup
+
+A `.pending` file may be replaced *after* it was safely opened and
+validated but *before* its bytes are read back or renamed over a live
+save. Previously, readback reopened the pathname through `fopen`,
+which follows symlinks, and failure cleanup removed whatever file was
+currently named `.pending`.
+
+For the experimental Linux staged-slot helper, Stage121 records the
+opened `.pending` inode's device/inode identity. Readback now opens
+with `O_NOFOLLOW | O_NONBLOCK` and rejects a non-regular, multiply linked
+or differently identified inode; stream read errors also fail closed.
+Before rename, `lstat` must still identify the same original regular
+inode. On failure, best-effort cleanup only attempts to remove the
+original inode when the pathname still identifies it, rather than
+unlinking a known replacement. This cannot eliminate a hostile
+time-of-check/time-of-use race after the last pathname check.
+
+Twelve added deterministic tests use an instrumented `fwrite` call:
+three authentic RKS1/RKC2/RKL3 codecs, both A/B newest-slot
+orientations and two replacements (symlink to the backup or an
+independent regular inode). The old open file descriptor still receives
+the new data, while readback of the swapped pathname must fail without
+overwriting either live slot, deleting the injected path, or modifying
+the committed-generation output. The original game pair loader must
+restore the correct state after explicit cleanup and a successful retry.
+
+These Linux-only checks do not prove correctness on Switch/libnx,
+durability on FAT/SDMC, or atomic protection from non-cooperating
+adversarial path changes. Shipping saves and gameplay are unaffected.

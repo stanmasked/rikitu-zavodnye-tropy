@@ -6,8 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 #if defined(__linux__)
+#include <errno.h>
 #include <fcntl.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #endif
 
@@ -17,18 +19,34 @@
  * writers that use this API and stable canonical slot paths only.
  */
 #if defined(__linux__)
+/* Return 1 for codec-valid, 0 for absent/invalid regular records,
+ * and -1 for filesystem/path I/O errors. A symlink, FIFO, device or
+ * directory must never be mistaken for a harmless absent backup. */
 static int slot_generation(const char *path,uint8_t *buffer,size_t n,
                            RikituStagedValidate validate,
                            void *context,uint32_t *generation){
-  FILE *f=fopen(path,"rb");
+  FILE *f;
+  struct stat st;
   size_t got;
-  int tail,closed;
-  if(!f)return 0;
+  int fd,tail,read_error,closed;
+  fd=open(path,O_RDONLY|O_NOFOLLOW|O_NONBLOCK);
+  if(fd<0)return errno==ENOENT?0:-1;
+  if(fstat(fd,&st)!=0||!S_ISREG(st.st_mode)){
+    (void)close(fd);
+    return -1;
+  }
+  f=fdopen(fd,"rb");
+  if(!f){
+    (void)close(fd);
+    return -1;
+  }
   got=fread(buffer,1,n,f);
   tail=fgetc(f);
+  read_error=ferror(f);
   closed=fclose(f)==0;
-  if(got!=n||tail!=EOF||!closed)return 0;
-  return validate(buffer,n,context,generation);
+  if(read_error||!closed)return -1;
+  if(got!=n||tail!=EOF)return 0;
+  return validate(buffer,n,context,generation)?1:0;
 }
 static int newer(uint32_t a,uint32_t b){
   return a!=b && (uint32_t)(a-b)<0x80000000u;
@@ -49,6 +67,8 @@ static int pair_commit_internal(
   const char *target=NULL;
   int fd=-1,va,vb,ok=0;
   if(!a||!b||!a[0]||!b[0]||strcmp(a,b)==0||
+     !rikitu_staged_slot_path_is_canonical(a)||
+     !rikitu_staged_slot_path_is_canonical(b)||
      !validate||!encode||!n||n>4096u)return 0;
   /* Lexicographic ordering ensures the same lock when caller swaps A/B.
    * Paths must identify the same files without aliases/symlink redirection. */
@@ -62,12 +82,51 @@ static int pair_commit_internal(
   if(!lock_path||!x||!y||!out)goto done;
   memcpy(lock_path,base,len);
   memcpy(lock_path+len,suffix,sizeof(suffix));
-  fd=open(lock_path,O_RDWR|O_CREAT|O_NOFOLLOW,0600);
-  if(fd<0||flock(fd,LOCK_EX)!=0)goto done;
+  fd=open(lock_path,O_RDWR|O_CREAT|O_NOFOLLOW|O_NONBLOCK,0600);
+  if(fd<0)goto done;
+  /* Do not accept a special file or hard-linked live record as the
+   * stable pair-wide lock; never unlink a trusted lock after use. */
+  {
+    struct stat lock_stat;
+    if(fstat(fd,&lock_stat)!=0||
+       !S_ISREG(lock_stat.st_mode)||lock_stat.st_nlink!=1)goto done;
+  }
+  if(flock(fd,LOCK_EX)!=0)goto done;
+  /* An open descriptor can remain single-linked even if the lock path
+   * was renamed away and replaced during flock contention. Check that
+   * the current directory entry STILL names our locked inode. */
+  {
+    struct stat locked_stat,path_stat;
+    if(fstat(fd,&locked_stat)!=0||
+       lstat(lock_path,&path_stat)!=0||
+       !S_ISREG(locked_stat.st_mode)||locked_stat.st_nlink!=1||
+       !S_ISREG(path_stat.st_mode)||path_stat.st_nlink!=1||
+       locked_stat.st_dev!=path_stat.st_dev||
+       locked_stat.st_ino!=path_stat.st_ino)goto done;
+  }
+  /* Two different names must not be hard links to one live slot:
+   * that would defeat the two-independent-copies recovery contract. */
+  {
+    struct stat stat_a,stat_b;
+    if(lstat(a,&stat_a)==0&&lstat(b,&stat_b)==0&&
+       S_ISREG(stat_a.st_mode)&&S_ISREG(stat_b.st_mode)&&
+       stat_a.st_dev==stat_b.st_dev&&stat_a.st_ino==stat_b.st_ino)
+      goto done;
+  }
   /* Selection is performed AFTER the lock, not on a stale earlier read.
    * Do not consider any .pending file a valid generation. */
   va=slot_generation(a,x,n,validate,context,&ga);
+  if(va<0)goto done;
   vb=slot_generation(b,y,n,validate,context,&gb);
+  if(vb<0)goto done;
+  /* A guarded writer cannot safely select the winner of split-brain
+   * records with the SAME generation but DIFFERENT contents, nor can
+   * serial arithmetic order generations exactly 2^31 apart. Leave
+   * both slots untouched and require explicit caller reconciliation.
+   * Preserve the legacy experimental unguarded API's selection. */
+  if(enforce_expected&&va&&vb&&
+     ((ga==gb&&memcmp(x,y,n)!=0)||
+      (uint32_t)(ga-gb)==0x80000000u))goto done;
   if(va&&vb){
     if(newer(gb,ga)){latest=gb;gen=gb+1u;target=a;}
     else{latest=ga;gen=ga+1u;target=b;}

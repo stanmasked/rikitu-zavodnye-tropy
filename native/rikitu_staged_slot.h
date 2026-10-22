@@ -8,4 +8,9 @@
  * This primitive is not yet used by the shipping game save writers.
  */
 int rikitu_staged_slot_commit(const char *target,const uint8_t *record,size_t n);
+#if defined(__linux__)
+/* Internal Linux-host guard: require an absolute path whose parent is
+ * already resolved (no . / .. / duplicate slash / symlink-parent alias). */
+int rikitu_staged_slot_path_is_canonical(const char *path);
+#endif
 #endif
