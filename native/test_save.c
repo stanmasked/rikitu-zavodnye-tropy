@@ -3,8 +3,19 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#define FILE_A "/tmp/rikitu-map01-save-test-a.bin"
-#define FILE_B "/tmp/rikitu-map01-save-test-b.bin"
+#define FILE_A "/tmp/rikitu-map01-save-test-a.rks"
+#define FILE_B "/tmp/rikitu-map01-save-test-b.rks"
+#define WRONG_A "/tmp/rikitu-map01-save-test-wrong-a.rkc"
+#define WRONG_B "/tmp/rikitu-map01-save-test-wrong-b.rkc"
+static void write_bytes(const char *path,const char *bytes,size_t n){
+  FILE *f=fopen(path,"wb");assert(f);
+  assert(fwrite(bytes,1,n,f)==n&&fclose(f)==0);
+}
+static void assert_bytes(const char *path,const char *expected,size_t n){
+  char actual[16];FILE *f=fopen(path,"rb");assert(f&&n<=sizeof(actual));
+  assert(fread(actual,1,n,f)==n&&fgetc(f)==EOF&&fclose(f)==0);
+  assert(memcmp(actual,expected,n)==0);
+}
 static void init(RikituScene *s,RikituLoop *l){
   rikitu_flower_init(s);memset(l,0,sizeof(*l));l->player=s->player;
 }
@@ -28,12 +39,18 @@ int main(void){
   uint32_t generation=0;
   FILE *f;int i;
   (void)remove(FILE_A);(void)remove(FILE_B);
+  (void)remove(WRONG_A);(void)remove(WRONG_B);
   init(&s,&l);
   assert(rikitu_save_encode(bytes,&s,&l,1));
   assert(bytes[0]=='R'&&bytes[1]=='K'&&bytes[2]=='S'&&bytes[3]=='1');
   assert(rikitu_save_decode(&d,&r,bytes,sizeof(bytes),&generation));
   assert(generation==1 && near(d.active_checkpoint,105));
   populate(&s,&l);
+  /* A map RKS1 writer must never overwrite a campaign RKC2 path. */
+  write_bytes(WRONG_A,"keep-a",6);write_bytes(WRONG_B,"keep-b",6);
+  assert(!rikitu_save_store_pair(WRONG_A,WRONG_B,&s,&l));
+  assert(!rikitu_save_load_pair(WRONG_A,WRONG_B,&d,&r));
+  assert_bytes(WRONG_A,"keep-a",6);assert_bytes(WRONG_B,"keep-b",6);
   assert(rikitu_save_encode(bytes,&s,&l,12));
   assert(rikitu_save_decode(&d,&r,bytes,sizeof(bytes),&generation));
   assert(generation==12 && d.level_id==1 && d.hearts==2);
