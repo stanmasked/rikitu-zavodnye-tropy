@@ -6,8 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 #if defined(__linux__)
+#include <errno.h>
 #include <fcntl.h>
 #include <sys/file.h>
+#include <sys/stat.h>
 #include <unistd.h>
 #endif
 
@@ -17,18 +19,34 @@
  * writers that use this API and stable canonical slot paths only.
  */
 #if defined(__linux__)
+/* Return 1 for codec-valid, 0 for absent/invalid regular records,
+ * and -1 for filesystem/path I/O errors. A symlink, FIFO, device or
+ * directory must never be mistaken for a harmless absent backup. */
 static int slot_generation(const char *path,uint8_t *buffer,size_t n,
                            RikituStagedValidate validate,
                            void *context,uint32_t *generation){
-  FILE *f=fopen(path,"rb");
+  FILE *f;
+  struct stat st;
   size_t got;
-  int tail,closed;
-  if(!f)return 0;
+  int fd,tail,read_error,closed;
+  fd=open(path,O_RDONLY|O_NOFOLLOW|O_NONBLOCK);
+  if(fd<0)return errno==ENOENT?0:-1;
+  if(fstat(fd,&st)!=0||!S_ISREG(st.st_mode)){
+    (void)close(fd);
+    return -1;
+  }
+  f=fdopen(fd,"rb");
+  if(!f){
+    (void)close(fd);
+    return -1;
+  }
   got=fread(buffer,1,n,f);
   tail=fgetc(f);
+  read_error=ferror(f);
   closed=fclose(f)==0;
-  if(got!=n||tail!=EOF||!closed)return 0;
-  return validate(buffer,n,context,generation);
+  if(read_error||!closed)return -1;
+  if(got!=n||tail!=EOF)return 0;
+  return validate(buffer,n,context,generation)?1:0;
 }
 static int newer(uint32_t a,uint32_t b){
   return a!=b && (uint32_t)(a-b)<0x80000000u;
@@ -67,7 +85,9 @@ static int pair_commit_internal(
   /* Selection is performed AFTER the lock, not on a stale earlier read.
    * Do not consider any .pending file a valid generation. */
   va=slot_generation(a,x,n,validate,context,&ga);
+  if(va<0)goto done;
   vb=slot_generation(b,y,n,validate,context,&gb);
+  if(vb<0)goto done;
   /* A guarded writer cannot safely select the winner of split-brain
    * records with the SAME generation but DIFFERENT contents, nor can
    * serial arithmetic order generations exactly 2^31 apart. Leave
