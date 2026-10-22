@@ -90,6 +90,13 @@ static int pair_commit_internal(
        !S_ISREG(lock_stat.st_mode)||lock_stat.st_nlink!=1)goto done;
   }
   if(flock(fd,LOCK_EX)!=0)goto done;
+  /* Another process could have hard-linked our lock inode while
+   * flock() waited. Recheck after acquisition, before touching saves. */
+  {
+    struct stat locked_stat;
+    if(fstat(fd,&locked_stat)!=0||
+       !S_ISREG(locked_stat.st_mode)||locked_stat.st_nlink!=1)goto done;
+  }
   /* Selection is performed AFTER the lock, not on a stale earlier read.
    * Do not consider any .pending file a valid generation. */
   va=slot_generation(a,x,n,validate,context,&ga);
