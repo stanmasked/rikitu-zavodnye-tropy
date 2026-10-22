@@ -1687,3 +1687,35 @@ live-slot types; it does not eliminate races with malicious or
 non-cooperating processes that replace paths during the operation,
 enforce hard-link/canonical-path identity, or prove any libnx or
 physical SD card properties. The Switch shipping path is untouched.
+
+## Stage117 — protect staging and lock inodes before truncation (Linux experiment)
+
+A pre-existing `.pending` path could be a **hard link** to a live,
+valid save. `open(..., O_TRUNC)` would then destroy that live save's
+bytes before the staged writer had any opportunity to refuse the
+operation. Symlink-only checks are insufficient: `O_NOFOLLOW`
+does not reject hard links.
+
+The Linux-only staged-slot helper now opens `.pending` *without*
+`O_TRUNC`, uses `fstat` on the opened file descriptor to require
+an ordinary regular file with `st_nlink == 1`, and only then calls
+`ftruncate(fd, 0)`. Pre-existing single-link regular `.pending`
+files may still be reused after interrupted writes. The
+`.pending.lock` and stable `.pair.lock` descriptors must likewise
+represent single-link regular files before they are locked. Opening
+potential FIFOs with `O_NONBLOCK` prevents indefinite waiting.
+
+The Stage114-117 combined Linux test adds **36 cases per compiler**:
+three authentic save codecs, both A/B newer-slot orientations, and
+six unsafe pre-existing path types (hard-linked `.pending`,
+hard-linked `.pending.lock`, hard-linked `.pair.lock`, FIFO
+`.pending`, directory `.pending`, FIFO `.pair.lock`).
+Every rejection must preserve both live records and the obstruction,
+leave the generation output and encoder call count unchanged, and
+succeed after explicit cleanup of the obstructing path. Production
+pair-loaders confirm the recovered game state.
+
+The protection is **not** a solution to adversarial races during the
+check/truncate/rename sequence or to aliasing via parent directories,
+and does not establish any guarantees for Switch/libnx or FAT/SDMC.
+The production Switch writer and game content remain unchanged.
