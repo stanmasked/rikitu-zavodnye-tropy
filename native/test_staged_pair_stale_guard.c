@@ -358,6 +358,79 @@ static void run_path_guard_case(int family,int bad_b,int kind){
   printf("PASS Stage116 family=%d unsafe=%c kind=%d\n",
          family,bad_b?'B':'A',kind);
 }
+/* Stage117: an existing hard link at a temporary/lock path must never
+ * allow O_TRUNC to clobber a live backup. Reject odd inode types too,
+ * preserve the original bytes, then recover after explicit cleanup. */
+enum {
+  PENDING_HARDLINK=0,PENDING_LOCK_HARDLINK=1,PAIR_LOCK_HARDLINK=2,
+  PENDING_FIFO=3,PENDING_DIRECTORY=4,PAIR_LOCK_FIFO=5
+};
+static void run_staging_inode_case(int family,int newer_b,int kind){
+  char a[200],b[200],obstruction[240];
+  const char *recent_path,*target,*source;
+  uint8_t old[RIKITU_LEVEL_SAVE_BYTES],recent[RIKITU_LEVEL_SAVE_BYTES];
+  uint8_t successor[RIKITU_LEVEL_SAVE_BYTES];
+  uint32_t reported=0xf00df00du;
+  Context ctx;
+  struct stat st;
+  int called,len;
+  size_t n=bytes_for(family);
+  memset(&ctx,0,sizeof(ctx));
+  ctx.family=family;
+  assert(rikitu_campaign_init(&ctx.campaign,4));
+  ctx.campaign.wallet=157;
+  create_paths(family,a,b);
+  clean_path(a);clean_path(b);
+  recent_path=newer_b?b:a;
+  target=newer_b?a:b;
+  generate(&ctx,0,1u,old);
+  generate(&ctx,1,2u,recent);
+  generate(&ctx,2,3u,successor);
+  write_bytes(target,old,n);
+  write_bytes(recent_path,recent,n);
+  source=(kind==PAIR_LOCK_HARDLINK||kind==PAIR_LOCK_FIFO)?a:target;
+  len=snprintf(obstruction,sizeof(obstruction),"%s%s",source,
+      (kind==PENDING_HARDLINK||kind==PENDING_FIFO||
+       kind==PENDING_DIRECTORY)?".pending":
+      kind==PENDING_LOCK_HARDLINK?".pending.lock":".pair.lock");
+  assert(len>0&&len<(int)sizeof(obstruction));
+  if(kind<=PAIR_LOCK_HARDLINK)
+    assert(link(recent_path,obstruction)==0);
+  else if(kind==PENDING_DIRECTORY)
+    assert(mkdir(obstruction,0700)==0);
+  else
+    assert(mkfifo(obstruction,0600)==0);
+  ctx.phase=2;
+  called=ctx.encode_calls;
+  assert(!rikitu_staged_pair_commit_if_current(
+      b,a,n,record_validate,record_encode,&ctx,2u,&reported));
+  assert(reported==0xf00df00du);
+  assert(ctx.encode_calls==called);
+  assert_bytes(target,old,n);
+  assert_bytes(recent_path,recent,n);
+  assert(lstat(obstruction,&st)==0);
+  if(kind<=PAIR_LOCK_HARDLINK){
+    assert(S_ISREG(st.st_mode));
+    assert(st.st_nlink>=2);
+    assert_bytes(obstruction,recent,n);
+  }else if(kind==PENDING_DIRECTORY){
+    assert(S_ISDIR(st.st_mode));
+  }else assert(S_ISFIFO(st.st_mode));
+  if(kind==PENDING_DIRECTORY)assert(rmdir(obstruction)==0);
+  else assert(unlink(obstruction)==0);
+  no_pending(a,b);
+  reported=0;
+  assert(rikitu_staged_pair_commit_if_current(
+      a,b,n,record_validate,record_encode,&ctx,2u,&reported));
+  assert(reported==3u);
+  assert_bytes(target,successor,n);
+  assert_bytes(recent_path,recent,n);
+  check_loader(&ctx,a,b,2);
+  no_pending(a,b);
+  clean_path(a);clean_path(b);
+  printf("PASS Stage117 family=%d newer=%c kind=%d\n",
+         family,newer_b?'B':'A',kind);
+}
 int main(void){
   int f,b,s;
   for(f=MAP;f<=LEVEL;f++)
@@ -375,5 +448,10 @@ int main(void){
       for(s=SLOT_LINK;s<=SLOT_FIFO;s++)
         run_path_guard_case(f,b,s);
   puts("PASS Stage116 18 unsafe-slot path refusal and recovery cases");
+  for(f=MAP;f<=LEVEL;f++)
+    for(b=0;b<2;b++)
+      for(s=PENDING_HARDLINK;s<=PAIR_LOCK_FIFO;s++)
+        run_staging_inode_case(f,b,s);
+  puts("PASS Stage117 36 staging/lock inode refusal and recovery cases");
   return 0;
 }
