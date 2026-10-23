@@ -13,7 +13,10 @@ concurrency:
   cancel-in-progress: true
 jobs:
   prototype:
-    runs-on: ubuntu-latest
+    # Playwright 1.57.0 Chromium install is unsupported on the ubuntu26.04
+    # runner currently selected by ubuntu-latest (observed PR #129 CI).
+    # Pin the known supported image until we explicitly upgrade Playwright.
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
