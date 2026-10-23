@@ -1,0 +1,35 @@
+name: RIKITU Stage149 synthetic background/gameplay compositing
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage149-background-overlay.yml'
+      - 'native/rikitu_draw.*'
+      - 'native/rikitu_background_blit.*'
+      - 'native/test_background_overlay.c'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage149-background-overlay.yml'
+      - 'native/rikitu_draw.*'
+      - 'native/rikitu_background_blit.*'
+      - 'native/test_background_overlay.c'
+permissions:
+  contents: read
+jobs:
+  overlay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: GCC synthetic background and foreground/HUD compositing
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_draw.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_enemies.c native/rikitu_parallax.c native/rikitu_background_blit.c native/test_background_overlay.c -lm -o /tmp/rikitu-overlay-gcc
+          /tmp/rikitu-overlay-gcc
+      - name: Clang synthetic background and foreground/HUD compositing
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_draw.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_enemies.c native/rikitu_parallax.c native/rikitu_background_blit.c native/test_background_overlay.c -lm -o /tmp/rikitu-overlay-clang
+          /tmp/rikitu-overlay-clang
+      - name: Clang sanitized opt-in graphics path
+        run: |
+          clang -std=c99 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_draw.c native/rikitu_demo.c native/rikitu_boss.c native/rikitu_enemies.c native/rikitu_parallax.c native/rikitu_background_blit.c native/test_background_overlay.c -lm -o /tmp/rikitu-overlay-sanitized
+          /tmp/rikitu-overlay-sanitized

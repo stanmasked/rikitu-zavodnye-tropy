@@ -76,8 +76,9 @@ static void label(Canvas *c,int x,int y,const char *s,int scale,uint32_t color) 
 static int worldx(float x,float camera){
   return (int)floorf(x-camera+0.5f);
 }
-int rikitu_draw_scene(uint32_t *pixels,int width,int height,
-                      int stride_pixels,const RikituScene *s) {
+static int draw_scene_impl(uint32_t *pixels,int width,int height,
+                           int stride_pixels,const RikituScene *s,
+                           int background_prefilled) {
   Canvas c;
   uint32_t sky,ink=rgb(232,240,250);
   float camera;
@@ -98,17 +99,21 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
   if(camera<0.0f)camera=0.0f;
   if(camera>s->world_width-width)camera=s->world_width-width;
   if(camera<0.0f)camera=0.0f;
-  /* Deterministic sky gradient and parallax silhouettes. */
-  for(y=0;y<height;y++){
-    const unsigned t=(unsigned)((size_t)y*80u/(unsigned)height);
-    sky=rgb(33+t/3,74+t/2,118+t);
-    box(&c,0,y,width,1,sky);
-  }
-  for(i=0;i<9;i++){
-    x=(i*301-(int)(camera*.23f))%(width+400);
-    if(x<0)x+=width+400;
-    box(&c,x-100,330+i%3*24,170,190,rgb(54,115,132));
-    box(&c,x-55,310+i%3*24,90,26,rgb(54,115,132));
+  /* Preserve the legacy debug sky unless caller prefilled an opaque RGBA8
+   * background using an independently validated blit.
+   * Foreground/platform/HUD/gameplay paths below are unchanged. */
+  if(!background_prefilled){
+    for(y=0;y<height;y++){
+      const unsigned t=(unsigned)((size_t)y*80u/(unsigned)height);
+      sky=rgb(33+t/3,74+t/2,118+t);
+      box(&c,0,y,width,1,sky);
+    }
+    for(i=0;i<9;i++){
+      x=(i*301-(int)(camera*.23f))%(width+400);
+      if(x<0)x+=width+400;
+      box(&c,x-100,330+i%3*24,170,190,rgb(54,115,132));
+      box(&c,x-55,310+i%3*24,90,26,rgb(54,115,132));
+    }
   }
   /* A few geometry-only scenery elements; no altered approved art. */
   for(i=0;i<(int)s->solid_count;i++){
@@ -251,6 +256,21 @@ int rikitu_draw_scene(uint32_t *pixels,int width,int height,
     label(&c,width/2-232,height/2-18,"STAGE COMPLETE",4,ink);
   }
   return 1;
+}
+
+/* Existing callers keep the same deterministic debug background. */
+int rikitu_draw_scene(uint32_t *pixels,int width,int height,
+                      int stride_pixels,const RikituScene *s){
+  return draw_scene_impl(pixels,width,height,stride_pixels,s,0);
+}
+
+/* Call only after a validated full-screen background blit.
+ * This mode overlays the existing gameplay/platform/HUD layers without
+ * repainting the underlying prefilled pixels. No asset loading occurs here.
+ */
+int rikitu_draw_scene_over_background(uint32_t *pixels,int width,int height,
+                                      int stride_pixels,const RikituScene *s){
+  return draw_scene_impl(pixels,width,height,stride_pixels,s,1);
 }
 
 /* Technical campaign phase overlay. This is not an approved character sprite. */

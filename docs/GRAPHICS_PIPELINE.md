@@ -34,6 +34,14 @@ The drafts do not define platform collision, collectible placement, checkpoints,
 
 Before any integration, render at 1280 × 720, inspect legibility at actual play scale, check scrolling/cropping against the existing MAP01, and confirm no decoration competes with gameplay.
 
+## Stage149 — synthetic scene compositing, no art integration
+
+The optional `rikitu_draw_scene_over_background` entry point draws the existing solids, collectibles, enemies, player hitbox and HUD **over a caller-prefilled frame**. It skips only the legacy synthetic sky gradient and far-distance rectangles. The original `rikitu_draw_scene` still calls the same implementation with legacy sky enabled, so existing games and NRO builds keep the identical default rendering path.
+
+Stage149's public regression uses a tiny, synthetic panorama transferred through `rikitu_background_blit_rgba8888` before rendering the unchanged gameplay/HUD layers. It checks visible background pixels remain untouched away from interactive geometry, while player and platform pixels are still drawn on top. GCC/Clang/sanitizer and the full renderer/browser build gates must pass.
+
+**No file loader is activated, and no GFX-01 source/raster pixels are compiled into the binary.** Approved art and a verified private-loading pipeline are separate GFX-02 acceptance gates. Never treat Stage149 as art approval or a screenshot from the real game.
+
 ## Stage148 — opt-in RGBA8 source-frame transfer (synthetic only)
 
 The *technical* Stage148 change adds `native/rikitu_background_blit.{h,c}`: a bounded, side-effect-free transfer of a pre-rendered **caller-owned** RGBA8888 panorama into a destination framebuffer. The crop position is calculated by the existing `rikitu_parallax_crop_x` geometry contract, preserving the 7900px MAP01 world and 5120px draft panorama relationship.
