@@ -1,0 +1,31 @@
+name: RIKITU Stage153 private RGBA8 export gate (synthetic only)
+on:
+  pull_request:
+    paths:
+      - 'tools/export_private_png_rgba8.py'
+      - 'tests/test_private_rgba8_export.py'
+      - 'docs/PRIVATE_RGBA8_ASSET_HANDOFF.md'
+      - '.github/workflows/stage153-private-rgba-export.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/export_private_png_rgba8.py'
+      - 'tests/test_private_rgba8_export.py'
+      - 'docs/PRIVATE_RGBA8_ASSET_HANDOFF.md'
+      - '.github/workflows/stage153-private-rgba-export.yml'
+permissions:
+  contents: read
+jobs:
+  synthetic-private-export:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned offline-export dependency
+        run: python -m pip install Pillow==12.0.0
+      - name: Verify synthetic PNG integrity and private destination guards
+        run: python -m unittest discover -s tests -p test_private_rgba8_export.py -v
+      # No upload-artifact: real PNGs, raw pixels and captures stay private.
