@@ -66,9 +66,25 @@ static int staged_level_validate(const uint8_t *record,size_t size,
                                  void *context,uint32_t *generation){
   const RikituLevelWriteContext *write_context=
       (const RikituLevelWriteContext*)context;
-  return size==RIKITU_LEVEL_SAVE_BYTES&&write_context&&
-         write_context->campaign&&
-         rikitu_level_save_inspect(record,size,generation)&&
+  RikituScene candidate;
+  RikituLoop candidate_loop;
+  if(size!=RIKITU_LEVEL_SAVE_BYTES||!write_context||
+     !write_context->scene||!write_context->campaign)return 0;
+  /* Inspecting only the CRC/header is not enough for slot selection:
+   * a CRC-valid record with impossible boss/lever state could otherwise
+   * outrank the last fully restorable checkpoint. Decode into a scratch
+   * copy of the current level geometry, clearing only the fresh-scene
+   * counters required by the decoder. The decoder replaces saved state
+   * in this copy and leaves the live scene untouched. */
+  candidate=*write_context->scene;
+  candidate.stage.coin_count=0;
+  candidate.stage.fragment_count=0;
+  candidate.reached_checkpoints=0;
+  candidate.damage_count=0;
+  memset(&candidate_loop,0,sizeof(candidate_loop));
+  return rikitu_level_save_decode(&candidate,&candidate_loop,
+                                  write_context->campaign,record,size,
+                                  generation)&&
          belongs_to_campaign(record,write_context->campaign);
 }
 static int staged_level_encode(uint8_t *record,size_t size,
