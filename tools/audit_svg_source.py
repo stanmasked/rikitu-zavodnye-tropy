@@ -70,6 +70,38 @@ def check_path(d):
     return None
 
 
+# This intentionally flags only a strong structural hint, not a semantic error.
+# It uses synthetic-only public fixtures; private SVG data is never included.
+ABSOLUTE_VERTICAL_CLOSURE = re.compile(
+    rf"[TL]\s*({NUMBER})[\s,]+({NUMBER})\s*"
+    rf"L\s*({NUMBER})[\s,]+({NUMBER})\s*"
+    rf"H\s*({NUMBER})\s*[zZ]\s*$"
+)
+
+
+def has_interior_bottom_cliff(path_data, view_box):
+    """Detect a long abrupt polygon closure to the bottom INSIDE the image.
+
+    Warning only: a vertical internal cliff may be intentional architecture.
+    Relative commands or arbitrary curves are out of scope; never auto-fix.
+    """
+    if view_box is None:
+        return False
+    left, top, width, height = view_box
+    match = ABSOLUTE_VERTICAL_CLOSURE.search(path_data)
+    if not match:
+        return False
+    x_before, y_before, x_end, y_end, _ = map(float, match.groups())
+    margin = max(12.0, width * 0.003)
+    bottom = top + height
+    return (
+        left + margin < x_end < left + width - margin
+        and abs(x_before - x_end) <= 0.5
+        and abs(y_end - bottom) <= 1.0
+        and y_end - y_before >= max(24.0, height * 0.04)
+    )
+
+
 def audit_svg(raw):
     """Return (summary, list of (severity, code)) without leaking private art."""
     issues = []
@@ -89,6 +121,7 @@ def audit_svg(raw):
     if root.tag != SVG_NS + "svg":
         err("wrong-root-namespace")
     vb = root.get("viewBox", "").replace(",", " ").split()
+    view_box = None
     if len(vb) != 4:
         err("missing-or-invalid-viewbox")
     else:
@@ -96,6 +129,8 @@ def audit_svg(raw):
             vals = [float(x) for x in vb]
             if not all(map(__import__("math").isfinite, vals)) or vals[2] <= 0 or vals[3] <= 0:
                 err("invalid-viewbox-extent")
+            else:
+                view_box = vals
         except ValueError:
             err("invalid-viewbox-extent")
     elements = list(root.iter())
@@ -126,6 +161,9 @@ def audit_svg(raw):
                 elif value[1:] not in id_set:
                     err("broken-href")
         if tag == "path":
+            if (node.get("fill", "").strip().lower() != "none"
+                    and has_interior_bottom_cliff(node.get("d", ""), view_box)):
+                warn("interior-bottom-vertical-fill-edge")
             issue = check_path(node.get("d", ""))
             if issue == "move-only-path":
                 warn(issue)
