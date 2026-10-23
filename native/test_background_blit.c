@@ -61,7 +61,7 @@ static void test_failures_leave_frame_intact(void){
   int x=777, n;
   fill();
   assert(!rikitu_background_blit_rgba8888(NULL,DH*DS,DW,DH,DS,&good,0,100,&x));
-  assert(!rikitu_background_blit_rgba8888(target,DH*DS,NULL==target?DW:0,DH,DS,&good,0,100,&x));
+  assert(!rikitu_background_blit_rgba8888(target,DH*DS,0,DH,DS,&good,0,100,&x));
   assert(!rikitu_background_blit_rgba8888(target,DH*DS,DW,DH,DW-1,&good,0,100,&x));
   assert(!rikitu_background_blit_rgba8888(target,DH*DS-5,DW,DH,DS,&good,0,100,&x));
   assert(!rikitu_background_blit_rgba8888(target,DH*DS,DW,DH,DS,NULL,0,100,&x));
