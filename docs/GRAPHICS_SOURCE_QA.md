@@ -13,6 +13,14 @@ The Stage146 auditor is a **code-only quality gate** for environment/vector art,
 
 The public GitHub workflow runs only `tests/test_svg_source_audit.py` with synthetic markup. It never fetches private Drive originals, artifacts, images, level screenshots, or extracted media.
 
+## Stage147 interior cliff warning (technical only)
+
+The structural SVG auditor additionally reports `interior-bottom-vertical-fill-edge` as a **warning** when a filled absolute path terminates vertically at the bottom of the canvas despite being well inside the canvas width. In a scrolling panorama this may indicate a hard visual seam (for example, the known MAP01 water shape). A vertically sided cliff or piece of architecture may be deliberate; this is not a fatal error, nor a replacement for rendering.
+
+The heuristic intentionally recognizes only a narrow pattern of absolute `T/L … L … H … Z` commands. It does **not** identify every possible abrupt edge, polygon, relative command or seam, and it cannot prove that an art composition is correct.
+
+After the warning, inspect the offending source in a **private working copy** against the untouched Drive master, render at native source resolution, and review overlapping 1280 × 720 crops at first/middle/last camera positions. Fix the derived source without replacing any approved character art. Do **not** upload SVGs, rendered frames or other raw evidence to a public workflow. Move verified derived results into the private Project Evidence Archive with size + SHA-256 + authenticated readback before discarding temporary files.
+
 ## Known current blocker
 
 The unapproved MAP01 GFX-01 draft panorama has a visible abrupt stream boundary near source `x=2960`. This is a visual issue beyond the structural SVG auditor; correcting it and approving the revised art require their own review. GFX-01 parallax geometry in `main` is *not* proof that the background has been integrated or approved.
