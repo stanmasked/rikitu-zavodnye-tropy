@@ -39,7 +39,7 @@ def export_png(source: Path, private_dir: Path, output_name: str,
     if not (1 <= width <= 16384 and 1 <= height <= 2160 and
             width * height <= MAX_PIXELS):
         raise ExportError("invalid-pixel-dimensions")
-    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\\.rgba8",
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{0,127}\.rgba8",
                         output_name):
         raise ExportError("invalid-private-output-name")
     if private_dir.is_symlink() or not private_dir.is_dir():
