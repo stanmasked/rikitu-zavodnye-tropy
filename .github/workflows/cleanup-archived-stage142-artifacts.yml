@@ -1,0 +1,44 @@
+name: RIKITU cleanup archived Stage142 artifacts
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/cleanup-archived-stage142-artifacts.yml'
+permissions:
+  actions: write
+  contents: read
+jobs:
+  remove-verified-public-copies:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Delete only Stage142 artifacts already verified in private Drive
+        shell: bash
+        env:
+          GH_TOKEN: \${{ github.token }}
+          REPOSITORY: \${{ github.repository }}
+          GH_API_URL: \${{ github.api_url }}
+        run: |
+          set -euo pipefail
+          artifact_ids=(
+            12514278956
+            12515265496
+            12514721546
+            12513599837
+            12513594747
+            12515295354
+            12514980899
+            12514547330
+          )
+          for artifact_id in "\${artifact_ids[@]}"; do
+            code="$(curl -sS -o "$RUNNER_TEMP/artifact-delete.json" -w '%{http_code}' \
+              -X DELETE \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H 'Accept: application/vnd.github+json' \
+              "$GH_API_URL/repos/$REPOSITORY/actions/artifacts/$artifact_id")"
+            case "$code" in
+              204) echo "DELETED archived artifact $artifact_id" ;;
+              404) echo "ALREADY ABSENT archived artifact $artifact_id" ;;
+              *) cat "$RUNNER_TEMP/artifact-delete.json"; echo "Unexpected HTTP $code for artifact $artifact_id" >&2; exit 1 ;;
+            esac
+          done
