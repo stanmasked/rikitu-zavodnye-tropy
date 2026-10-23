@@ -34,6 +34,16 @@ The drafts do not define platform collision, collectible placement, checkpoints,
 
 Before any integration, render at 1280 × 720, inspect legibility at actual play scale, check scrolling/cropping against the existing MAP01, and confirm no decoration competes with gameplay.
 
+## Stage148 — opt-in RGBA8 source-frame transfer (synthetic only)
+
+The *technical* Stage148 change adds `native/rikitu_background_blit.{h,c}`: a bounded, side-effect-free transfer of a pre-rendered **caller-owned** RGBA8888 panorama into a destination framebuffer. The crop position is calculated by the existing `rikitu_parallax_crop_x` geometry contract, preserving the 7900px MAP01 world and 5120px draft panorama relationship.
+
+The destination and source memory spans are validated (dimensions, per-row strides, last accessible pixel, camera and world-width finiteness) **before any pixel is written**. Row padding remains unchanged, the existing source buffer is never modified, and malformed/short buffers are rejected without partial screen updates. Callers are required to supply independent, non-overlapping memory areas and fully decoded source pixels. There is no decoder, filesystem access, SVG parsing or character art linked into the library.
+
+GCC, Clang and Clang ASan/UBSan tests operate only on a small synthetic 80×8 panorama. **No original/derived SVG, screenshot, real sprite or confidential source pixels are stored in public GitHub**. The existing `rikitu_draw_scene` and Switch scene remain unchanged: actual background rendering is gated on separate visual approval, a verified private asset-loading strategy and NeXium capture QA.
+
+The current GFX-01 stream taper is still an **unapproved private draft** even though it has five independently archived 1280×720 source-only review crops. Do not mistake the Stage148 framebuffer copy for in-game asset integration or a decision on the art direction.
+
 ## Production sequence
 
 1. Review and lock the environment style using MAP01 only.
