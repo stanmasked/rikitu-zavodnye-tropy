@@ -89,7 +89,7 @@ def fake_semantic_record(generation: int) -> bytes:
 
 
 def check_semantic_record(data: bytes, generation: int) -> None:
-    if len(data) != 64 or data[:5] != b"RKL3\\x03":
+    if len(data) != 64 or data[:5] != b"RKL3\x03":
         raise AssertionError("Stage132: invalid RKL3 size/magic/version")
     actual = int.from_bytes(data[32:36], "little")
     if actual != generation:
