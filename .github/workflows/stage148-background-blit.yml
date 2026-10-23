@@ -1,0 +1,35 @@
+name: RIKITU Stage148 synthetic panorama framebuffer blit
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage148-background-blit.yml'
+      - 'native/rikitu_background_blit.*'
+      - 'native/rikitu_parallax.*'
+      - 'native/test_background_blit.c'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage148-background-blit.yml'
+      - 'native/rikitu_background_blit.*'
+      - 'native/rikitu_parallax.*'
+      - 'native/test_background_blit.c'
+permissions:
+  contents: read
+jobs:
+  synthetic-background:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: GCC background copy bounds and pixel guards
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_parallax.c native/rikitu_background_blit.c native/test_background_blit.c -lm -o /tmp/rikitu-background-gcc
+          /tmp/rikitu-background-gcc
+      - name: Clang background copy bounds and pixel guards
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_parallax.c native/rikitu_background_blit.c native/test_background_blit.c -lm -o /tmp/rikitu-background-clang
+          /tmp/rikitu-background-clang
+      - name: Clang ASan/UBSan background safety
+        run: |
+          clang -std=c99 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Inative native/rikitu_parallax.c native/rikitu_background_blit.c native/test_background_blit.c -lm -o /tmp/rikitu-background-sanitize
+          /tmp/rikitu-background-sanitize
