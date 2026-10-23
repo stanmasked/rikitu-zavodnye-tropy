@@ -102,6 +102,41 @@ def has_interior_bottom_cliff(path_data, view_box):
     )
 
 
+
+# Complementary warning for near-vertical *opening* edges. A path may begin at
+# the stream surface, terminate along the bottom edge and close straight back
+# up to its initial M point. The drawing is valid SVG but can look cut off.
+ABSOLUTE_START_MOVE = re.compile(
+    rf"^\s*M\s*({NUMBER})[\s,]+({NUMBER})"
+)
+ABSOLUTE_BOTTOM_CLOSE = re.compile(
+    rf"L\s*({NUMBER})[\s,]+({NUMBER})\s*H\s*({NUMBER})\s*[zZ]\s*$"
+)
+
+
+def has_interior_opening_cliff(path_data, view_box):
+    """Warn about a tall near-vertical *first* fill edge inside the canvas.
+
+    The heuristic recognizes a restricted absolute M...L...H...Z form only.
+    It does not prove a visual defect; architecture can have vertical edges.
+    """
+    if view_box is None:
+        return False
+    start = ABSOLUTE_START_MOVE.search(path_data)
+    end = ABSOLUTE_BOTTOM_CLOSE.search(path_data)
+    if not start or not end:
+        return False
+    start_x, start_y = map(float, start.groups())
+    _, bottom_y, closure_x = map(float, end.groups())
+    left, top, width, height = view_box
+    margin = max(12.0, width * 0.003)
+    return (
+        left + margin < start_x < left + width - margin
+        and abs(start_x - closure_x) <= max(24.0, height * 0.035)
+        and abs(bottom_y - (top + height)) <= 1.0
+        and bottom_y - start_y >= max(64.0, height * 0.12)
+    )
+
 def audit_svg(raw):
     """Return (summary, list of (severity, code)) without leaking private art."""
     issues = []
@@ -161,9 +196,12 @@ def audit_svg(raw):
                 elif value[1:] not in id_set:
                     err("broken-href")
         if tag == "path":
-            if (node.get("fill", "").strip().lower() != "none"
-                    and has_interior_bottom_cliff(node.get("d", ""), view_box)):
-                warn("interior-bottom-vertical-fill-edge")
+            if node.get("fill", "").strip().lower() != "none":
+                d = node.get("d", "")
+                if has_interior_bottom_cliff(d, view_box):
+                    warn("interior-bottom-vertical-fill-edge")
+                if has_interior_opening_cliff(d, view_box):
+                    warn("interior-start-near-vertical-fill-edge")
             issue = check_path(node.get("d", ""))
             if issue == "move-only-path":
                 warn(issue)
