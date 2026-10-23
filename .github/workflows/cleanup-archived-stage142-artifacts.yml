@@ -15,9 +15,9 @@ jobs:
       - name: Delete only Stage142 artifacts already verified in private Drive
         shell: bash
         env:
-          GH_TOKEN: \${{ github.token }}
-          REPOSITORY: \${{ github.repository }}
-          GH_API_URL: \${{ github.api_url }}
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          GH_API_URL: ${{ github.api_url }}
         run: |
           set -euo pipefail
           artifact_ids=(
@@ -30,7 +30,7 @@ jobs:
             12514980899
             12514547330
           )
-          for artifact_id in "\${artifact_ids[@]}"; do
+          for artifact_id in "${artifact_ids[@]}"; do
             code="$(curl -sS -o "$RUNNER_TEMP/artifact-delete.json" -w '%{http_code}' \
               -X DELETE \
               -H "Authorization: Bearer $GH_TOKEN" \
