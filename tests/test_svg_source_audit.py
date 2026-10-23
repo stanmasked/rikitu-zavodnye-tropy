@@ -74,10 +74,14 @@ class SvgAuditTest(unittest.TestCase):
         # Synthetic analogue of a fill abruptly ending inside a panorama.
         _, issues = audit_svg(doc('<path d="M200 540 T620 560 L620 720 H200Z"'
                                   ' fill="#5eb3be"/>'))
-        self.assertEqual(issues, [("warning", "interior-bottom-vertical-fill-edge")])
+        self.assertEqual(issues, [
+            ("warning", "interior-bottom-vertical-fill-edge"),
+            ("warning", "interior-start-near-vertical-fill-edge"),
+        ])
 
     def test_does_not_flag_normal_canvas_edge_closure(self):
-        _, issues = audit_svg(doc('<path d="M200 540 T1280 560 L1280 720 H200Z"'
+        # Both vertical closures are exactly on the canvas borders.
+        _, issues = audit_svg(doc('<path d="M0 540 T1280 560 L1280 720 H0Z"'
                                   ' fill="#5eb3be"/>'))
         self.assertEqual(issues, [])
 
