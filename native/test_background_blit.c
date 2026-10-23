@@ -76,9 +76,31 @@ static void test_failures_leave_frame_intact(void){
   assert(x==777);
   for(n=0;n<DH*DS;n++)assert(target[n]==SENTINEL);
 }
+static void test_partial_alias_rejected_before_copy(void){
+  static uint32_t storage[1024], before[1024];
+  const RikituBackgroundImage head={storage,SH*SS,SW,SH,SS};
+  const RikituBackgroundImage shifted={storage+3,SH*SS,SW,SH,SS};
+  int n,crop=712;
+  for(n=0;n<1024;n++)storage[n]=0x54970000u+(uint32_t)n;
+  memcpy(before,storage,sizeof(storage));
+  /* Destination starts *inside* source: pointer inequality is not safety. */
+  assert(!rikitu_background_blit_rgba8888(
+      storage+2,DH*DS,DW,DH,DS,&head,0.0,100.0,&crop));
+  assert(crop==712 && memcmp(before,storage,sizeof(storage))==0);
+  /* Source starts *inside* destination range, not at the same address. */
+  assert(!rikitu_background_blit_rgba8888(
+      storage,DH*DS,DW,DH,DS,&shifted,0.0,100.0,&crop));
+  assert(crop==712 && memcmp(before,storage,sizeof(storage))==0);
+  /* Adjacent non-overlapping regions remain valid, despite one allocation. */
+  assert(rikitu_background_blit_rgba8888(
+      storage+SH*SS,DH*DS,DW,DH,DS,&head,0.0,100.0,&crop));
+  assert(crop==0);
+  for(n=0;n<SH*SS;n++)assert(storage[n]==before[n]);
+}
 int main(void){
   test_cameras();
   test_failures_leave_frame_intact();
+  test_partial_alias_rejected_before_copy();
   puts("PASS Stage148: panorama source crop, 0/50/100% camera, stride sentinels, invalid buffers");
   return 0;
 }
