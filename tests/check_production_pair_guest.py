@@ -25,7 +25,8 @@ PHASE_MARKER = {
     "block": "ready-to-recover",
     "recover": "ready-to-verify",
     "verify": "verified",
-    "semantic": "semantic-verified",
+    "semantic-commit": "semantic-committed",
+    "semantic-verify": "semantic-verified",
 }
 GENERATIONS = {
     "seed": (1, None),
@@ -33,7 +34,8 @@ GENERATIONS = {
     "block": (1, 2),
     "recover": (3, 2),
     "verify": (3, 2),
-    "semantic": (3, 2),
+    "semantic-commit": (3, 2),
+    "semantic-verify": (3, 2),
 }
 
 
@@ -151,7 +153,7 @@ def verify_files(root: Path, phase: str) -> None:
         base / "stage132-level-a.rkl",
         base / "stage132-level-b.rkl",
     )
-    if phase == "semantic":
+    if phase in ("semantic-commit", "semantic-verify"):
         verify_semantic_files(base)
     else:
         for path in semantic_paths:
@@ -230,11 +232,16 @@ def verify_files(root: Path, phase: str) -> None:
         if not previous or hashes != previous:
             raise AssertionError("verify: cold-start verification changed committed bytes")
         manifest["verify"] = hashes
-    elif phase == "semantic":
+    elif phase == "semantic-commit":
         previous = manifest.get("verify")
         if not previous or hashes != previous:
-            raise AssertionError("semantic: Stage132 test changed Stage131 live slot bytes")
-        manifest["semantic"] = hashes
+            raise AssertionError("semantic-commit: Stage132 write changed Stage131 live slot bytes")
+        manifest["semantic-commit"] = hashes
+    elif phase == "semantic-verify":
+        previous = manifest.get("semantic-commit")
+        if not previous or hashes != previous:
+            raise AssertionError("semantic-verify: cold-start verification changed Stage131 live slot bytes")
+        manifest["semantic-verify"] = hashes
 
     manifest_path.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -288,7 +295,7 @@ def selftest() -> None:
         root = Path(temp)
         base = root / "sdmc" / "switch" / "RIKITU"
         base.mkdir(parents=True)
-        for phase in ("seed", "advance", "block", "recover", "verify", "semantic"):
+        for phase in ("seed", "advance", "block", "recover", "verify", "semantic-commit", "semantic-verify"):
             a_generation, b_generation = GENERATIONS[phase]
             for family in FAMILIES:
                 for slot, generation in (("a", a_generation), ("b", b_generation)):
@@ -297,7 +304,7 @@ def selftest() -> None:
                         path.unlink(missing_ok=True)
                     else:
                         path.write_bytes(fake_record(family, generation))
-            if phase == "semantic":
+            if phase in ("semantic-commit", "semantic-verify"):
                 (base / "stage132-level-a.rkl").write_bytes(fake_semantic_record(10))
                 (base / "stage132-level-b.rkl").write_bytes(fake_semantic_record(11))
             else:
@@ -339,7 +346,7 @@ def main() -> None:
         # SDMC bytes before visual assertions. If production logic fails, the
         # guest writes semantic-fail-N and the auditor reports the exact step
         # instead of masking it behind a secondary screenshot-color failure.
-        if phase == "semantic":
+        if phase in ("semantic-commit", "semantic-verify"):
             try:
                 verify_files(Path(root), phase)
             except AssertionError as exc:
@@ -359,7 +366,7 @@ def main() -> None:
     else:
         raise SystemExit(
             "Usage: check_production_pair_guest.py --selftest | "
-            "seed|advance|block|recover|verify|semantic BEFORE AFTER DATA_ROOT"
+            "seed|advance|block|recover|verify|semantic-commit|semantic-verify BEFORE AFTER DATA_ROOT"
         )
 
 

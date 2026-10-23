@@ -84,7 +84,7 @@ jobs:
           if [ -z "$bin" ]; then bin="$(find /tmp/nexium -type f -executable -name 'nexium' -print -quit)"; fi
           test -n "$bin"
           echo "NEXIUM_BIN=$bin" >> "$GITHUB_ENV"
-      - name: Six independent guest starts exercise production save-pair writes and Stage132 semantic rejection
+      - name: Seven independent guest starts verify production save-pair writes and Stage132 semantic rejection after cold restart
         run: |
           set -euo pipefail
           icd="$(find /usr/share/vulkan/icd.d -maxdepth 1 -name 'lvp_icd*.json' -print -quit)"
@@ -96,7 +96,7 @@ jobs:
           mkdir -p "$NEXIUM_DATA_ROOT/sdmc" /tmp/rikitu-xdg-runtime
           chmod 700 /tmp/rikitu-xdg-runtime
           export XDG_RUNTIME_DIR=/tmp/rikitu-xdg-runtime
-          for phase in seed advance block recover verify semantic; do
+          for phase in seed advance block recover verify semantic-commit semantic-verify; do
             export RIKITU_QA_PHASE="$phase"
             export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage131-$phase"
             bash tests/run_nexium_retry_display.sh
