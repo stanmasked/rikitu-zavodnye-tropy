@@ -25,6 +25,10 @@ static const char *const paths[3][2]={
   {"sdmc:/switch/RIKITU/stage131-level-a.rkl",
    "sdmc:/switch/RIKITU/stage131-level-b.rkl"}
 };
+static const char *const semantic_paths[2]={
+  "sdmc:/switch/RIKITU/stage132-level-a.rkl",
+  "sdmc:/switch/RIKITU/stage132-level-b.rkl"
+};
 static const char *const holds[3]={
   "sdmc:/switch/RIKITU/stage131-map-a.hold",
   "sdmc:/switch/RIKITU/stage131-campaign-a.hold",
@@ -98,7 +102,10 @@ static int all_absent(void){
      !absent("sdmc:/switch/RIKITU/nested/stage131-escape.rks.pending")||
      !absent(wrong_ext_a)||!absent(wrong_ext_b)||
      !absent("sdmc:/switch/RIKITU/stage131-map-mislabel-a.rkc.pending")||
-     !absent("sdmc:/switch/RIKITU/stage131-map-mislabel-b.rkc.pending"))return 0;
+     !absent("sdmc:/switch/RIKITU/stage131-map-mislabel-b.rkc.pending")||
+     !absent(semantic_paths[0])||!absent(semantic_paths[1])||
+     !absent("sdmc:/switch/RIKITU/stage132-level-a.rkl.pending")||
+     !absent("sdmc:/switch/RIKITU/stage132-level-b.rkl.pending"))return 0;
   for(f=MAP;f<=LEVEL;f++){
     if(!absent(holds[f]))return 0;
     for(b=0;b<2;b++){
@@ -381,6 +388,81 @@ static int recover_pairs(void){
 static int verify_pairs(void){
   return a3_b2_state()&&latest_is_progress(1)&&write_marker("verified");
 }
+static uint32_t record_crc32(const uint8_t *p,size_t n){
+  uint32_t value=0xffffffffu;
+  size_t i;unsigned bit;
+  for(i=0;i<n;i++){
+    value^=p[i];
+    for(bit=0;bit<8;bit++)
+      value=(value>>1)^((value&1u)?0xedb88320u:0u);
+  }
+  return ~value;
+}
+static void put32le(uint8_t *p,uint32_t value){
+  unsigned i;
+  for(i=0;i<4;i++)p[i]=(uint8_t)(value>>(8u*i));
+}
+static int write_exact_record(const char *path,const uint8_t *data,size_t n){
+  FILE *f=fopen(path,"wb");
+  int ok;
+  if(!f)return 0;
+  ok=fwrite(data,1,n,f)==n&&fflush(f)==0;
+  if(fclose(f)!=0)ok=0;
+  return ok;
+}
+/* Stage132 guest proof: same campaign identity, but a CRC-valid RKL3
+ * record with impossible non-boss HP and generation 500 must not outrank
+ * the last fully decodable generation-10 checkpoint. */
+static int semantic_invalid_generation(void){
+  RikituCampaign campaign;
+  RikituScene scene,probe,loaded;
+  RikituLoop loop,probe_loop,loaded_loop;
+  uint8_t good[RIKITU_LEVEL_SAVE_BYTES];
+  uint8_t invalid[RIKITU_LEVEL_SAVE_BYTES];
+  uint8_t observed[RIKITU_LEVEL_SAVE_BYTES];
+  uint32_t generation=0;
+  char pending[128];
+  if(!rikitu_campaign_init(&campaign,1))return 0;
+  campaign.wallet=120;
+  seed_flower(&scene,&loop);
+  scene.active_checkpoint=scene.checkpoints[0];
+  scene.reached_checkpoints=1;
+  scene.hearts=3;
+  loop.active_seconds=20.0f;
+  if(!rikitu_level_save_encode(good,&scene,&loop,&campaign,10))return 0;
+  if(!write_exact_record(semantic_paths[0],good,sizeof(good)))return 0;
+  memcpy(invalid,good,sizeof(invalid));
+  invalid[9]=1;
+  put32le(invalid+32,500);
+  put32le(invalid+60,record_crc32(invalid,60));
+  if(!rikitu_level_save_inspect(invalid,sizeof(invalid),&generation)||
+     generation!=500)return 0;
+  seed_flower(&probe,&probe_loop);
+  if(rikitu_level_save_decode(&probe,&probe_loop,&campaign,invalid,
+                              sizeof(invalid),NULL))return 0;
+  if(!write_exact_record(semantic_paths[1],invalid,sizeof(invalid)))return 0;
+  progress_level(&scene,&loop,0);
+  if(!rikitu_level_save_store_pair(semantic_paths[0],semantic_paths[1],
+                                   &scene,&loop,&campaign))return 0;
+  if(!bytes_equal(semantic_paths[0],good,sizeof(good)))return 0;
+  if(!read_exact(semantic_paths[1],observed,sizeof(observed))||
+     !rikitu_level_save_inspect(observed,sizeof(observed),&generation)||
+     generation!=11)return 0;
+  seed_flower(&loaded,&loaded_loop);
+  if(!rikitu_level_save_load_pair(semantic_paths[0],semantic_paths[1],
+                                  &loaded,&loaded_loop,&campaign)||
+     loaded.reached_checkpoints!=1||loaded.hearts!=2||
+     loaded.stage.coin_count!=1||loaded.stage.coins[0]!=1)return 0;
+  seed_flower(&probe,&probe_loop);
+  if(!rikitu_level_save_decode(&probe,&probe_loop,&campaign,observed,
+                               sizeof(observed),&generation)||
+     generation!=11)return 0;
+  if(snprintf(pending,sizeof(pending),"%s.pending",semantic_paths[0])<0||
+     !absent(pending)||
+     snprintf(pending,sizeof(pending),"%s.pending",semantic_paths[1])<0||
+     !absent(pending))return 0;
+  return write_marker("semantic-verified");
+}
 static void draw_checks(uint32_t *pixels,int stride,unsigned bits,int phase){
   int i,x,y;
   for(i=0;i<4;i++){
@@ -433,6 +515,10 @@ int main(void){
                a3_b2_state()){
         phase=5;mask|=4u;
         ok=reject_traversal_path()&&verify_pairs();
+      }else if(read_marker(state)&&strcmp(state,"verified")==0&&
+               a3_b2_state()&&latest_is_progress(1)){
+        phase=6;mask|=4u;
+        ok=semantic_invalid_generation();
       }
       if(ok)mask|=8u;
     }

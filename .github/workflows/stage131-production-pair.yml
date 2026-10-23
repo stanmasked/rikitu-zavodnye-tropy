@@ -1,4 +1,4 @@
-name: RIKITU Stage131 production save-pair transaction guest
+name: RIKITU Stage131/132 production save-pair guest proof
 on:
   pull_request:
     paths:
@@ -84,7 +84,7 @@ jobs:
           if [ -z "$bin" ]; then bin="$(find /tmp/nexium -type f -executable -name 'nexium' -print -quit)"; fi
           test -n "$bin"
           echo "NEXIUM_BIN=$bin" >> "$GITHUB_ENV"
-      - name: Five independent guest starts exercise production save-pair writes
+      - name: Six independent guest starts exercise production save-pair writes and Stage132 semantic rejection
         run: |
           set -euo pipefail
           icd="$(find /usr/share/vulkan/icd.d -maxdepth 1 -name 'lvp_icd*.json' -print -quit)"
@@ -96,7 +96,7 @@ jobs:
           mkdir -p "$NEXIUM_DATA_ROOT/sdmc" /tmp/rikitu-xdg-runtime
           chmod 700 /tmp/rikitu-xdg-runtime
           export XDG_RUNTIME_DIR=/tmp/rikitu-xdg-runtime
-          for phase in seed advance block recover verify; do
+          for phase in seed advance block recover verify semantic; do
             export RIKITU_QA_PHASE="$phase"
             export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage131-$phase"
             bash tests/run_nexium_retry_display.sh
@@ -105,6 +105,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: stage131-production-pair-evidence
+          name: stage131-132-production-pair-evidence
           path: evidence/
           if-no-files-found: warn

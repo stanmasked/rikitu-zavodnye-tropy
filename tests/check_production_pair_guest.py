@@ -25,6 +25,7 @@ PHASE_MARKER = {
     "block": "ready-to-recover",
     "recover": "ready-to-verify",
     "verify": "verified",
+    "semantic": "semantic-verified",
 }
 GENERATIONS = {
     "seed": (1, None),
@@ -32,6 +33,7 @@ GENERATIONS = {
     "block": (1, 2),
     "recover": (3, 2),
     "verify": (3, 2),
+    "semantic": (3, 2),
 }
 
 
@@ -69,6 +71,55 @@ def check_record(data: bytes, family: str, generation: int) -> None:
             raise AssertionError(f"RKL3 coin bit inconsistent with generation {generation}")
 
 
+def fake_semantic_record(generation: int) -> bytes:
+    data = bytearray(64)
+    data[:4] = b"RKL3"
+    data[4] = 3
+    data[5] = 1
+    data[6] = 1
+    data[7] = 3 if generation == 10 else 2
+    data[8] = 3
+    data[9] = 0
+    data[12] = 1 if generation == 11 else 0
+    data[28:32] = (20000).to_bytes(4, "little")
+    data[32:36] = generation.to_bytes(4, "little")
+    data[36:40] = (120).to_bytes(4, "little")
+    data[-4:] = (zlib.crc32(data[:-4]) & 0xFFFFFFFF).to_bytes(4, "little")
+    return bytes(data)
+
+
+def check_semantic_record(data: bytes, generation: int) -> None:
+    if len(data) != 64 or data[:5] != b"RKL3\\x03":
+        raise AssertionError("Stage132: invalid RKL3 size/magic/version")
+    actual = int.from_bytes(data[32:36], "little")
+    if actual != generation:
+        raise AssertionError(f"Stage132: generation {actual} != {generation}")
+    expected_hearts = 3 if generation == 10 else 2
+    expected_coin = generation == 11
+    if (data[5] != 1 or data[6] != 1 or data[7] != expected_hearts or
+            data[8] != 3 or data[9] != 0 or data[10] != 0 or
+            data[11] != 0 or bool(data[12] & 1) != expected_coin or
+            any(data[13:24]) or int.from_bytes(data[24:28], "little") != 0 or
+            int.from_bytes(data[28:32], "little") != 20000 or
+            int.from_bytes(data[36:40], "little") != 120 or
+            data[40] != 0 or data[41] != 0 or any(data[42:60]) or
+            int.from_bytes(data[60:64], "little") !=
+            (zlib.crc32(data[:60]) & 0xFFFFFFFF)):
+        raise AssertionError(f"Stage132: generation {generation} semantic record mismatch")
+
+
+def verify_semantic_files(base: Path) -> None:
+    for slot, generation in (("a", 10), ("b", 11)):
+        path = base / f"stage132-level-{slot}.rkl"
+        if path.is_symlink() or not path.is_file():
+            raise AssertionError(f"Stage132: missing/non-regular {path.name}")
+        check_semantic_record(path.read_bytes(), generation)
+        pending = base / f"{path.name}.pending"
+        if pending.exists() or pending.is_symlink():
+            raise AssertionError(f"Stage132: stale pending file {pending.name}")
+        print(f"PASS Stage132 semantic guest slot {slot.upper()}: gen={generation}")
+
+
 def verify_files(root: Path, phase: str) -> None:
     base = root / "sdmc" / "switch" / "RIKITU"
     marker = base / "stage131-phase.txt"
@@ -96,6 +147,20 @@ def verify_files(root: Path, phase: str) -> None:
             raise AssertionError(
                 f"{phase}: wrong-extension attempt left sidecar {pending.name}"
             )
+    semantic_paths = (
+        base / "stage132-level-a.rkl",
+        base / "stage132-level-b.rkl",
+    )
+    if phase == "semantic":
+        verify_semantic_files(base)
+    else:
+        for path in semantic_paths:
+            if path.exists() or path.is_symlink():
+                raise AssertionError(f"{phase}: unexpected Stage132 slot {path.name}")
+            pending = base / f"{path.name}.pending"
+            if pending.exists() or pending.is_symlink():
+                raise AssertionError(f"{phase}: unexpected Stage132 pending {pending.name}")
+
     a_generation, b_generation = GENERATIONS[phase]
     hashes: dict[str, str] = {}
     for family in FAMILIES:
@@ -165,6 +230,11 @@ def verify_files(root: Path, phase: str) -> None:
         if not previous or hashes != previous:
             raise AssertionError("verify: cold-start verification changed committed bytes")
         manifest["verify"] = hashes
+    elif phase == "semantic":
+        previous = manifest.get("verify")
+        if not previous or hashes != previous:
+            raise AssertionError("semantic: Stage132 test changed Stage131 live slot bytes")
+        manifest["semantic"] = hashes
 
     manifest_path.write_text(
         json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
@@ -218,7 +288,7 @@ def selftest() -> None:
         root = Path(temp)
         base = root / "sdmc" / "switch" / "RIKITU"
         base.mkdir(parents=True)
-        for phase in ("seed", "advance", "block", "recover", "verify"):
+        for phase in ("seed", "advance", "block", "recover", "verify", "semantic"):
             a_generation, b_generation = GENERATIONS[phase]
             for family in FAMILIES:
                 for slot, generation in (("a", a_generation), ("b", b_generation)):
@@ -227,6 +297,12 @@ def selftest() -> None:
                         path.unlink(missing_ok=True)
                     else:
                         path.write_bytes(fake_record(family, generation))
+            if phase == "semantic":
+                (base / "stage132-level-a.rkl").write_bytes(fake_semantic_record(10))
+                (base / "stage132-level-b.rkl").write_bytes(fake_semantic_record(11))
+            else:
+                (base / "stage132-level-a.rkl").unlink(missing_ok=True)
+                (base / "stage132-level-b.rkl").unlink(missing_ok=True)
             (base / "stage131-phase.txt").write_text(PHASE_MARKER[phase])
             verify_files(root, phase)
             if phase == "advance":
@@ -250,7 +326,7 @@ def selftest() -> None:
                 path.write_bytes(fake_record("map", 2))
                 (base / "stage131-phase.txt").write_text(PHASE_MARKER["advance"])
                 print("PASS Stage131 checker selftest: rejects CRC-valid slot mutation")
-        print("PASS Stage131 checker selftest: five phases, all three formats, adversarial hash check")
+        print("PASS Stage131/132 checker selftest: six phases, all three formats, semantic RKL3 and adversarial hash check")
 
 
 def main() -> None:
@@ -265,7 +341,7 @@ def main() -> None:
     else:
         raise SystemExit(
             "Usage: check_production_pair_guest.py --selftest | "
-            "seed|advance|block|recover|verify BEFORE AFTER DATA_ROOT"
+            "seed|advance|block|recover|verify|semantic BEFORE AFTER DATA_ROOT"
         )
 
 
