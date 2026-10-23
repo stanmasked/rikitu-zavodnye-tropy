@@ -1,0 +1,23 @@
+name: RIKITU Stage146 SVG source integrity (synthetic only)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage146-svg-source-audit.yml'
+      - 'tools/audit_svg_source.py'
+      - 'tests/test_svg_source_audit.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage146-svg-source-audit.yml'
+      - 'tools/audit_svg_source.py'
+      - 'tests/test_svg_source_audit.py'
+permissions:
+  contents: read
+jobs:
+  synthetic-svg-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Audit SVG source logic against synthetic test fixtures
+        run: python3 -m unittest discover -s tests -p test_svg_source_audit.py -v
