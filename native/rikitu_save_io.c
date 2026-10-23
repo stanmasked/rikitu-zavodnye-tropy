@@ -67,7 +67,7 @@ int rikitu_save_store_pair(const char *a,const char *b,
   if(!save_path(a)||!save_path(b)||!s||!l||strcmp(a,b)==0)return 0;
   context.scene=s;
   context.loop=l;
-  return rikitu_staged_pair_commit(a,b,RIKITU_SAVE_BYTES,
+  return rikitu_staged_pair_commit_checked(a,b,RIKITU_SAVE_BYTES,
                                    staged_save_validate,staged_save_encode,
                                    &context,NULL);
 }

@@ -61,7 +61,7 @@ int rikitu_campaign_save_store_pair(
     const char *a,const char *b,const RikituCampaign *campaign){
   if(!campaign_path(a)||!campaign_path(b)||!campaign||strcmp(a,b)==0||
      !rikitu_campaign_valid(campaign))return 0;
-  return rikitu_staged_pair_commit(a,b,RIKITU_CAMPAIGN_SAVE_BYTES,
+  return rikitu_staged_pair_commit_checked(a,b,RIKITU_CAMPAIGN_SAVE_BYTES,
                                    staged_campaign_validate,
                                    staged_campaign_encode,
                                    (void*)campaign,NULL);

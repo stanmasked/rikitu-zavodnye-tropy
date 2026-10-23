@@ -306,9 +306,34 @@ static void run_ambiguity_case(int family,int reversed,int scenario){
     assert_bytes(b,two,n);
   }
   no_pending(a,b);
-  clean_path(a);clean_path(b);
   printf("PASS Stage115 family=%d reversed=%d ambiguity=%d\n",
          family,reversed,scenario);
+
+  /* Exercise the production-safe entry point without an expected generation:
+   * ambiguity must still fail closed, while byte-identical duplicates remain
+   * recoverable. Restore the original pair after the guarded API test above. */
+  write_bytes(a,one,n);write_bytes(b,two,n);
+  ctx.phase=2;
+  called=ctx.encode_calls;
+  reported=0xf00df00du;
+  if(scenario==DUPLICATE){
+    assert(rikitu_staged_pair_commit_checked(
+      first,second,n,record_validate,record_encode,&ctx,&reported));
+    assert(reported==9u&&ctx.encode_calls==called+1);
+    assert_bytes(first,one,n);
+    assert_bytes(second,successor,n);
+    check_loader(&ctx,a,b,2);
+  }else{
+    assert(!rikitu_staged_pair_commit_checked(
+      first,second,n,record_validate,record_encode,&ctx,&reported));
+    assert(reported==0xf00df00du&&ctx.encode_calls==called);
+    assert_bytes(a,one,n);
+    assert_bytes(b,two,n);
+  }
+  no_pending(a,b);
+  printf("PASS Stage139 family=%d reversed=%d ambiguity=%d\n",
+         family,reversed,scenario);
+  clean_path(a);clean_path(b);
 }
 /* Stage116: deny live slot symlinks, directories, and FIFOs, instead of
  * silently classifying read/path errors as an absent or corrupt backup.
@@ -901,6 +926,7 @@ int main(void){
       for(s=SPLIT;s<=DUPLICATE;s++)
         run_ambiguity_case(f,b,s);
   puts("PASS Stage115 18 ambiguous-generation fail-closed/duplicate cases");
+  puts("PASS Stage139 18 production-checked ambiguity cases");
   for(f=MAP;f<=LEVEL;f++)
     for(b=0;b<2;b++)
       for(s=SLOT_LINK;s<=SLOT_FIFO;s++)
