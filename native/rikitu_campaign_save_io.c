@@ -38,6 +38,10 @@ int rikitu_campaign_save_load_pair(
   vx=rx==RIKITU_SLOT_READ_OK&&check(x,&gx);
   vy=ry==RIKITU_SLOT_READ_OK&&check(y,&gy);
   if(!vx&&!vy)return 0;
+  /* Fail closed on split-brain equal generations and unordered half-range
+   * serials; do not mutate the caller's campaign on ambiguous input. */
+  if(vx&&vy&&((gx==gy&&memcmp(x,y,sizeof(x))!=0)||
+               (uint32_t)(gx-gy)==0x80000000u))return 0;
   if(vy&&(!vx||newer(gy,gx)))
     return rikitu_campaign_save_decode(
         campaign,y,RIKITU_CAMPAIGN_SAVE_BYTES,NULL);

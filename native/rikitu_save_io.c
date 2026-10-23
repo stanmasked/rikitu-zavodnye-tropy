@@ -36,6 +36,10 @@ int rikitu_save_load_pair(const char *a,const char *b,
   vx=rx==RIKITU_SLOT_READ_OK&&valid(x,&gx);
   vy=ry==RIKITU_SLOT_READ_OK&&valid(y,&gy);
   if(!vx&&!vy)return 0;
+  /* Divergent equal-generation records and half-range serials have no safe
+   * automatic winner. Return before decoding into caller-owned outputs. */
+  if(vx&&vy&&((gx==gy&&memcmp(x,y,sizeof(x))!=0)||
+               (uint32_t)(gx-gy)==0x80000000u))return 0;
   if(vy&&(!vx||newer(gy,gx)))
     return rikitu_save_decode(s,l,y,sizeof(y),NULL);
   return rikitu_save_decode(s,l,x,sizeof(x),NULL);
