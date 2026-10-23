@@ -1,0 +1,39 @@
+name: RIKITU Stage150 MAP01 five-camera synthetic composite
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage150-map01-five-cameras.yml'
+      - 'native/test_map01_background_composite.c'
+      - 'native/rikitu_draw.*'
+      - 'native/rikitu_flower.*'
+      - 'native/rikitu_parallax.*'
+      - 'native/rikitu_background_blit.*'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage150-map01-five-cameras.yml'
+      - 'native/test_map01_background_composite.c'
+      - 'native/rikitu_draw.*'
+      - 'native/rikitu_flower.*'
+      - 'native/rikitu_parallax.*'
+      - 'native/rikitu_background_blit.*'
+permissions:
+  contents: read
+jobs:
+  map01-five-cameras:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: GCC real MAP01 layout with synthetic background, five cameras
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_draw.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_parallax.c native/rikitu_background_blit.c native/test_map01_background_composite.c -lm -o /tmp/rikitu-map01-synthetic-gcc
+          /tmp/rikitu-map01-synthetic-gcc
+      - name: Clang real MAP01 layout with synthetic background, five cameras
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_draw.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_parallax.c native/rikitu_background_blit.c native/test_map01_background_composite.c -lm -o /tmp/rikitu-map01-synthetic-clang
+          /tmp/rikitu-map01-synthetic-clang
+      - name: Clang ASan and UBSan on five-camera synthetic render
+        run: |
+          clang -std=c99 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_draw.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_parallax.c native/rikitu_background_blit.c native/test_map01_background_composite.c -lm -o /tmp/rikitu-map01-synthetic-asan
+          /tmp/rikitu-map01-synthetic-asan
