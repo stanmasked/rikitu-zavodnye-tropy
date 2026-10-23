@@ -15,7 +15,9 @@ typedef struct RikituBackgroundImage {
 } RikituBackgroundImage;
 
 /* Copy the camera-selected, unscaled source slice to a framebuffer.
- * Contract: source/destination buffers must not overlap; the caller draws
+ * Contract: source/destination buffers must not overlap (including different
+ * pointers into the same allocation); the blit rejects overlapping spans.
+ * The caller draws
  * foreground/gameplay/HUD afterwards. Source height equals viewport height.
  * For invalid arguments return 0 without changing destination/out_crop_x.
  * This is NOT wired into the game renderer until art is approved.
