@@ -422,6 +422,17 @@ static int semantic_fail(unsigned step){
   (void)write_marker(state);
   return 0;
 }
+static int semantic_fail_generation(uint32_t decoded,const uint8_t *record){
+  uint32_t raw;
+  char state[64];
+  if(!record)return semantic_fail(94);
+  raw=(uint32_t)record[32]|((uint32_t)record[33]<<8)|
+      ((uint32_t)record[34]<<16)|((uint32_t)record[35]<<24);
+  (void)snprintf(state,sizeof(state),"semantic-fail-93-d%u-r%u",
+                 (unsigned)decoded,(unsigned)raw);
+  (void)write_marker(state);
+  return 0;
+}
 /* Stage132 guest proof: same campaign identity, but a CRC-valid RKL3
  * record with impossible non-boss HP and generation 500 must not outrank
  * the last fully decodable generation-10 checkpoint. */
@@ -467,7 +478,7 @@ static int semantic_invalid_generation(void){
   generation=0;
   if(!rikitu_level_save_inspect(observed,sizeof(observed),&generation))
     return semantic_fail(92);
-  if(generation!=11)return semantic_fail(93);
+  if(generation!=11)return semantic_fail_generation(generation,observed);
   seed_flower(&loaded,&loaded_loop);
   if(!rikitu_level_save_load_pair(semantic_paths[0],semantic_paths[1],
                                   &loaded,&loaded_loop,&campaign)||
