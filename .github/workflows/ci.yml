@@ -44,13 +44,8 @@ jobs:
       - run: python tests/test-finale.py
       - run: python tests/test-real-controls.py
       - run: python tests/test-export-results.py
-      - name: Save real-control frames for visual QA
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: rikitu-real-controls-frames
-          path: artifacts/real-controls/*.png
-          if-no-files-found: warn
+      # Real-control PNGs are temporary runner outputs. Do not publish raw frames
+      # as public GitHub artifacts; durable evidence belongs in the private Drive archive.
       - name: Native C99 rules (GCC)
         run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/test_rules.c -o /tmp/rikitu-gcc && /tmp/rikitu-gcc
       - name: Native C99 rules (Clang)
@@ -236,3 +231,7 @@ jobs:
 
       - name: Clang Stage140 production save wrappers reject ambiguous pairs
         run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_flower.c native/rikitu_bridge.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_save.c native/rikitu_save_io.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_production_pair_ambiguity.c -lm -o /tmp/rikitu-stage140-clang && timeout 45s /tmp/rikitu-stage140-clang
+      - name: GCC Stage143 CRC-valid semantic corruption falls back across RKS1/RKC2/RKL3
+        run: gcc -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_flower.c native/rikitu_bridge.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_save.c native/rikitu_save_io.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_production_pair_semantic_fallback.c -lm -o /tmp/rikitu-stage143-gcc && timeout 45s /tmp/rikitu-stage143-gcc
+      - name: Clang Stage143 CRC-valid semantic corruption falls back across RKS1/RKC2/RKL3
+        run: clang -std=c99 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_stage.c native/rikitu_flower.c native/rikitu_bridge.c native/rikitu_campaign.c native/rikitu_campaign_save.c native/rikitu_campaign_save_io.c native/rikitu_level_save.c native/rikitu_level_save_io.c native/rikitu_save.c native/rikitu_save_io.c native/rikitu_staged_slot.c native/rikitu_staged_pair.c native/test_production_pair_semantic_fallback.c -lm -o /tmp/rikitu-stage143-clang && timeout 45s /tmp/rikitu-stage143-clang
