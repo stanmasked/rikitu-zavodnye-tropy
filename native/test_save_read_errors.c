@@ -11,6 +11,9 @@
 #include "rikitu_bridge.h"
 #include <assert.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdarg.h>
+#include <sys/types.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -24,11 +27,29 @@
 static const char *denied_path;
 static int deny_read;
 extern FILE *__real_fopen(const char *,const char *);
+extern int __real_open(const char *,int,...);
 FILE *__wrap_fopen(const char *path,const char *mode){
   if(deny_read&&path&&mode&&strcmp(path,denied_path)==0&&strcmp(mode,"rb")==0){
     errno=EACCES;return NULL;
   }
   return __real_fopen(path,mode);
+}
+int __wrap_open(const char *path,int flags,...){
+  mode_t mode=0;
+  int has_mode=(flags&O_CREAT)!=0;
+  if(has_mode){
+    va_list args;
+    va_start(args,flags);
+    mode=(mode_t)va_arg(args,int);
+    va_end(args);
+  }
+  if(deny_read&&path&&strcmp(path,denied_path)==0&&
+     (flags&O_ACCMODE)==O_RDONLY){
+    errno=EACCES;
+    return -1;
+  }
+  if(has_mode)return __real_open(path,flags,mode);
+  return __real_open(path,flags);
 }
 static void read_exact(const char *path,uint8_t *out,size_t n){
   FILE *f=__real_fopen(path,"rb");assert(f);
@@ -72,6 +93,13 @@ static void test_map(int block_b){
   verify_pair(MAP_A,MAP_B,sizeof(old_a),old_a,old_b);
   assert(rikitu_save_load_pair(MAP_A,MAP_B,&loaded,&loaded_loop));
   assert(loaded.reached_checkpoints==1&&loaded.hearts==2);
+  /* One valid RKS1 file is not a two-slot recovery pair. */
+  loaded.hearts=1;loaded.reached_checkpoints=2;loaded_loop.active_seconds=777.0f;
+  before=loaded;before_loop=loaded_loop;
+  assert(!rikitu_save_load_pair(MAP_A,MAP_A,&loaded,&loaded_loop));
+  assert(loaded.hearts==before.hearts&&
+         loaded.reached_checkpoints==before.reached_checkpoints&&
+         loaded_loop.active_seconds==before_loop.active_seconds);
   (void)remove(MAP_A);(void)remove(MAP_B);
 }
 static void test_campaign(int block_b){
@@ -92,6 +120,11 @@ static void test_campaign(int block_b){
   verify_pair(CAM_A,CAM_B,sizeof(old_a),old_a,old_b);
   assert(rikitu_campaign_save_load_pair(CAM_A,CAM_B,&loaded));
   assert(loaded.wallet==158&&loaded.level==4);
+  /* Reject duplicate RKC2 slot paths without mutating the campaign. */
+  loaded.wallet=999;before=loaded;
+  assert(!rikitu_campaign_save_load_pair(CAM_A,CAM_A,&loaded));
+  assert(loaded.wallet==before.wallet&&loaded.level==before.level&&
+         loaded.mode==before.mode);
   (void)remove(CAM_A);(void)remove(CAM_B);
 }
 static void test_level(int block_b){
@@ -117,6 +150,13 @@ static void test_level(int block_b){
   assert(rikitu_level_save_load_pair(LVL_A,LVL_B,&loaded,&loaded_loop,&c));
   assert(loaded.reached_checkpoints==1&&loaded.hearts==2);
   assert(loaded.stage.coin_count==1&&loaded.stage.coins[0]==1);
+  /* Reject duplicate RKL3 slot paths without mutating scene/loop state. */
+  loaded.hearts=1;loaded.reached_checkpoints=2;loaded_loop.active_seconds=777.0f;
+  before=loaded;before_loop=loaded_loop;
+  assert(!rikitu_level_save_load_pair(LVL_A,LVL_A,&loaded,&loaded_loop,&c));
+  assert(loaded.hearts==before.hearts&&
+         loaded.reached_checkpoints==before.reached_checkpoints&&
+         loaded_loop.active_seconds==before_loop.active_seconds);
   (void)remove(LVL_A);(void)remove(LVL_B);
 }
 int main(void){

@@ -30,6 +30,15 @@ int main(void){
   assert(!rikitu_level_save_load_pair(A,B,&s,&loop,&c));
   assert(!rikitu_level_save_store_pair(A,A,&s,&loop,&c));
   assert(rikitu_level_save_store_pair(A,B,&s,&loop,&c));
+  /* A single valid RKL3 file cannot stand in for both recovery slots. */
+  reset(&fresh,&restored);
+  fresh.hearts=1;
+  fresh.reached_checkpoints=2;
+  restored.active_seconds=777.0f;
+  restored.player.x=123.0f;
+  assert(!rikitu_level_save_load_pair(A,A,&fresh,&restored,&c));
+  assert(fresh.hearts==1 && fresh.reached_checkpoints==2 &&
+         restored.active_seconds==777.0f && restored.player.x==123.0f);
   s.hearts=2;
   s.stage.coins[0]=1;s.stage.coin_count=1;
   s.active_checkpoint=s.checkpoints[0];s.reached_checkpoints=1;

@@ -3,7 +3,7 @@ set -euo pipefail
 test -n "$NEXIUM_BIN" || { echo "Missing emulator binary"; exit 2; }
 test -n "$NRO_PATH" || { echo "Missing NRO path"; exit 2; }
 test -n "$OUTPUT_DIR" || { echo "Missing evidence path"; exit 2; }
-if [[ "${RIKITU_QA_MODE:-0}" == "3" || "${RIKITU_QA_MODE:-0}" == "4" || "${RIKITU_QA_MODE:-0}" == "5" || "${RIKITU_QA_MODE:-0}" == "6" || "${RIKITU_QA_MODE:-0}" == "7" ]]; then
+if [[ "${RIKITU_QA_MODE:-0}" == "3" || "${RIKITU_QA_MODE:-0}" == "4" || "${RIKITU_QA_MODE:-0}" == "5" || "${RIKITU_QA_MODE:-0}" == "6" || "${RIKITU_QA_MODE:-0}" == "7" || "${RIKITU_QA_MODE:-0}" == "8" ]]; then
   test -n "${NEXIUM_DATA_ROOT:-}" || { echo "Missing persistent NeXium SD root"; exit 2; }
   mkdir -p "$NEXIUM_DATA_ROOT/sdmc"
 fi
@@ -49,6 +49,10 @@ if [[ "${RIKITU_QA_WRAP:-0}" == "1" ]]; then
   [[ "${RIKITU_QA_MODE:-0}" == "3" || "${RIKITU_QA_MODE:-0}" == "4" ]] || exit 2
   python3 tests/check_wrap_guest_slots.py frame "${RIKITU_QA_PHASE:?phase required}" \
     "$OUTPUT_DIR/scene-before.png" "$OUTPUT_DIR/scene-after-right.png"
+elif [[ "${RIKITU_QA_MODE:-0}" == "8" ]]; then
+  python3 tests/check_production_pair_guest.py "${RIKITU_QA_PHASE:?phase required}" \
+    "$OUTPUT_DIR/scene-before.png" "$OUTPUT_DIR/scene-after-right.png" \
+    "${NEXIUM_DATA_ROOT:?root required}"
 elif [[ "${RIKITU_QA_MODE:-0}" == "7" ]]; then
   python3 tests/check_staged_faults_guest.py "${RIKITU_QA_PHASE:?phase required}" \
     "$OUTPUT_DIR/scene-before.png" "$OUTPUT_DIR/scene-after-right.png" \

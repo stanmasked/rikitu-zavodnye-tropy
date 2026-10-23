@@ -2,11 +2,11 @@
  *
  * GNU/Linux host-only --wrap=fclose exercises REAL production pair writers.
  * Both paths return EOF/EIO to caller after the underlying close succeeds:
- *  (a) torn: the target is truncated before close (invalid candidate);
- *  (b) complete: entire CRC-valid record survives despite reported error.
- * In (a), retry replaces torn target, preserving the sole valid backup.
- * In (b), loader accepts the complete gen2 candidate; subsequent store
- * selects the gen1 slot for gen3, retaining the valid gen2 as backup.
+ *  (a) torn: the temporary .pending record is truncated before close;
+ *  (b) complete: the temporary record has complete CRC-valid bytes.
+ * In both cases the staged writer must reject the ambiguous close,
+ * remove .pending, leave both live slots untouched and allow retry.
+ * A complete yet uncommitted temporary file is NOT a valid live gen2 slot.
  *
  * This reveals an important limit: return of EIO does not prove durable
  * storage; successful CRC readback cannot prove a real SD flush/power cut.
@@ -93,10 +93,17 @@ static void assert_same(const char *path,const uint8_t *original,size_t size){
   read_exact(path,data,size);
   assert(memcmp(data,original,size)==0);
 }
-static void assert_size(const char *path,size_t size){
+static void assert_pending_absent(const char *target){
   struct stat st;
-  assert(stat(path,&st)==0 && S_ISREG(st.st_mode));
-  assert(st.st_size==(off_t)size);
+  char pending[256];
+  int n=snprintf(pending,sizeof(pending),"%s.pending",target);
+  assert(n>0 && (size_t)n<sizeof(pending));
+  assert(lstat(pending,&st)!=0 && errno==ENOENT);
+}
+static void assert_failed_stage_clean(const char *target){
+  struct stat st;
+  assert(lstat(target,&st)!=0 && errno==ENOENT);
+  assert_pending_absent(target);
 }
 static void flower(RikituScene *s,RikituLoop *l){
   rikitu_flower_init(s);memset(l,0,sizeof(*l));l->player=s->player;
@@ -122,7 +129,7 @@ static void stage_bridge(RikituScene *s,RikituLoop *l,int stage){
 static void test_rks(CloseFault mode,int backup_b){
   RikituScene s,recovered;
   RikituLoop l,loaded;
-  uint8_t old[RIKITU_SAVE_BYTES],candidate[RIKITU_SAVE_BYTES],latest[RIKITU_SAVE_BYTES];
+  uint8_t old[RIKITU_SAVE_BYTES],latest[RIKITU_SAVE_BYTES];
   const char *backup,*target;
   uint32_t generation=0;
   reset_pair(S_A,S_B);
@@ -135,43 +142,25 @@ static void test_rks(CloseFault mode,int backup_b){
   assert(!rikitu_save_store_pair(S_A,S_B,&s,&l));
   end_fault();
   assert_same(backup,old,sizeof(old));
-  if(mode==CLOSE_TORN){
-    assert_size(target,sizeof(old)/2);
-    flower(&recovered,&loaded);
-    assert(rikitu_save_load_pair(S_A,S_B,&recovered,&loaded));
-    assert(recovered.reached_checkpoints==0 && recovered.hearts==3);
-    assert(rikitu_save_store_pair(S_A,S_B,&s,&l));
-    assert_same(backup,old,sizeof(old));
-    read_exact(target,latest,sizeof(latest));
-    assert(rikitu_save_decode(&recovered,&loaded,latest,sizeof(latest),&generation));
-    assert(generation==2);
-    flower(&recovered,&loaded);
-    assert(rikitu_save_load_pair(S_A,S_B,&recovered,&loaded));
-    assert(recovered.reached_checkpoints==1 && recovered.hearts==2);
-  }else{
-    assert_size(target,sizeof(old));
-    read_exact(target,candidate,sizeof(candidate));
-    flower(&recovered,&loaded);
-    assert(rikitu_save_load_pair(S_A,S_B,&recovered,&loaded));
-    assert(recovered.reached_checkpoints==1 && recovered.hearts==2);
-    assert(rikitu_save_decode(&recovered,&loaded,candidate,sizeof(candidate),&generation));
-    assert(generation==2);
-    stage_flower(&s,&l,2);
-    assert(rikitu_save_store_pair(S_A,S_B,&s,&l));
-    assert_same(target,candidate,sizeof(candidate)); /* gen2 remains valid */
-    read_exact(backup,latest,sizeof(latest));
-    assert(rikitu_save_decode(&recovered,&loaded,latest,sizeof(latest),&generation));
-    assert(generation==3);
-    flower(&recovered,&loaded);
-    assert(rikitu_save_load_pair(S_A,S_B,&recovered,&loaded));
-    assert(recovered.reached_checkpoints==2 && recovered.hearts==1);
-  }
+  assert_failed_stage_clean(target);
+  flower(&recovered,&loaded);
+  assert(rikitu_save_load_pair(S_A,S_B,&recovered,&loaded));
+  assert(recovered.reached_checkpoints==0 && recovered.hearts==3);
+  assert(rikitu_save_store_pair(S_A,S_B,&s,&l));
+  assert_same(backup,old,sizeof(old));
+  read_exact(target,latest,sizeof(latest));
+  assert(rikitu_save_decode(&recovered,&loaded,latest,sizeof(latest),&generation));
+  assert(generation==2);
+  assert_pending_absent(target);
+  flower(&recovered,&loaded);
+  assert(rikitu_save_load_pair(S_A,S_B,&recovered,&loaded));
+  assert(recovered.reached_checkpoints==1 && recovered.hearts==2);
   reset_pair(S_A,S_B);
 }
 static void test_rkc(CloseFault mode,int backup_b){
   RikituCampaign c,recovered;
   uint8_t old[RIKITU_CAMPAIGN_SAVE_BYTES];
-  uint8_t candidate[RIKITU_CAMPAIGN_SAVE_BYTES],latest[RIKITU_CAMPAIGN_SAVE_BYTES];
+  uint8_t latest[RIKITU_CAMPAIGN_SAVE_BYTES];
   const char *backup,*target;
   uint32_t generation=0;
   reset_pair(C_A,C_B);
@@ -185,37 +174,19 @@ static void test_rkc(CloseFault mode,int backup_b){
   assert(!rikitu_campaign_save_store_pair(C_A,C_B,&c));
   end_fault();
   assert_same(backup,old,sizeof(old));
-  if(mode==CLOSE_TORN){
-    assert_size(target,sizeof(old)/2);
-    memset(&recovered,0,sizeof(recovered));
-    assert(rikitu_campaign_save_load_pair(C_A,C_B,&recovered));
-    assert(recovered.wallet==157);
-    assert(rikitu_campaign_save_store_pair(C_A,C_B,&c));
-    assert_same(backup,old,sizeof(old));
-    read_exact(target,latest,sizeof(latest));
-    assert(rikitu_campaign_save_decode(&recovered,latest,sizeof(latest),&generation));
-    assert(generation==2);
-    memset(&recovered,0,sizeof(recovered));
-    assert(rikitu_campaign_save_load_pair(C_A,C_B,&recovered));
-    assert(recovered.wallet==158);
-  }else{
-    assert_size(target,sizeof(old));
-    read_exact(target,candidate,sizeof(candidate));
-    memset(&recovered,0,sizeof(recovered));
-    assert(rikitu_campaign_save_load_pair(C_A,C_B,&recovered));
-    assert(recovered.wallet==158);
-    assert(rikitu_campaign_save_decode(&recovered,candidate,sizeof(candidate),&generation));
-    assert(generation==2);
-    c.wallet=159;
-    assert(rikitu_campaign_save_store_pair(C_A,C_B,&c));
-    assert_same(target,candidate,sizeof(candidate));
-    read_exact(backup,latest,sizeof(latest));
-    assert(rikitu_campaign_save_decode(&recovered,latest,sizeof(latest),&generation));
-    assert(generation==3);
-    memset(&recovered,0,sizeof(recovered));
-    assert(rikitu_campaign_save_load_pair(C_A,C_B,&recovered));
-    assert(recovered.wallet==159);
-  }
+  assert_failed_stage_clean(target);
+  memset(&recovered,0,sizeof(recovered));
+  assert(rikitu_campaign_save_load_pair(C_A,C_B,&recovered));
+  assert(recovered.wallet==157 && recovered.level==4);
+  assert(rikitu_campaign_save_store_pair(C_A,C_B,&c));
+  assert_same(backup,old,sizeof(old));
+  read_exact(target,latest,sizeof(latest));
+  assert(rikitu_campaign_save_decode(&recovered,latest,sizeof(latest),&generation));
+  assert(generation==2);
+  assert_pending_absent(target);
+  memset(&recovered,0,sizeof(recovered));
+  assert(rikitu_campaign_save_load_pair(C_A,C_B,&recovered));
+  assert(recovered.wallet==158 && recovered.level==4);
   reset_pair(C_A,C_B);
 }
 static void test_rkl(CloseFault mode,int backup_b){
@@ -223,7 +194,7 @@ static void test_rkl(CloseFault mode,int backup_b){
   RikituScene s,recovered;
   RikituLoop l,loaded;
   uint8_t old[RIKITU_LEVEL_SAVE_BYTES];
-  uint8_t candidate[RIKITU_LEVEL_SAVE_BYTES],latest[RIKITU_LEVEL_SAVE_BYTES];
+  uint8_t latest[RIKITU_LEVEL_SAVE_BYTES];
   const char *backup,*target;
   uint32_t generation=0;
   reset_pair(L_A,L_B);
@@ -237,39 +208,21 @@ static void test_rkl(CloseFault mode,int backup_b){
   assert(!rikitu_level_save_store_pair(L_A,L_B,&s,&l,&c));
   end_fault();
   assert_same(backup,old,sizeof(old));
-  if(mode==CLOSE_TORN){
-    assert_size(target,sizeof(old)/2);
-    bridge(&recovered,&loaded);
-    assert(rikitu_level_save_load_pair(L_A,L_B,&recovered,&loaded,&c));
-    assert(recovered.reached_checkpoints==0 && recovered.stage.coin_count==0);
-    assert(rikitu_level_save_store_pair(L_A,L_B,&s,&l,&c));
-    assert_same(backup,old,sizeof(old));
-    read_exact(target,latest,sizeof(latest));
-    assert(rikitu_level_save_inspect(latest,sizeof(latest),&generation));
-    assert(generation==2);
-    bridge(&recovered,&loaded);
-    assert(rikitu_level_save_load_pair(L_A,L_B,&recovered,&loaded,&c));
-    assert(recovered.reached_checkpoints==1 && recovered.hearts==2);
-    assert(recovered.stage.coin_count==1 && recovered.stage.coins[0]==1);
-  }else{
-    assert_size(target,sizeof(old));
-    read_exact(target,candidate,sizeof(candidate));
-    assert(rikitu_level_save_inspect(candidate,sizeof(candidate),&generation));
-    assert(generation==2);
-    bridge(&recovered,&loaded);
-    assert(rikitu_level_save_load_pair(L_A,L_B,&recovered,&loaded,&c));
-    assert(recovered.reached_checkpoints==1 && recovered.hearts==2);
-    stage_bridge(&s,&l,2);
-    assert(rikitu_level_save_store_pair(L_A,L_B,&s,&l,&c));
-    assert_same(target,candidate,sizeof(candidate));
-    read_exact(backup,latest,sizeof(latest));
-    assert(rikitu_level_save_inspect(latest,sizeof(latest),&generation));
-    assert(generation==3);
-    bridge(&recovered,&loaded);
-    assert(rikitu_level_save_load_pair(L_A,L_B,&recovered,&loaded,&c));
-    assert(recovered.reached_checkpoints==2 && recovered.hearts==1);
-    assert(recovered.stage.coin_count==2 && recovered.stage.coins[1]==1);
-  }
+  assert_failed_stage_clean(target);
+  bridge(&recovered,&loaded);
+  assert(rikitu_level_save_load_pair(L_A,L_B,&recovered,&loaded,&c));
+  assert(recovered.reached_checkpoints==0 && recovered.stage.coin_count==0);
+  assert(recovered.hearts==3);
+  assert(rikitu_level_save_store_pair(L_A,L_B,&s,&l,&c));
+  assert_same(backup,old,sizeof(old));
+  read_exact(target,latest,sizeof(latest));
+  assert(rikitu_level_save_inspect(latest,sizeof(latest),&generation));
+  assert(generation==2);
+  assert_pending_absent(target);
+  bridge(&recovered,&loaded);
+  assert(rikitu_level_save_load_pair(L_A,L_B,&recovered,&loaded,&c));
+  assert(recovered.reached_checkpoints==1 && recovered.hearts==2);
+  assert(recovered.stage.coin_count==1 && recovered.stage.coins[0]==1);
   reset_pair(L_A,L_B);
 }
 int main(void){
@@ -284,6 +237,6 @@ int main(void){
              mode==CLOSE_TORN?"torn":"complete",backup_b?'B':'A');
     }
   }
-  puts("PASS Stage104: 12 ambiguous-close tests, real writers, CRC and retry");
+  puts("PASS Stage104: 12 ambiguous-close cases; both live slots preserved, pending cleaned, retry verified");
   return 0;
 }

@@ -1,5 +1,6 @@
 #include "rikitu_campaign_save.h"
 #include "rikitu_slot_read.h"
+#include "rikitu_staged_pair.h"
 #include <stdio.h>
 #include <string.h>
 /* Restrict this new writer to .rkc paths, guarding legacy MAP01 .rks.
@@ -43,34 +44,25 @@ int rikitu_campaign_save_load_pair(
   return rikitu_campaign_save_decode(
       campaign,x,RIKITU_CAMPAIGN_SAVE_BYTES,NULL);
 }
+static int staged_campaign_validate(const uint8_t *record,size_t size,
+                                     void *context,uint32_t *generation){
+  RikituCampaign decoded;
+  (void)context;
+  if(size!=RIKITU_CAMPAIGN_SAVE_BYTES)return 0;
+  return rikitu_campaign_save_decode(&decoded,record,size,generation);
+}
+static int staged_campaign_encode(uint8_t *record,size_t size,
+                                  uint32_t generation,void *context){
+  const RikituCampaign *campaign=(const RikituCampaign*)context;
+  if(size!=RIKITU_CAMPAIGN_SAVE_BYTES||!campaign)return 0;
+  return rikitu_campaign_save_encode(record,campaign,generation);
+}
 int rikitu_campaign_save_store_pair(
     const char *a,const char *b,const RikituCampaign *campaign){
-  uint8_t x[RIKITU_CAMPAIGN_SAVE_BYTES],y[RIKITU_CAMPAIGN_SAVE_BYTES];
-  uint8_t data[RIKITU_CAMPAIGN_SAVE_BYTES];
-  uint32_t gx=0,gy=0,gen=1;
-  int rx,ry,vx,vy;
-  const char *target;
-  FILE *f;
-  size_t n;
-  if(!campaign_path(a)||!campaign_path(b)||!campaign||
-     strcmp(a,b)==0||!rikitu_campaign_valid(campaign))return 0;
-  rx=read_slot(a,x);
-  if(rx==RIKITU_SLOT_READ_ERROR)return 0;
-  ry=read_slot(b,y);
-  if(ry==RIKITU_SLOT_READ_ERROR)return 0;
-  vx=rx==RIKITU_SLOT_READ_OK&&check(x,&gx);
-  vy=ry==RIKITU_SLOT_READ_OK&&check(y,&gy);
-  if(vx&&vy){
-    if(newer(gy,gx)){gen=gy+1;target=a;}
-    else{gen=gx+1;target=b;}
-  }else if(vx){gen=gx+1;target=b;}
-  else if(vy){gen=gy+1;target=a;}
-  else target=a;
-  if(!gen)gen=1;
-  if(!rikitu_campaign_save_encode(data,campaign,gen))return 0;
-  f=fopen(target,"wb");
-  if(!f)return 0;
-  n=fwrite(data,1,sizeof(data),f);
-  if(n!=sizeof(data)||fflush(f)!=0){(void)fclose(f);return 0;}
-  return fclose(f)==0;
+  if(!campaign_path(a)||!campaign_path(b)||!campaign||strcmp(a,b)==0||
+     !rikitu_campaign_valid(campaign))return 0;
+  return rikitu_staged_pair_commit_checked(a,b,RIKITU_CAMPAIGN_SAVE_BYTES,
+                                   staged_campaign_validate,
+                                   staged_campaign_encode,
+                                   (void*)campaign,NULL);
 }
