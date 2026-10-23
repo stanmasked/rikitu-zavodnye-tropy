@@ -247,11 +247,64 @@ static void test_rkl_duplicate(void){
   assert_no_sidecars(RKL_A,RKL_B);
   clean_pair(RKL_A,RKL_B);
 }
+static void test_rks_wrap(int reverse){
+  RikituScene old,latest,loaded;
+  RikituLoop old_loop,latest_loop,loaded_loop;
+  uint8_t a[RIKITU_SAVE_BYTES],b[RIKITU_SAVE_BYTES];
+  clean_pair(RKS_A,RKS_B);
+  make_flower(&old,&old_loop,0);make_flower(&latest,&latest_loop,1);
+  assert(rikitu_save_encode(a,&old,&old_loop,0xffffffffu));
+  assert(rikitu_save_encode(b,&latest,&latest_loop,1u));
+  if(reverse){write_exact(RKS_A,b,sizeof(b));write_exact(RKS_B,a,sizeof(a));}
+  else{write_exact(RKS_A,a,sizeof(a));write_exact(RKS_B,b,sizeof(b));}
+  make_flower(&loaded,&loaded_loop,0);
+  assert(rikitu_save_load_pair(RKS_A,RKS_B,&loaded,&loaded_loop));
+  assert(loaded.reached_checkpoints==1&&loaded.hearts==2);
+  clean_pair(RKS_A,RKS_B);
+  printf("PASS Stage142 RKS1 wrap ordering orientation=%s\n",reverse?"A-new":"B-new");
+}
+static void test_rkc_wrap(int reverse){
+  RikituCampaign old,latest,loaded;
+  uint8_t a[RIKITU_CAMPAIGN_SAVE_BYTES],b[RIKITU_CAMPAIGN_SAVE_BYTES];
+  clean_pair(RKC_A,RKC_B);
+  make_campaign(&old,157);make_campaign(&latest,159);
+  assert(rikitu_campaign_save_encode(a,&old,0xffffffffu));
+  assert(rikitu_campaign_save_encode(b,&latest,1u));
+  if(reverse){write_exact(RKC_A,b,sizeof(b));write_exact(RKC_B,a,sizeof(a));}
+  else{write_exact(RKC_A,a,sizeof(a));write_exact(RKC_B,b,sizeof(b));}
+  memset(&loaded,0,sizeof(loaded));
+  assert(rikitu_campaign_save_load_pair(RKC_A,RKC_B,&loaded));
+  assert(loaded.wallet==159);
+  clean_pair(RKC_A,RKC_B);
+  printf("PASS Stage142 RKC2 wrap ordering orientation=%s\n",reverse?"A-new":"B-new");
+}
+static void test_rkl_wrap(int reverse){
+  RikituCampaign c;
+  RikituScene old,latest,loaded;
+  RikituLoop old_loop,latest_loop,loaded_loop;
+  uint8_t a[RIKITU_LEVEL_SAVE_BYTES],b[RIKITU_LEVEL_SAVE_BYTES];
+  clean_pair(RKL_A,RKL_B);
+  make_campaign(&c,157);
+  make_bridge(&old,&old_loop,0);make_bridge(&latest,&latest_loop,1);
+  assert(rikitu_level_save_encode(a,&old,&old_loop,&c,0xffffffffu));
+  assert(rikitu_level_save_encode(b,&latest,&latest_loop,&c,1u));
+  if(reverse){write_exact(RKL_A,b,sizeof(b));write_exact(RKL_B,a,sizeof(a));}
+  else{write_exact(RKL_A,a,sizeof(a));write_exact(RKL_B,b,sizeof(b));}
+  make_bridge(&loaded,&loaded_loop,0);
+  assert(rikitu_level_save_load_pair(RKL_A,RKL_B,&loaded,&loaded_loop,&c));
+  assert(loaded.reached_checkpoints==1&&loaded.hearts==2&&
+         loaded.stage.coin_count==1);
+  clean_pair(RKL_A,RKL_B);
+  printf("PASS Stage142 RKL3 wrap ordering orientation=%s\n",reverse?"A-new":"B-new");
+}
 int main(void){
   test_rks_conflict(0);test_rks_conflict(1);
   test_rkc_conflict(0);test_rkc_conflict(1);
   test_rkl_conflict(0);test_rkl_conflict(1);
   test_rks_duplicate();test_rkc_duplicate();test_rkl_duplicate();
-  puts("PASS Stage140: all production save wrappers fail closed; identical duplicates recover");
+  test_rks_wrap(0);test_rks_wrap(1);
+  test_rkc_wrap(0);test_rkc_wrap(1);
+  test_rkl_wrap(0);test_rkl_wrap(1);
+  puts("PASS Stage140-142: production save ambiguity, duplicate recovery and wrap ordering");
   return 0;
 }
