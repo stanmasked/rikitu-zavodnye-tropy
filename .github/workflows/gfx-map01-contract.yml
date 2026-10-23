@@ -1,0 +1,36 @@
+name: RIKITU GFX-01 panorama crop contract
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/gfx-map01-contract.yml'
+      - 'docs/GRAPHICS_PIPELINE.md'
+      - 'tests/test_gfx_map01_scroll_contract.py'
+      - 'native/rikitu_flower_data.h'
+      - 'native/rikitu_parallax.*'
+      - 'native/test_parallax_map01.c'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/gfx-map01-contract.yml'
+      - 'tests/test_gfx_map01_scroll_contract.py'
+      - 'native/rikitu_flower_data.h'
+      - 'native/rikitu_parallax.*'
+      - 'native/test_parallax_map01.c'
+permissions:
+  contents: read
+jobs:
+  verify-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check synthetic panorama crop and tile strip
+        run: python3 tests/test_gfx_map01_scroll_contract.py
+      - name: GCC native 7900-to-5120 panorama crop boundary regression
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_parallax.c native/test_parallax_map01.c -lm -o /tmp/rikitu-parallax-gcc
+          /tmp/rikitu-parallax-gcc
+      - name: Clang native 7900-to-5120 panorama crop boundary regression
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_parallax.c native/test_parallax_map01.c -lm -o /tmp/rikitu-parallax-clang
+          /tmp/rikitu-parallax-clang
