@@ -92,7 +92,7 @@ int rikitu_level_save_store_pair(const char *a,const char *b,
   context.scene=scene;
   context.loop=loop;
   context.campaign=campaign;
-  return rikitu_staged_pair_commit(a,b,RIKITU_LEVEL_SAVE_BYTES,
+  return rikitu_staged_pair_commit_checked(a,b,RIKITU_LEVEL_SAVE_BYTES,
                                    staged_level_validate,
                                    staged_level_encode,&context,NULL);
 }

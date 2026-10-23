@@ -18,7 +18,22 @@ typedef int (*RikituStagedValidate)(
   const uint8_t *record,size_t size,void *context,uint32_t *generation);
 typedef int (*RikituStagedEncode)(
   uint8_t *record,size_t size,uint32_t generation,void *context);
+/* Legacy permissive API. It serializes writes but retains the historical
+ * tie-break when valid slots have an ambiguous generation relationship.
+ * Production writers should use _checked, or _if_current when they track the
+ * generation they loaded.
+ */
 int rikitu_staged_pair_commit(
+  const char *slot_a,const char *slot_b,size_t size,
+  RikituStagedValidate validate,RikituStagedEncode encode,
+  void *context,uint32_t *committed_generation);
+
+/* Production-safe variant: refuse to choose between two valid slots when
+ * they have the same generation but different bytes, or generations exactly
+ * 2^31 apart. This does not detect stale caller snapshots; use _if_current
+ * when the caller knows the generation from which its state was loaded.
+ */
+int rikitu_staged_pair_commit_checked(
   const char *slot_a,const char *slot_b,size_t size,
   RikituStagedValidate validate,RikituStagedEncode encode,
   void *context,uint32_t *committed_generation);
