@@ -3,9 +3,10 @@
  *
  * This test uses GNU/ELF --wrap=fwrite and --wrap=fflush in the host CI
  * executable ONLY. The shipping codecs/writers are linked without edits.
- * Every injected write creates a truncated target record: both the short
- * fwrite path and the fflush-error path must preserve the intact backup.
- * Then an unmodified retry must recover generation 2 and the new progress.
+ * The production staged writer now writes through a .pending file:
+ * neither a short fwrite nor a failed fflush may create/modify the live
+ * target or leave a pending sidecar. The backup remains byte-exact.
+ * Then an unmodified retry must commit generation 2 and new progress.
  *
  * A flush error is emulated AFTER a real fflush and deterministic truncation:
  * it exercises writer error handling and recovery, not the hardware timing
@@ -95,11 +96,14 @@ static void unchanged(const char *p,const uint8_t *original,size_t size){
   read_exact(p,data,size);
   assert(memcmp(data,original,size)==0);
 }
-static void assert_truncated(const char *p,size_t full_size){
+static void assert_failed_stage_clean(const char *target){
   struct stat st;
-  assert(stat(p,&st)==0);
-  assert(S_ISREG(st.st_mode));
-  assert(st.st_size==(off_t)(full_size/2));
+  char pending[256];
+  int n=snprintf(pending,sizeof(pending),"%s.pending",target);
+  assert(n>0 && (size_t)n<sizeof(pending));
+  /* No live-slot truncation and no partial .pending after a failed write. */
+  assert(lstat(target,&st)!=0 && errno==ENOENT);
+  assert(lstat(pending,&st)!=0 && errno==ENOENT);
 }
 static void flower(RikituScene *s,RikituLoop *l){
   rikitu_flower_init(s);
@@ -130,7 +134,7 @@ static void test_rks(Fault mode,int backup_b){
   assert(!rikitu_save_store_pair(S_A,S_B,&scene,&loop));
   end_fault();
   unchanged(backup,original,sizeof(original));
-  assert_truncated(target,sizeof(original));
+  assert_failed_stage_clean(target);
   flower(&restored,&loaded);
   assert(rikitu_save_load_pair(S_A,S_B,&restored,&loaded));
   assert(restored.reached_checkpoints==0 && restored.hearts==3);
@@ -162,7 +166,7 @@ static void test_rkc(Fault mode,int backup_b){
   assert(!rikitu_campaign_save_store_pair(C_A,C_B,&campaign));
   end_fault();
   unchanged(backup,original,sizeof(original));
-  assert_truncated(target,sizeof(original));
+  assert_failed_stage_clean(target);
   memset(&restored,0,sizeof(restored));
   assert(rikitu_campaign_save_load_pair(C_A,C_B,&restored));
   assert(restored.wallet==157 && restored.level==4);
@@ -201,7 +205,7 @@ static void test_rkl(Fault mode,int backup_b){
   assert(!rikitu_level_save_store_pair(L_A,L_B,&scene,&loop,&campaign));
   end_fault();
   unchanged(backup,original,sizeof(original));
-  assert_truncated(target,sizeof(original));
+  assert_failed_stage_clean(target);
   bridge(&restored,&loaded);
   assert(rikitu_level_save_load_pair(L_A,L_B,&restored,&loaded,&campaign));
   assert(restored.reached_checkpoints==0 && restored.stage.coin_count==0);
@@ -230,6 +234,6 @@ int main(void){
              backup_b?'B':'A');
     }
   }
-  puts("PASS Stage103 12 injection/recovery cases; all backups byte-identical");
+  puts("PASS Stage103 12 staged-write fault/retry cases; live slots intact, no pending sidecars");
   return 0;
 }
