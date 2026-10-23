@@ -111,8 +111,8 @@ static int switch_slot_generation(const char *path,uint8_t *buffer,size_t n,
 static int pair_commit_internal(
   const char *a,const char *b,size_t n,
   RikituStagedValidate validate,RikituStagedEncode encode,
-  void *context,int enforce_expected,uint32_t expected_generation,
-  uint32_t *committed_generation){
+  void *context,int enforce_expected,int reject_ambiguous,
+  uint32_t expected_generation,uint32_t *committed_generation){
 #if defined(__linux__)
   const char suffix[]=".pair.lock";
   const char *base;
@@ -180,7 +180,7 @@ static int pair_commit_internal(
    * serial arithmetic order generations exactly 2^31 apart. Leave
    * both slots untouched and require explicit caller reconciliation.
    * Preserve the legacy experimental unguarded API's selection. */
-  if(enforce_expected&&va&&vb&&
+  if(reject_ambiguous&&va&&vb&&
      ((ga==gb&&memcmp(x,y,n)!=0)||
       (uint32_t)(ga-gb)==0x80000000u))goto done;
   if(va&&vb){
@@ -226,7 +226,7 @@ done:
   if(va<0)goto switch_done;
   vb=switch_slot_generation(b,y,n,validate,context,&gb);
   if(vb<0)goto switch_done;
-  if(enforce_expected&&va&&vb&&
+  if(reject_ambiguous&&va&&vb&&
      ((ga==gb&&memcmp(x,y,n)!=0)||
       (uint32_t)(ga-gb)==0x80000000u))goto switch_done;
   if(va&&vb){
@@ -248,7 +248,7 @@ switch_done:
 #else
   (void)a;(void)b;(void)n;(void)validate;(void)encode;
   (void)context;(void)committed_generation;
-  (void)enforce_expected;(void)expected_generation;
+  (void)enforce_expected;(void)reject_ambiguous;(void)expected_generation;
   /* Fail closed on unverified platforms. */
   return 0;
 #endif
@@ -259,7 +259,14 @@ int rikitu_staged_pair_commit(
   RikituStagedValidate validate,RikituStagedEncode encode,
   void *context,uint32_t *committed_generation){
   return pair_commit_internal(a,b,n,validate,encode,context,
-                              0,0,committed_generation);
+                              0,0,0,committed_generation);
+}
+int rikitu_staged_pair_commit_checked(
+  const char *a,const char *b,size_t n,
+  RikituStagedValidate validate,RikituStagedEncode encode,
+  void *context,uint32_t *committed_generation){
+  return pair_commit_internal(a,b,n,validate,encode,context,
+                              0,1,0,committed_generation);
 }
 int rikitu_staged_pair_commit_if_current(
   const char *a,const char *b,size_t n,
@@ -267,5 +274,5 @@ int rikitu_staged_pair_commit_if_current(
   void *context,uint32_t expected_generation,
   uint32_t *committed_generation){
   return pair_commit_internal(a,b,n,validate,encode,context,
-                              1,expected_generation,committed_generation);
+                              1,1,expected_generation,committed_generation);
 }
