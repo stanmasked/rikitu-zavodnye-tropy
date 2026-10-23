@@ -50,6 +50,14 @@ typedef struct RikituScene {
  * Returns 1 for success, 0 for invalid arguments. No memory allocations. */
 int rikitu_draw_scene(uint32_t *pixels, int width, int height,
                       int stride_pixels, const RikituScene *scene);
+/* Optional compositing-only scene mode: caller must first fill the complete
+ * framebuffer using a validated opaque RGBA8 background blit.
+ * Retains all current gameplay/solid/HUD rendering, skips only the legacy
+ * sky and nine debug silhouettes. No asset approval or I/O implied.
+ */
+int rikitu_draw_scene_over_background(uint32_t *pixels,int width,int height,
+                                      int stride_pixels,const RikituScene *scene);
+
 /* Geometry-only chapter/shop/victory overlay, using existing debug font. */
 int rikitu_draw_campaign_overlay(uint32_t *pixels,int width,int height,
                                  int stride_pixels,const RikituCampaign *c,
