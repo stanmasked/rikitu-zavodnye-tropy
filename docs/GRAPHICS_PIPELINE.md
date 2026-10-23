@@ -88,7 +88,7 @@ For these dimensions the proportional factor is approximately `0.5800604`: left 
 
 The tile strip contract is `20 × 64 = 1280` horizontal source pixels, each tile 64 × 64. The strip is an artist reference only; it is not a new collision definition.
 
-`tests/test_gfx_map01_scroll_contract.py` checks this technical relationship without loading or publishing any private art. Passing the test does **not** prove rendering or game integration. That still requires texture support, an approved style review and real captured 1280 × 720 frame QA stored only in the verified private archive.
+`tests/test_gfx_map01_scroll_contract.py` checks the synthetic relationship, and `native/rikitu_parallax.{h,c}` provides a reusable side-effect-free crop function whose C regression `native/test_parallax_map01.c` runs under GCC and Clang. The function intentionally does not draw, read, package, or approve an art asset, and has no effect on existing MAP01 camera or gameplay. Passing the test does **not** prove rendering or game integration. That still requires texture support, an approved style review and real captured 1280 × 720 frame QA stored only in the verified private archive.
 
 ## Technical handoff conventions
 
