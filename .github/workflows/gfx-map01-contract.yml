@@ -1,0 +1,24 @@
+name: RIKITU GFX-01 panorama crop contract
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/gfx-map01-contract.yml'
+      - 'docs/GRAPHICS_PIPELINE.md'
+      - 'tests/test_gfx_map01_scroll_contract.py'
+      - 'native/rikitu_flower_data.h'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/gfx-map01-contract.yml'
+      - 'tests/test_gfx_map01_scroll_contract.py'
+      - 'native/rikitu_flower_data.h'
+permissions:
+  contents: read
+jobs:
+  verify-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check synthetic panorama crop and tile strip
+        run: python3 tests/test_gfx_map01_scroll_contract.py
