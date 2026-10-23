@@ -1,0 +1,21 @@
+name: RIKITU CI storage-policy regression
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - 'tests/test_ci_artifact_policy.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'tests/test_ci_artifact_policy.py'
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check public artifact retention and transfer paths
+        run: python3 tests/test_ci_artifact_policy.py

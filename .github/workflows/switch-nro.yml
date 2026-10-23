@@ -42,8 +42,4 @@ jobs:
           test -s switch/rikitu_native_probe.nro
           python3 tests/check_nro.py switch/rikitu_native_probe.nro
           ls -lh switch/rikitu_native_probe.nro
-      - uses: actions/upload-artifact@v4
-        with:
-          name: rikitu-first-libnx-input-probe
-          path: switch/rikitu_native_probe.nro
-          if-no-files-found: error
+      # Build is verified in place; no public NRO artifact is required.

@@ -52,6 +52,7 @@ jobs:
           name: stage131-production-pair-probe
           path: switch_graphical/rikitu_production_pair_qa_probe.nro
           if-no-files-found: error
+          retention-days: 1
   guest-proof:
     needs: build-guest
     runs-on: ubuntu-26.04
@@ -101,10 +102,4 @@ jobs:
             export OUTPUT_DIR="$GITHUB_WORKSPACE/evidence/stage131-$phase"
             bash tests/run_nexium_retry_display.sh
           done
-      - name: Upload guest screenshots and SDMC bytes
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: stage131-132-production-pair-evidence
-          path: evidence/
-          if-no-files-found: warn
+      # Stage145: runner-local raw output only; public artifact upload forbidden.

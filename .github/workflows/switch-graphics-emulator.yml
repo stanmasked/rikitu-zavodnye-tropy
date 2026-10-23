@@ -101,24 +101,28 @@ jobs:
           name: rikitu-nexium-campaign-qa-nro
           path: switch_graphical/rikitu_campaign_qa_probe.nro
           if-no-files-found: error
+          retention-days: 1
       - name: Upload dedicated SDMC save QA NRO
         uses: actions/upload-artifact@v4
         with:
           name: rikitu-nexium-save-qa-nro
           path: switch_graphical/rikitu_save_qa_probe.nro
           if-no-files-found: error
+          retention-days: 1
       - name: Upload guest combat QA NRO
         uses: actions/upload-artifact@v4
         with:
           name: rikitu-nexium-combat-qa-nro
           path: switch_graphical/rikitu_combat_qa_probe.nro
           if-no-files-found: error
+          retention-days: 1
       - name: Upload graphical NRO
         uses: actions/upload-artifact@v4
         with:
           name: rikitu-nexium-qa-input-nro
           path: switch_graphical/rikitu_scene_probe.nro
           if-no-files-found: error
+          retention-days: 1
   emulated-graphics:
     needs: compile
     runs-on: ubuntu-26.04
@@ -438,10 +442,4 @@ jobs:
                 "$NEXIUM_DATA_ROOT" "$fault" "$newest"
             done
           done
-      - name: Upload runtime screenshot evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: rikitu-nexium-guest-screenshots
-          path: evidence/
-          if-no-files-found: warn
+      # Stage145: runner-local raw output only; public artifact upload forbidden.
