@@ -105,8 +105,10 @@ static void make_campaign(RikituCampaign *c,int wallet){
   c->wallet=wallet;
 }
 static void test_rks_conflict(int halfway){
-  RikituScene sa,sb,request;
-  RikituLoop la,lb,request_loop;
+  RikituScene sa,sb,request,loaded;
+  RikituLoop la,lb,request_loop,loaded_loop;
+  unsigned char scene_snapshot[sizeof(RikituScene)];
+  unsigned char loop_snapshot[sizeof(RikituLoop)];
   uint8_t a[RIKITU_SAVE_BYTES],b[RIKITU_SAVE_BYTES];
   uint32_t ga=8u,gb=halfway?0x80000008u:8u;
   clean_pair(RKS_A,RKS_B);
@@ -116,6 +118,13 @@ static void test_rks_conflict(int halfway){
   assert(rikitu_save_encode(b,&sb,&lb,gb));
   assert(memcmp(a,b,sizeof(a))!=0);
   write_exact(RKS_A,a,sizeof(a));write_exact(RKS_B,b,sizeof(b));
+  memset(&loaded,0x5a,sizeof(loaded));
+  memset(&loaded_loop,0xa5,sizeof(loaded_loop));
+  memcpy(scene_snapshot,&loaded,sizeof(loaded));
+  memcpy(loop_snapshot,&loaded_loop,sizeof(loaded_loop));
+  assert(!rikitu_save_load_pair(RKS_A,RKS_B,&loaded,&loaded_loop));
+  assert(memcmp(scene_snapshot,&loaded,sizeof(loaded))==0);
+  assert(memcmp(loop_snapshot,&loaded_loop,sizeof(loaded_loop))==0);
   assert(!rikitu_save_store_pair(RKS_A,RKS_B,&request,&request_loop));
   assert(equal_file(RKS_A,a,sizeof(a))&&equal_file(RKS_B,b,sizeof(b)));
   assert_no_sidecars(RKS_A,RKS_B);
@@ -124,7 +133,8 @@ static void test_rks_conflict(int halfway){
   clean_pair(RKS_A,RKS_B);
 }
 static void test_rkc_conflict(int halfway){
-  RikituCampaign ca,cb,request;
+  RikituCampaign ca,cb,request,loaded;
+  unsigned char campaign_snapshot[sizeof(RikituCampaign)];
   uint8_t a[RIKITU_CAMPAIGN_SAVE_BYTES],b[RIKITU_CAMPAIGN_SAVE_BYTES];
   uint32_t ga=8u,gb=halfway?0x80000008u:8u;
   clean_pair(RKC_A,RKC_B);
@@ -133,6 +143,10 @@ static void test_rkc_conflict(int halfway){
   assert(rikitu_campaign_save_encode(b,&cb,gb));
   assert(memcmp(a,b,sizeof(a))!=0);
   write_exact(RKC_A,a,sizeof(a));write_exact(RKC_B,b,sizeof(b));
+  memset(&loaded,0x5a,sizeof(loaded));
+  memcpy(campaign_snapshot,&loaded,sizeof(loaded));
+  assert(!rikitu_campaign_save_load_pair(RKC_A,RKC_B,&loaded));
+  assert(memcmp(campaign_snapshot,&loaded,sizeof(loaded))==0);
   assert(!rikitu_campaign_save_store_pair(RKC_A,RKC_B,&request));
   assert(equal_file(RKC_A,a,sizeof(a))&&equal_file(RKC_B,b,sizeof(b)));
   assert_no_sidecars(RKC_A,RKC_B);
@@ -142,8 +156,10 @@ static void test_rkc_conflict(int halfway){
 }
 static void test_rkl_conflict(int halfway){
   RikituCampaign c;
-  RikituScene sa,sb,request;
-  RikituLoop la,lb,request_loop;
+  RikituScene sa,sb,request,loaded;
+  RikituLoop la,lb,request_loop,loaded_loop;
+  unsigned char scene_snapshot[sizeof(RikituScene)];
+  unsigned char loop_snapshot[sizeof(RikituLoop)];
   uint8_t a[RIKITU_LEVEL_SAVE_BYTES],b[RIKITU_LEVEL_SAVE_BYTES];
   uint32_t ga=8u,gb=halfway?0x80000008u:8u;
   clean_pair(RKL_A,RKL_B);
@@ -154,6 +170,12 @@ static void test_rkl_conflict(int halfway){
   assert(rikitu_level_save_encode(b,&sb,&lb,&c,gb));
   assert(memcmp(a,b,sizeof(a))!=0);
   write_exact(RKL_A,a,sizeof(a));write_exact(RKL_B,b,sizeof(b));
+  make_bridge(&loaded,&loaded_loop,0);
+  memcpy(scene_snapshot,&loaded,sizeof(loaded));
+  memcpy(loop_snapshot,&loaded_loop,sizeof(loaded_loop));
+  assert(!rikitu_level_save_load_pair(RKL_A,RKL_B,&loaded,&loaded_loop,&c));
+  assert(memcmp(scene_snapshot,&loaded,sizeof(loaded))==0);
+  assert(memcmp(loop_snapshot,&loaded_loop,sizeof(loaded_loop))==0);
   assert(!rikitu_level_save_store_pair(RKL_A,RKL_B,&request,&request_loop,&c));
   assert(equal_file(RKL_A,a,sizeof(a))&&equal_file(RKL_B,b,sizeof(b)));
   assert_no_sidecars(RKL_A,RKL_B);
@@ -167,8 +189,13 @@ static void test_rks_duplicate(void){
   uint8_t record[RIKITU_SAVE_BYTES];
   clean_pair(RKS_A,RKS_B);
   make_flower(&old,&old_loop,0);make_flower(&request,&request_loop,1);
+  RikituScene duplicate_loaded;
+  RikituLoop duplicate_loop;
   assert(rikitu_save_encode(record,&old,&old_loop,8u));
   write_exact(RKS_A,record,sizeof(record));write_exact(RKS_B,record,sizeof(record));
+  make_flower(&duplicate_loaded,&duplicate_loop,0);
+  assert(rikitu_save_load_pair(RKS_A,RKS_B,&duplicate_loaded,&duplicate_loop));
+  assert(duplicate_loaded.reached_checkpoints==0&&duplicate_loaded.hearts==3);
   assert(rikitu_save_store_pair(RKS_A,RKS_B,&request,&request_loop));
   assert(equal_file(RKS_A,record,sizeof(record)));
   assert(!equal_file(RKS_B,record,sizeof(record)));
@@ -185,6 +212,9 @@ static void test_rkc_duplicate(void){
   make_campaign(&old,157);make_campaign(&request,159);
   assert(rikitu_campaign_save_encode(record,&old,8u));
   write_exact(RKC_A,record,sizeof(record));write_exact(RKC_B,record,sizeof(record));
+  memset(&loaded,0,sizeof(loaded));
+  assert(rikitu_campaign_save_load_pair(RKC_A,RKC_B,&loaded));
+  assert(loaded.wallet==157);
   assert(rikitu_campaign_save_store_pair(RKC_A,RKC_B,&request));
   assert(equal_file(RKC_A,record,sizeof(record)));
   assert(!equal_file(RKC_B,record,sizeof(record)));
@@ -204,6 +234,9 @@ static void test_rkl_duplicate(void){
   make_bridge(&old,&old_loop,0);make_bridge(&request,&request_loop,1);
   assert(rikitu_level_save_encode(record,&old,&old_loop,&c,8u));
   write_exact(RKL_A,record,sizeof(record));write_exact(RKL_B,record,sizeof(record));
+  make_bridge(&loaded,&loaded_loop,0);
+  assert(rikitu_level_save_load_pair(RKL_A,RKL_B,&loaded,&loaded_loop,&c));
+  assert(loaded.reached_checkpoints==0&&loaded.stage.coin_count==0);
   assert(rikitu_level_save_store_pair(RKL_A,RKL_B,&request,&request_loop,&c));
   assert(equal_file(RKL_A,record,sizeof(record)));
   assert(!equal_file(RKL_B,record,sizeof(record)));

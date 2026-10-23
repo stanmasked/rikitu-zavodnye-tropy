@@ -53,6 +53,10 @@ int rikitu_level_save_load_pair(const char *a,const char *b,
   if(ry==RIKITU_SLOT_READ_OK)
     vy=rikitu_level_save_decode(&sy,&ly,campaign,y,sizeof(y),&gy);
   if(!vx&&!vy)return 0;
+  /* Both records passed full semantic/campaign validation. Divergent ties
+   * and half-range serials have no safe automatic winner. */
+  if(vx&&vy&&((gx==gy&&memcmp(x,y,sizeof(x))!=0)||
+               (uint32_t)(gx-gy)==0x80000000u))return 0;
   if(vy&&(!vx||newer(gy,gx))){*scene=sy;*loop=ly;}
   else{*scene=sx;*loop=lx;}
   return 1;
