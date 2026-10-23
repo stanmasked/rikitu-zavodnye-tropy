@@ -54,11 +54,6 @@ static void read_exact(const char *path,uint8_t *out,size_t n){
   assert(f);assert(fread(out,1,n,f)==n);
   assert(fgetc(f)==EOF);assert(fclose(f)==0);
 }
-static int equal_file(const char *path,const uint8_t *expected,size_t n){
-  uint8_t actual[RIKITU_LEVEL_SAVE_BYTES];
-  assert(n<=sizeof(actual));read_exact(path,actual,n);
-  return memcmp(actual,expected,n)==0;
-}
 static void clean_pair(const char *a,const char *b){
   char sidecar[256],lock[256];
   const char *paths[2]={a,b};
