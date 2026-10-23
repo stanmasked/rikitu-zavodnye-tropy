@@ -335,9 +335,27 @@ def main() -> None:
         selftest()
     elif len(args) == 4 and args[0] in PHASE_MARKER:
         phase, before, after, root = args
-        verify_image(Path(before), phase)
-        verify_image(Path(after), phase)
-        verify_files(Path(root), phase)
+        # For the new semantic phase, inspect the guest's durable marker and
+        # SDMC bytes before visual assertions. If production logic fails, the
+        # guest writes semantic-fail-N and the auditor reports the exact step
+        # instead of masking it behind a secondary screenshot-color failure.
+        if phase == "semantic":
+            try:
+                verify_files(Path(root), phase)
+            except AssertionError as exc:
+                marker = Path(root) / "sdmc" / "switch" / "RIKITU" / "stage131-phase.txt"
+                actual = marker.read_text(encoding="utf-8").strip() if marker.is_file() else ""
+                if actual.startswith("semantic-fail-"):
+                    raise AssertionError(
+                        f"semantic guest production assertion failed at {actual}"
+                    ) from exc
+                raise
+            verify_image(Path(before), phase)
+            verify_image(Path(after), phase)
+        else:
+            verify_image(Path(before), phase)
+            verify_image(Path(after), phase)
+            verify_files(Path(root), phase)
     else:
         raise SystemExit(
             "Usage: check_production_pair_guest.py --selftest | "
