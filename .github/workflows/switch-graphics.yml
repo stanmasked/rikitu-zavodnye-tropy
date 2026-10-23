@@ -758,12 +758,7 @@ jobs:
           /tmp/rikitu-stage95-graphics-clang seed /tmp/rikitu-stage95-graphics-clang-a.rks /tmp/rikitu-stage95-graphics-clang-b.rks
           /tmp/rikitu-stage95-graphics-clang resume /tmp/rikitu-stage95-graphics-clang-a.rks /tmp/rikitu-stage95-graphics-clang-b.rks
           /tmp/rikitu-stage95-graphics-clang verify /tmp/rikitu-stage95-graphics-clang-a.rks /tmp/rikitu-stage95-graphics-clang-b.rks
-      - name: Upload pixel-accurate host render
-        uses: actions/upload-artifact@v4
-        with:
-          name: rikitu-debug-scene-preview-ppm
-          path: artifacts/rikitu-debug-scene.ppm
-          if-no-files-found: error
+      # Stage145: runner-local raw output only; public artifact upload forbidden.
   switch-nro:
     runs-on: ubuntu-latest
     container:
@@ -782,9 +777,4 @@ jobs:
         run: |
           test -s switch_graphical/rikitu_scene_probe.nro
           python3 tests/check_nro.py switch_graphical/rikitu_scene_probe.nro
-      - name: Upload graphical NRO
-        uses: actions/upload-artifact@v4
-        with:
-          name: rikitu-first-graphical-nro
-          path: switch_graphical/rikitu_scene_probe.nro
-          if-no-files-found: error
+      # Stage145: runner-local raw output only; public artifact upload forbidden.
