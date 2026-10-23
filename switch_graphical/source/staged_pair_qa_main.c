@@ -462,9 +462,12 @@ static int semantic_invalid_generation(void){
     return semantic_fail(7);
   if(!bytes_equal(semantic_paths[0],good,sizeof(good)))
     return semantic_fail(8);
-  if(!read_exact(semantic_paths[1],observed,sizeof(observed))||
-     !rikitu_level_save_inspect(observed,sizeof(observed),&generation)||
-     generation!=11)return semantic_fail(9);
+  if(!read_exact(semantic_paths[1],observed,sizeof(observed)))
+    return semantic_fail(91);
+  generation=0;
+  if(!rikitu_level_save_inspect(observed,sizeof(observed),&generation))
+    return semantic_fail(92);
+  if(generation!=11)return semantic_fail(93);
   seed_flower(&loaded,&loaded_loop);
   if(!rikitu_level_save_load_pair(semantic_paths[0],semantic_paths[1],
                                   &loaded,&loaded_loop,&campaign)||
