@@ -333,7 +333,7 @@ def selftest() -> None:
                 path.write_bytes(fake_record("map", 2))
                 (base / "stage131-phase.txt").write_text(PHASE_MARKER["advance"])
                 print("PASS Stage131 checker selftest: rejects CRC-valid slot mutation")
-        print("PASS Stage131/132 checker selftest: six phases, all three formats, semantic RKL3 and adversarial hash check")
+        print("PASS Stage131/132 checker selftest: seven phases, all three formats, semantic RKL3 and adversarial hash check")
 
 
 def main() -> None:
