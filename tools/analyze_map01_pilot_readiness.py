@@ -145,7 +145,7 @@ def build_summary(session_bytes, exports):
     ]
 
     return {
-        'schema': 'rikitu-map01-controller-pilot-readiness-v1',
+        'schema': 'rikitu-map01-controller-pilot-readiness-v2',
         'provenance_verified': False,
         'interpretation': 'Descriptive pilot summary only; this does not authenticate human control or establish that the level is balanced.',
         'browser_exports_cross_checked': True,
