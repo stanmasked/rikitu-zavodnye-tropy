@@ -1,0 +1,40 @@
+name: RIKITU Stage171 disposable two-tier MAP01 branch layout
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage171-map01-two-tier-layout.yml'
+      - 'native/test_map01_two_tier_branch_fixture.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'native/rikitu_map01_telemetry.*'
+      - 'docs/STAGE171_MAP01_TWO_TIER_LAYOUT.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage171-map01-two-tier-layout.yml'
+      - 'native/test_map01_two_tier_branch_fixture.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'native/rikitu_map01_telemetry.*'
+      - 'docs/STAGE171_MAP01_TWO_TIER_LAYOUT.md'
+permissions:
+  contents: read
+jobs:
+  two-tier-layout:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: GCC direct baseline versus two-tier branch
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_two_tier_branch_fixture.c -lm -o /tmp/rikitu-two-tier-gcc
+          /tmp/rikitu-two-tier-gcc
+      - name: Clang direct baseline versus two-tier branch
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_two_tier_branch_fixture.c -lm -o /tmp/rikitu-two-tier-clang
+          /tmp/rikitu-two-tier-clang
+      - name: Clang ASan and UBSan
+        run: |
+          clang -std=c99 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_two_tier_branch_fixture.c -lm -o /tmp/rikitu-two-tier-san
+          /tmp/rikitu-two-tier-san
+      # Test-only geometry; no user artifacts or gameplay recordings uploaded.
