@@ -34,8 +34,11 @@ with sync_playwright() as pw:
     pad = lambda script: page.evaluate(script)
 
     assert state()["mode"] == "title"
-    page.keyboard.press("Enter")
+    # Start must launch the game without keyboard or mouse assistance.
+    pad("window.__testPad.buttons[9].pressed=true")
     page.wait_for_function("()=>RIKITU_TEST_STATE().mode==='playing'", timeout=5000)
+    pad("window.__testPad.buttons[9].pressed=false")
+    page.wait_for_timeout(100)
 
     # Standard Gamepad button 15 is D-pad right. No teleport/test movement helper is used.
     before = state()["playerX"]
