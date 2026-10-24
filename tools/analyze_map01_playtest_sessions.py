@@ -152,7 +152,7 @@ def analyse(data):
             stop_counts[s['stop_reason']] = stop_counts.get(s['stop_reason'], 0) + 1
 
     report = {
-        'schema': 'rikitu-map01-human-playtest-summary-v1',
+        'schema': 'rikitu-map01-human-playtest-summary-v2',
         'provenance_verified': False,
         'interpretation': 'Self-reported/manual session notes; integrity checks do not authenticate human play.',
         'counts': {
