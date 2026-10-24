@@ -27,6 +27,8 @@ The report schema advances to `rikitu-map01-controller-pilot-readiness-v2` becau
 
 The paired difference is repeat time minus first time; a negative value means the repeat was faster. Pseudonymous participant IDs are used only in memory and are never included in the report.
 
+The aggregate also reports participants with multiple input methods and controller repeats whose A1 used keyboard/touch. These are diagnostic counts; the frozen controller medians remain unchanged and still include every completed controller row.
+
 ## Frozen decision rule remains unchanged
 
 The existing `pacing_assessment` still uses all completed controller first attempts and all completed controller repeat attempts, requiring at least five completed runs in each group. The new paired metrics are supplemental and do not change that threshold, target range, or assessment. They are descriptive only and do not authenticate human control or prove that MAP01 is balanced.
