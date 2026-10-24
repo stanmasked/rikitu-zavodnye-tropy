@@ -147,11 +147,11 @@ class PilotReadinessTests(unittest.TestCase):
             exports.pop('P004-A1.csv')
 
             out = io.StringIO(newline='')
-            writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n',
+            writer = csv.writer(out, delimiter=';', lineterminator='\r\n',
                                 quoting=csv.QUOTE_ALL)
             writer.writerow(header)
             writer.writerows(rows)
-            sessions = ('\\ufeff' + out.getvalue()).encode('utf-8')
+            sessions = ('\ufeff' + out.getvalue()).encode('utf-8')
 
             session_file = root/'manual-sessions.csv'
             exports_dir = root/'browser_exports'
