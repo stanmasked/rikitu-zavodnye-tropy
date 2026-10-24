@@ -133,6 +133,12 @@ static void test_route(RecoveryRoute *r,int hz){
   assert(r->jumps==2u);
   assert(r->evidence.new_fragments==1u);
   assert(r->evidence.new_checkpoints==1u);
+  /* Recovering the missed fragment includes >180 px of genuine LEFT
+   * movement; do not confuse it with an instantaneous respawn jump. */
+  assert(r->evidence.leftward_distance_px>180.0f);
+  assert(r->evidence.leftward_distance_px<240.0f);
+  assert(r->evidence.leftward_frames>0u);
+  assert(r->evidence.large_left_discontinuities==0u);
   assert(r->evidence.completions==0u);
   assert(r->evidence.paused_frames==0u);
   assert(r->evidence.observed_ticks==r->ticks);
