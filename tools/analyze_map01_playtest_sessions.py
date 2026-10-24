@@ -138,6 +138,7 @@ def analyse(data, exports=None):
 
     sessions = []
     seen_ids = set()
+    participant_attempts = {}
     referenced_exports = set()
     linked_hashes = set()
     for row in rows[1:]:
@@ -149,7 +150,9 @@ def analyse(data, exports=None):
         if not ID_RE.fullmatch(session_id) or session_id in seen_ids:
             raise ValueError('invalid or duplicate anonymized session ID')
         seen_ids.add(session_id)
-        attempt_number = int(session_id.rsplit('-A', 1)[1])
+        participant_id, attempt_suffix = session_id.rsplit('-A', 1)
+        attempt_number = int(attempt_suffix)
+        participant_attempts.setdefault(participant_id, set()).add(attempt_number)
         if attempt_type not in ATTEMPTS or ((attempt_number == 1) != (attempt_type == 'first')):
             raise ValueError('attempt type does not match anonymized attempt number')
         if input_method not in INPUTS or outcome not in OUTCOMES:
@@ -207,6 +210,10 @@ def analyse(data, exports=None):
             'stop_reason': stop_reason,
             'source_csv_sha256': source_hash,
         })
+
+    for attempts in participant_attempts.values():
+        if attempts and attempts != set(range(1, max(attempts) + 1)):
+            raise ValueError('repeat attempt is missing a prior attempt for the same participant')
 
     if exports is not None and set(exports) != referenced_exports:
         raise ValueError('export directory contains unreferenced files or a completed session is unlinked')
