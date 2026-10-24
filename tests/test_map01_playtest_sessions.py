@@ -38,7 +38,7 @@ class SessionAnalyzerTests(unittest.TestCase):
     def test_aggregates_only_and_never_authenticates_provenance(self):
         raw=fixture()
         report=m.analyse(raw)
-        self.assertEqual(report['schema'],'rikitu-map01-human-playtest-summary-v1')
+        self.assertEqual(report['schema'],'rikitu-map01-human-playtest-summary-v2')
         self.assertFalse(report['provenance_verified'])
         self.assertEqual(report['counts']['sessions'],4)
         self.assertEqual(report['counts']['first_attempts'],3)
