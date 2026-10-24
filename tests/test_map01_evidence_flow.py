@@ -25,23 +25,23 @@ BROWSER_HEADER = ('Уровень', 'Название', 'Тип', 'Секунд�
 
 def make_browser_export():
     out = io.StringIO(newline='')
-    writer = csv.writer(out, delimiter=';', lineterminator='\r\n', quoting=csv.QUOTE_ALL)
+    writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n', quoting=csv.QUOTE_ALL)
     writer.writerow(BROWSER_HEADER)
     writer.writerow(('1', 'Цветочная тропа', 'Обычный', '400.0', '2', '18',
                      '360', '480', 'В пределах цели'))
-    return ('\ufeff' + out.getvalue()).encode('utf-8')
+    return ('\\ufeff' + out.getvalue()).encode('utf-8')
 
 
 def make_session_log(export_bytes):
     export_sha = hashlib.sha256(export_bytes).hexdigest()
     out = io.StringIO(newline='')
-    writer = csv.writer(out, delimiter=';', lineterminator='\r\n', quoting=csv.QUOTE_ALL)
+    writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n', quoting=csv.QUOTE_ALL)
     writer.writerow(crosscheck.SESSIONS.HEADER)
     writer.writerow(('P001-A1','first','controller','completed','400.0','2','18',
-                     '3','3','0','1','yes','yes','none',export_sha))
+                     '3','3','0','1','yes','yes','none','P001-A1.csv',export_sha))
     writer.writerow(('P002-A1','first','controller','stopped','220.0','4','6',
-                     '1','1','2','1','no','no','missed_fragment',''))
-    return ('\ufeff' + out.getvalue()).encode('utf-8')
+                     '1','1','2','1','no','no','missed_fragment','',''))
+    return ('\\ufeff' + out.getvalue()).encode('utf-8')
 
 
 class Map01EvidenceFlowTests(unittest.TestCase):
@@ -49,23 +49,24 @@ class Map01EvidenceFlowTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             source = root/'private-source'
+            exports_dir = source/'browser_exports'
             receipts = root/'receipts'
             bundles = root/'bundles'
             payload_readback = root/'independent-payload-readback'
             zip_readback = root/'independent-zip-readback'
-            for folder in (source, receipts, bundles, payload_readback, zip_readback):
-                folder.mkdir()
+            for folder in (source, exports_dir, receipts, bundles, payload_readback, zip_readback):
+                folder.mkdir(exist_ok=True)
 
             export_bytes = make_browser_export()
             session_bytes = make_session_log(export_bytes)
             sessions = source/'manual-sessions.csv'
-            browser_csv = source/'P001-A1-browser.csv'
+            browser_csv = exports_dir/'P001-A1.csv'
             report = source/'map01-crosscheck.json'
             sessions.write_bytes(session_bytes)
             browser_csv.write_bytes(export_bytes)
 
             checked = crosscheck.analyse_files(
-                sessions, [browser_csv], report, hashlib.sha256(session_bytes).hexdigest())
+                sessions, exports_dir, report, hashlib.sha256(session_bytes).hexdigest())
             self.assertEqual(checked['sessions'], 2)
             self.assertEqual(checked['matched'], 1)
             self.assertEqual(report.stat().st_mode & 0o777, 0o600)
@@ -98,8 +99,7 @@ class Map01EvidenceFlowTests(unittest.TestCase):
             self.assertEqual(zip_verified['result'],
                              'BYTE_MATCH_ONLY_REQUIRES_AUTHENTICATED_DRIVE_FETCH')
 
-            # Tamper with the independent payload copy: the sealed manifest must fail.
-            (payload_readback/'P001-A1-browser.csv').write_bytes(b'altered synthetic CSV')
+            (payload_readback/'browser_exports'/'P001-A1.csv').write_bytes(b'altered synthetic CSV')
             with self.assertRaisesRegex(EvidenceError, 'private-readback-mismatch'):
                 verify(manifest, payload_readback, sealed['manifest_sha256'])
 
