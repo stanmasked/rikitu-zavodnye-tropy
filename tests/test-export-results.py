@@ -1,9 +1,13 @@
 """CSV pacing export: no download before completion and accurate saved rows afterward."""
 from pathlib import Path
-import json, os
+import json, os, hashlib, importlib.util
 from playwright.sync_api import sync_playwright
 
 ROOT=Path(__file__).resolve().parents[1]
+ANALYZER=importlib.util.spec_from_file_location(
+    'rikitu_private_pacing', ROOT/'tools/analyze_private_pacing_csv.py')
+pacing=importlib.util.module_from_spec(ANALYZER)
+ANALYZER.loader.exec_module(pacing)
 HTML=(ROOT/'RIKITU_play_now.html').read_text(encoding='utf-8')
 KEY='rikitu-zavodnye-tropy-checkpoint-v1'
 SHIM="""(initial)=>{
@@ -42,7 +46,29 @@ with sync_playwright() as pw:
         page.locator('#export-results').click()
     download=pending.value
     assert download.suggested_filename=='RIKITU_stage_results.csv'
-    content=Path(download.path()).read_text(encoding='utf-8-sig')
+    raw_csv=Path(download.path()).read_bytes()
+    content=raw_csv.decode('utf-8-sig')
+    # Stage164: the game's *actual downloaded bytes* must pass Stage163's
+    # offline parser without a separate hand-built CSV fixture.
+    validated=pacing.analyse(raw_csv, 'scripted')
+    assert validated['source_sha256']==hashlib.sha256(raw_csv).hexdigest()
+    assert validated['source_size_bytes']==len(raw_csv)
+    assert validated['counts']=={
+        'stages':2,'within':2,'below':0,'above':0,
+        'total_hits':3,'total_coins':150},validated['counts']
+    assert [r['active_seconds'] for r in validated['stages']]==['402.5','531.5']
+    assert validated['provenance_label']=='scripted'
+    assert validated['provenance_verified'] is False
+    # A forged comparison must be rejected even if other columns still parse.
+    damaged=raw_csv.replace('В пределах цели'.encode('utf-8'),
+                            'Ниже цели'.encode('utf-8'),1)
+    assert damaged!=raw_csv
+    try:
+        pacing.analyse(damaged, 'scripted')
+    except ValueError:
+        pass
+    else:
+        raise AssertionError('mismatched game verdict accepted by private analyser')
     lines=content.splitlines()
     assert len(lines)==3,lines
     assert '"Уровень";"Название";"Тип"' in lines[0],lines[0]
@@ -52,6 +78,6 @@ with sync_playwright() as pw:
     page.wait_for_function('()=>RIKITU_TEST_STATE().stageRecords.length===0',timeout=5000)
     assert page.locator('#export-results').is_disabled()
     assert not errors,errors
-    print('PASS CSV export: disabled until completion, correct data, reset')
+    print('PASS CSV export + Stage163 private schema readback: synthetic rows, digest, corrupted verdict rejected, reset')
     context.close()
     browser.close()
