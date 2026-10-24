@@ -8,6 +8,8 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
 HTML = (ROOT / "RIKITU_play_now.html").read_text(encoding="utf-8")
+assert "ENTER / ПРОБЕЛ / START — НАЧАТЬ" in HTML, "title screen must advertise controller Start"
+assert "ENTER / START — УРОВЕНЬ" in HTML, "between-level prompt must advertise controller Start"
 MARKER = "  const C=window.RikituCore;"
 assert HTML.count(MARKER) == 1, "standalone game script marker changed"
 HTML = HTML.replace(
