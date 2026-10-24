@@ -755,12 +755,12 @@
       text('RIKITU',480,190,69,'#318168','center','900');
       text('ЗАВОДНЫЕ ТРОПЫ',480,250,35,'#284b5f','center','850');
       text('Игровой прототип • Четыре мира, шестнадцать уровней',480,293,18,'#5d7d79','center','600');
-      rounded(268,341,424,55,15,'#338f70');text(startupSave?'ENTER — ПРОДОЛЖИТЬ':'ENTER / ПРОБЕЛ — НАЧАТЬ',480,378,20,'#fff','center');
+      rounded(268,341,424,55,15,'#338f70');text(startupSave?'ENTER / START — ПРОДОЛЖИТЬ':'ENTER / ПРОБЕЛ / START — НАЧАТЬ',480,378,20,'#fff','center');
       text('Герой временно обозначен маркером «Р» — дизайн Рикиту не изменяется.',480,486,15,'#345e65','center','500');
     } else {
       drawWorld();
       if(mode==='paused')overlay('ПАУЗА',['Игра остановлена.','P — продолжить • R — начать заново'],'P — ПРОДОЛЖИТЬ');
-      else if(mode==='between')overlay('УРОВЕНЬ ПРОЙДЕН!',[level.endText,`Время: ${formatClock(stageSeconds)} · попаданий: ${stageHits} · монет: ${stageCoins}/90`,`Следующий уровень: ${chapterInfo[levelIndex+1].name}`],`ENTER — УРОВЕНЬ ${levelIndex+2}`);
+      else if(mode==='between')overlay('УРОВЕНЬ ПРОЙДЕН!',[level.endText,`Время: ${formatClock(stageSeconds)} · попаданий: ${stageHits} · монет: ${stageCoins}/90`,`Следующий уровень: ${chapterInfo[levelIndex+1].name}`],`ENTER / START — УРОВЕНЬ ${levelIndex+2}`);
       else if(mode==='shop'){
         const offer=C.nextHeartPurchase(shopStage,purchasedHearts,allCoins);
         const n=C.unlockedUpgrades(shopStage);
@@ -772,10 +772,10 @@
           lines.push(offer.available?'B — КУПИТЬ СЕРДЕЧКО':'Монет пока не хватает — покупку можно отложить!');
         }else if(lifeCapacity()===7)lines.push('Получены все семь сердечек!');
         else lines.push('Следующее сердечко станет доступно в следующем мире.');
-        overlay('МОКИ — ЛАВКА СЕРДЕЦ',lines,'ENTER — ПРОДОЛЖИТЬ');
+        overlay('МОКИ — ЛАВКА СЕРДЕЦ',lines,'ENTER / START — ПРОДОЛЖИТЬ');
         text('♥',745,180,33,'#d75f6d','center');
       }
-      else if(mode==='victory')overlay('СЕРДЦЕ ДОРОГ СПАСЕНО!',['Хроном остановил механизм, чтобы не допустить катастрофы.','Рикиту собрал 48 фрагментов и установил регулятор Моториуса.','Часы снова идут: 07:13. Королевство объединено!',`Последний уровень: ${formatClock(stageSeconds)} · попаданий: ${stageHits}`],'ENTER — НАЧАТЬ НОВУЮ ИГРУ');
+      else if(mode==='victory')overlay('СЕРДЦЕ ДОРОГ СПАСЕНО!',['Хроном остановил механизм, чтобы не допустить катастрофы.','Рикиту собрал 48 фрагментов и установил регулятор Моториуса.','Часы снова идут: 07:13. Королевство объединено!',`Последний уровень: ${formatClock(stageSeconds)} · попаданий: ${stageHits}`],'ENTER / START — НАЧАТЬ НОВУЮ ИГРУ');
     }
   }
   function togglePause(){if(mode==='playing'){mode='paused'}else if(mode==='paused'){mode='playing'}}
