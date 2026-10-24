@@ -45,9 +45,10 @@ candidate to observe is the existing raised platform and its optional coins.
    noticed and used the existing raised platform. Distinguish “hit” from
    “respawn”; they are not equivalent.
 4. On completion, export `RIKITU_stage_results.csv`. Preserve the original
-   bytes; do not edit/re-save it in a spreadsheet. Record its SHA-256 in
-   the session log. The browser CSV is evidence of a browser export, not
-   proof by itself that a human controlled the game.
+   bytes; do not edit/re-save it in a spreadsheet. Rename the archived copy
+   to the anonymized ID, e.g. `P001-A1.csv`, without editing its bytes.
+   Record that filename and its SHA-256 in the session log. The browser CSV
+   is evidence of a browser export, not proof by itself that a human controlled the game.
 5. For an incomplete attempt, record the HUD elapsed time at stopping and
    choose an outcome/stop reason. Leave the browser-export hash blank.
 6. Ask only after the attempt: Was the goal clear? Was any required fragment
@@ -63,7 +64,7 @@ Keep the populated file **outside the Git checkout** and only in restricted
 private storage.
 
 ```csv
-session_id;attempt_type;input_method;outcome;elapsed_seconds;hits;coins;fragments;checkpoints;respawns;backtrack_count;raised_platform_seen;raised_platform_used;stop_reason;source_csv_sha256
+session_id;attempt_type;input_method;outcome;elapsed_seconds;hits;coins;fragments;checkpoints;respawns;backtrack_count;raised_platform_seen;raised_platform_used;stop_reason;source_csv_filename;source_csv_sha256
 ```
 
 - `session_id`: anonymized `P001-A1`, `P001-A2`, etc.; no real names.
@@ -80,9 +81,11 @@ session_id;attempt_type;input_method;outcome;elapsed_seconds;hits;coins;fragment
 - `raised_platform_seen/used`: `yes`, `no` or `uncertain`.
 - `stop_reason`: `none`, `missed_fragment`, `gap_fall`, `lost_route`,
   `repeated_failure`, `quit`, `technical_issue` or `other`.
+- `source_csv_filename`: exact anonymized filename, `session_id.csv`, e.g.
+  `P001-A1.csv`. Keep the original bytes unchanged after renaming.
 - `source_csv_sha256`: hash of the exact browser CSV for completed runs;
   blank for incomplete runs. Each completed session must link to its own
-  export, not reuse the same CSV for multiple attempts.
+  named export. Identical content hashes can legitimately occur in separate files.
 
 ## Private analysis
 
@@ -96,11 +99,15 @@ session_id;attempt_type;input_method;outcome;elapsed_seconds;hits;coins;fragment
    browser export in a private working directory, pinning the original
    SHA-256. Compare the stage seconds/hits/coins with the matching session
    row.
-3. Run `tools/analyze_map01_playtest_sessions.py` against the manual log,
-   writing the JSON summary to a new path in the private directory. The
-   tool refuses Git checkouts and overwrites, writes mode-0600 output, and
-   prints aggregates/hashes only. It does not authenticate provenance or
-   upload anything.
+3. Put the exact named browser exports in a dedicated private folder,
+   with one `P###-A#.csv` file per completed attempt and no unrelated files.
+   Run `tools/analyze_map01_playtest_sessions.py --input ABSOLUTE_NOTES.csv
+   --exports-dir ABSOLUTE_EXPORTS_DIR --output ABSOLUTE_SUMMARY.json`.
+   The tool cross-checks each completed row's filename, SHA-256, MAP01 stage,
+   seconds, hits and coins against the original export; missing, changed or
+   unreferenced exports fail closed. It refuses Git checkouts and overwrites,
+   writes mode-0600 output, and prints aggregates/hashes only. It does not
+   authenticate human provenance or upload anything.
 4. Archive the summary, its SHA-256 and the input hash alongside the
    originals. Verify readback of the summary as well as the raw files.
 
