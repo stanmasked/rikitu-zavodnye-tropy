@@ -9,6 +9,12 @@ typedef struct RikituMap01Telemetry {
   int initialized;
   unsigned observed_frames, observed_ticks, paused_frames;
   unsigned new_fragments, new_coins, new_checkpoints, new_damage, completions;
+  /* Observational leftward movement (not necessarily intentional return trips).
+   * Negative position changes >64 px in one sample are treated as an
+   * ambiguous discontinuity, NOT counted as ordinary walking backward.
+   * Never store a position history or upload telemetry. */
+  unsigned leftward_frames, large_left_discontinuities;
+  float leftward_distance_px, last_player_x;
   float checkpoint_active_seconds[RIKITU_MAX_CHECKPOINTS];
   float last_active_seconds;
   int last_fragments, last_coins, last_checkpoints, last_damage, last_completed;
