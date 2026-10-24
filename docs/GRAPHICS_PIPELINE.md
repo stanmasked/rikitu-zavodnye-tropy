@@ -34,6 +34,23 @@ The drafts do not define platform collision, collectible placement, checkpoints,
 
 Before any integration, render at 1280 × 720, inspect legibility at actual play scale, check scrolling/cropping against the existing MAP01, and confirm no decoration competes with gameplay.
 
+## Stage182 — pinned GFX workflow environment
+
+The public synthetic graphics contract now pins the four related workflows
+(Stage148 framebuffer blit, Stage149 foreground compositing, Stage150 five-camera
+MAP01 composite, and the GFX-01 panorama crop contract) to `ubuntu-24.04`.
+The panorama contract regression checks each workflow for its runner pin,
+bounded timeout, and required synthetic test entry point. Its path filters
+include the three predecessor workflows so changing one re-runs the contract.
+
+This is a CI reproducibility measure only. All graphics tests use synthetic
+pixel buffers and existing level geometry. No private SVG, draft tileset,
+character artwork, screenshot, or original game resource is uploaded to public
+CI. It does not approve the private StreamBank draft, change gameplay, or
+enable real art loading. Stage148–150 and GFX-01 remain separate technical
+gates; art review and the verified private runtime-loading path are still
+required before integration.
+
 ## Stage149 — synthetic scene compositing, no art integration
 
 The optional `rikitu_draw_scene_over_background` entry point draws the existing solids, collectibles, enemies, player hitbox and HUD **over a caller-prefilled frame**. It skips only the legacy synthetic sky gradient and far-distance rectangles. The original `rikitu_draw_scene` still calls the same implementation with legacy sky enabled, so existing games and NRO builds keep the identical default rendering path.
