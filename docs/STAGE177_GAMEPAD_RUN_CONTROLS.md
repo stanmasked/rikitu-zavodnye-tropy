@@ -13,6 +13,8 @@ as a keyboard player. The help text also did not explain the actual mapping.
 - Standard gamepad A/B buttons (indices 0/1) trigger jump.
 - Hold RB/R1 (standard button index 5) to run at the existing run speed.
 - Start (button index 9) starts the title screen, advances between levels/menus, and toggles pause during play.
+- Title, between-level, shop and victory prompts now visibly include `START`; the synthetic test asserts the generated standalone HTML keeps those prompts.
+- Regression coverage also checks D-pad left/right, simultaneous contradictory D-pad input, analog deadzone, and that a disconnected controller cannot leave movement stuck.
 - Keyboard movement and Shift-running remain unchanged.
 - Regenerated `RIKITU_play_now.html` from `index.html`, `style.css`,
   `game-core.js` and `game.js`; source/standalone parity is enforced by
