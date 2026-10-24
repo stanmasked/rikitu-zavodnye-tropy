@@ -18,6 +18,7 @@ rule for the small pilot, not a claim that the level is balanced.
   excluded from the controller timing groups.
 - Incomplete attempts count toward attempt totals and controller stop reasons,
   but their stop-time observations are never treated as completed-run times.
+- Repeat attempts must be linked to the same pseudonymous participant as a complete prior attempt sequence (A2 requires A1; A3 requires A1 and A2). Missing attempt rows invalidate the log rather than silently changing the repeat group.
 - If both controller medians are inside 360–480 seconds, report
   `PILOT_MEDIANS_WITHIN_TARGET_REVIEW_REQUIRED`.
 - If either median is outside the target, report
