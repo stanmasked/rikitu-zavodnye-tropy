@@ -1,0 +1,67 @@
+name: RIKITU Stage176 MAP01 controller pilot readiness
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage176-map01-pilot-readiness.yml'
+      - 'tools/analyze_map01_playtest_sessions.py'
+      - 'tools/analyze_private_pacing_csv.py'
+      - 'tools/crosscheck_map01_playtest_exports.py'
+      - 'tools/analyze_map01_pilot_readiness.py'
+      - 'tools/private_evidence_readback.py'
+      - 'tools/private_evidence_bundle.py'
+      - 'tests/test_map01_playtest_sessions.py'
+      - 'tests/test_map01_browser_export_crosscheck.py'
+      - 'tests/test_map01_evidence_flow.py'
+      - 'tests/test_map01_pilot_readiness.py'
+      - 'tests/test_private_evidence_readback.py'
+      - 'tests/test_private_evidence_bundle.py'
+      - 'docs/STAGE176_MAP01_PILOT_READINESS.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage176-map01-pilot-readiness.yml'
+      - 'tools/analyze_map01_playtest_sessions.py'
+      - 'tools/analyze_private_pacing_csv.py'
+      - 'tools/crosscheck_map01_playtest_exports.py'
+      - 'tools/analyze_map01_pilot_readiness.py'
+      - 'tools/private_evidence_readback.py'
+      - 'tools/private_evidence_bundle.py'
+      - 'tests/test_map01_playtest_sessions.py'
+      - 'tests/test_map01_browser_export_crosscheck.py'
+      - 'tests/test_map01_evidence_flow.py'
+      - 'tests/test_map01_pilot_readiness.py'
+      - 'tests/test_private_evidence_readback.py'
+      - 'tests/test_private_evidence_bundle.py'
+      - 'docs/STAGE176_MAP01_PILOT_READINESS.md'
+permissions:
+  contents: read
+jobs:
+  controller-pilot-readiness:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile private-only analysis and evidence tools
+        run: |
+          python -m py_compile tools/analyze_map01_playtest_sessions.py
+          python -m py_compile tools/analyze_private_pacing_csv.py
+          python -m py_compile tools/crosscheck_map01_playtest_exports.py
+          python -m py_compile tools/analyze_map01_pilot_readiness.py
+          python -m py_compile tools/private_evidence_readback.py
+          python -m py_compile tools/private_evidence_bundle.py
+      - name: Stage173 manual session validation
+        run: python tests/test_map01_playtest_sessions.py
+      - name: Stage174 exact browser export cross-check
+        run: python tests/test_map01_browser_export_crosscheck.py
+      - name: Stage157 manifest/readback regression
+        run: python tests/test_private_evidence_readback.py
+      - name: Stage158 private bundle regression
+        run: python tests/test_private_evidence_bundle.py
+      - name: Stage175 end-to-end synthetic evidence flow
+        run: python tests/test_map01_evidence_flow.py
+      - name: Stage176 controller pilot readiness and decision-rule tests
+        run: python tests/test_map01_pilot_readiness.py
+      # Synthetic data only. No real participant inputs, exports, captures or artifacts are uploaded.
