@@ -1,0 +1,30 @@
+name: RIKITU Stage157 private evidence readback integrity
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage157-private-evidence-readback.yml'
+      - 'tools/private_evidence_readback.py'
+      - 'tests/test_private_evidence_readback.py'
+      - 'docs/PRIVATE_EVIDENCE_READBACK.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage157-private-evidence-readback.yml'
+      - 'tools/private_evidence_readback.py'
+      - 'tests/test_private_evidence_readback.py'
+      - 'docs/PRIVATE_EVIDENCE_READBACK.md'
+permissions:
+  contents: read
+jobs:
+  synthetic-receipt:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify synthetic private evidence hashes and independent download simulation
+        run: python -m unittest discover -s tests -p 'test_private_evidence_readback.py' -v
+      # Deliberately no upload-artifact: synthetic tests cannot authorize
+      # publication or persistent hosting of private captures.
