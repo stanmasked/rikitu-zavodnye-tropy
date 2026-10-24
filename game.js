@@ -378,7 +378,11 @@
     gamepadJump=!!(gp&&(gp.buttons[0]?.pressed||gp.buttons[1]?.pressed));
     gamepadRun=!!(gp&&gp.buttons[5]?.pressed); // RB/R1, held for faster movement.
     const pause=!!(gp&&gp.buttons[9]?.pressed);
-    if(pause&&!gamepadPause)togglePause(); gamepadPause=pause;
+    if(pause&&!gamepadPause){
+      if(mode==='playing'||mode==='paused')togglePause();
+      else act();
+    }
+    gamepadPause=pause;
   }
   function update(dt){
     frame++;readGamepad();
