@@ -23,9 +23,12 @@ and positions outside the stage width are rejected. Genuine leftward
 steps are measured in the unchanged production physics loop; a synthetic
 large jump verifies exclusion of discontinuities.
 
-The full input-only optimized MAP01 route should report zero reverse
-movement. The separate missed-fragment test can later be used to assert
-positive leftward distance when it has been merged into main.
+The full input-only optimized MAP01 route must report zero reverse
+movement. The Stage166 missed-fragment recovery test now also asserts
+**more than 180 pixels** of genuine leftward movement and no large
+discontinuities while retrieving the skipped fragment. This directly
+cross-checks the aggregated observer against actual leftward physics
+commands, without retaining a player trajectory or simulating a teleport.
 
 ## Privacy and interpretation
 
