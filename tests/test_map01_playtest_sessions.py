@@ -108,11 +108,12 @@ class SessionAnalyzerTests(unittest.TestCase):
             m.analyse(raw, export_metadata(exports))
 
         # A3 also requires A1 and A2; the attempt sequence cannot contain gaps.
+        full_rows, full_exports = rows_and_exports()
         extra = ('P004-A3','repeat','controller','stopped','220','4','6','1','1','2','1',
                  'no','no','missed_fragment','','')
-        raw_gap, _ = fixture(session_rows + [extra])
+        raw_gap, _ = fixture(full_rows + [extra])
         with self.assertRaisesRegex(ValueError, 'missing a prior attempt'):
-            m.analyse(raw_gap, export_metadata(exports))
+            m.analyse(raw_gap, export_metadata(full_exports))
 
     def test_identical_export_bytes_allowed_for_distinct_named_sessions(self):
         identical = browser_export('400.0', 2, 18)
