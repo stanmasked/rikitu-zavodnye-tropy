@@ -63,10 +63,10 @@ with sync_playwright() as pw:
     pad("window.__testPad.buttons[14].pressed=false")
     page.wait_for_timeout(100)
     before_conflict = state()["playerX"]
-    pad("window.__testPad.buttons[14].pressed=true;window.__testPad.buttons[15].pressed=true")
+    pad("window.__testPad.buttons[14].pressed=true;window.__testPad.buttons[15].pressed=true;window.__testPad.axes[0]=1")
     page.wait_for_timeout(200)
     conflict_drift = abs(state()["playerX"] - before_conflict)
-    pad("window.__testPad.buttons[14].pressed=false;window.__testPad.buttons[15].pressed=false")
+    pad("window.__testPad.buttons[14].pressed=false;window.__testPad.buttons[15].pressed=false;window.__testPad.axes[0]=0")
     assert conflict_drift < 1.0, {"conflicting_dpad_drift": conflict_drift}
 
     # Analog deadzone must ignore small noise and accept a deliberate deflection.
