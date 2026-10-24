@@ -126,6 +126,10 @@ static void run(RouteResult *r,int hz){
   assert(r->telemetry.new_damage==(unsigned)r->scene.damage_count);
   assert(r->telemetry.new_damage==0u);
   assert(r->telemetry.completions==1u);
+  /* The idealized Stage162/165 route has no reverse movement. */
+  assert(r->telemetry.leftward_distance_px==0.0f);
+  assert(r->telemetry.leftward_frames==0u);
+  assert(r->telemetry.large_left_discontinuities==0u);
   assert(close_(r->telemetry.last_active_seconds,
                 r->loop.active_seconds,0.02f));
   assert(r->checkpoint_seconds[0]>0.0f);
