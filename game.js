@@ -366,12 +366,17 @@
     // Collected parts and coins persist, to keep the game accessible.
   }
   function jumpPressed(){return keys.has('Space')||keys.has('ArrowUp')||keys.has('KeyW')||touch.jump||gamepadJump;}
-  let gamepadJump=false,gamepadX=0,gamepadPause=false,previousJump=false;
+  let gamepadJump=false,gamepadX=0,gamepadRun=false,gamepadPause=false,previousJump=false;
   function readGamepad(){
     let pads=[];try{pads=navigator.getGamepads?navigator.getGamepads():[];}catch(e){}
     const gp=Array.from(pads).find(g=>g&&g.connected);
     gamepadX=gp?gp.axes[0]||0:0;
+    // Standard Gamepad mapping: D-pad left/right override a neutral or analog stick axis.
+    const dpadLeft=!!(gp&&gp.buttons[14]?.pressed);
+    const dpadRight=!!(gp&&gp.buttons[15]?.pressed);
+    if(dpadLeft!==dpadRight)gamepadX=dpadLeft?-1:1;
     gamepadJump=!!(gp&&(gp.buttons[0]?.pressed||gp.buttons[1]?.pressed));
+    gamepadRun=!!(gp&&gp.buttons[5]?.pressed); // RB/R1, held for faster movement.
     const pause=!!(gp&&gp.buttons[9]?.pressed);
     if(pause&&!gamepadPause)togglePause(); gamepadPause=pause;
   }
@@ -384,7 +389,7 @@
     p.inv=Math.max(0,p.inv-dt);
     const left=keys.has('ArrowLeft')||keys.has('KeyA')||touch.left||gamepadX<-.30;
     const right=keys.has('ArrowRight')||keys.has('KeyD')||touch.right||gamepadX>.30;
-    p.vx=((right?1:0)-(left?1:0))*(keys.has('ShiftLeft')?d.runSpeed:d.walkSpeed);
+    p.vx=((right?1:0)-(left?1:0))*((keys.has('ShiftLeft')||gamepadRun)?d.runSpeed:d.walkSpeed);
     if(p.vx)p.facing=Math.sign(p.vx);
     const jumpNow=jumpPressed();
     p.jumpBuffer=(jumpNow&&!previousJump)?d.jumpBuffer:Math.max(0,p.jumpBuffer-dt);
