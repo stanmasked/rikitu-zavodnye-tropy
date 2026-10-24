@@ -1,0 +1,31 @@
+name: RIKITU Stage158 private evidence ZIP handoff (synthetic only)
+on:
+  pull_request:
+    paths:
+      - 'tools/private_evidence_bundle.py'
+      - 'tests/test_private_evidence_bundle.py'
+      - 'docs/PRIVATE_EVIDENCE_ZIP_HANDOFF.md'
+      - '.github/workflows/stage158-evidence-zip-handoff.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'tools/private_evidence_bundle.py'
+      - 'tests/test_private_evidence_bundle.py'
+      - 'docs/PRIVATE_EVIDENCE_ZIP_HANDOFF.md'
+      - '.github/workflows/stage158-evidence-zip-handoff.yml'
+permissions:
+  contents: read
+jobs:
+  bundle-integrity:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Synthetic private receipt + immutable ZIP and readback checks
+        run: |
+          python -m unittest discover -s tests -p 'test_private_evidence_readback.py' -v
+          python -m unittest discover -s tests -p 'test_private_evidence_bundle.py' -v
+      # NO upload-artifact, no real captures and no Drive authentication in PR CI.
