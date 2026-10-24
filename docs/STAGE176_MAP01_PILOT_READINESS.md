@@ -64,6 +64,11 @@ median of repeat-minus-first time differences. Negative differences mean the
 matched repeat was faster. Participant IDs are used only in memory and are
 not emitted in the aggregate report.
 
+The same report also emits aggregate-only input-method diagnostics: how many
+participants changed methods, and how many controller repeat rows follow a
+non-controller A1. These diagnostics do not alter the frozen medians; review
+them before interpreting first-versus-repeat comparisons.
+
 This supplemental audit does **not** alter the preregistered pacing
 assessment: its existing first/repeat medians and five-completed-runs-per-group
 threshold still use all completed controller runs. It does not authenticate
