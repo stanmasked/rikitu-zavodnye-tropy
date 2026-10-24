@@ -15,13 +15,16 @@ int main(void){
   RikituStage stage;
   int i,shops=0,bought=0;
   assert(!rikitu_campaign_init(NULL,1));
+  assert(!rikitu_campaign_uses_legacy_map01_checkpoint(NULL));
   assert(!rikitu_campaign_init(&c,0));
   assert(!rikitu_campaign_init(&c,17));
   assert(rikitu_campaign_init(&c,1));
   assert(c.wallet==0 && c.mode==RIKITU_CAMPAIGN_PLAYING);
+  assert(rikitu_campaign_uses_legacy_map01_checkpoint(&c));
   for(i=1;i<=16;i++){
     RikituHeartOffer offer;
     assert(c.level==i&&c.mode==RIKITU_CAMPAIGN_PLAYING);
+    assert(rikitu_campaign_uses_legacy_map01_checkpoint(&c)==(i==1));
     stage=done(i,90);
     assert(!rikitu_campaign_buy(&c).success);
     stage.completed=0;
@@ -35,6 +38,8 @@ int main(void){
     assert(rikitu_campaign_finish(&c,&stage));
     assert(!rikitu_campaign_finish(&c,&stage));
     assert(rikitu_campaign_valid(&c));
+    /* RKS1 stays scoped to MAP01 even after the campaign enters BETWEEN. */
+    assert(rikitu_campaign_uses_legacy_map01_checkpoint(&c)==(i==1));
     if(i%2){
       assert(c.mode==RIKITU_CAMPAIGN_BETWEEN);
       assert(!rikitu_campaign_buy(&c).success);
@@ -73,6 +78,7 @@ int main(void){
   assert(rikitu_campaign_finish(&c,&stage)&&c.wallet==90);
   c.max_hearts=99;
   assert(!rikitu_campaign_valid(&c));
+  assert(!rikitu_campaign_uses_legacy_map01_checkpoint(&c));
   assert(!rikitu_campaign_continue(&c));
   assert(!rikitu_campaign_buy(&c).success);
   puts("PASS campaign: 16 stages, 8 Moki visits, 4 upgrades, final victory");
