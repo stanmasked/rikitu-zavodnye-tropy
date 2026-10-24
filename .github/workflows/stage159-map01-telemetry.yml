@@ -1,0 +1,39 @@
+name: RIKITU Stage159 MAP01 observational telemetry
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage159-map01-telemetry.yml'
+      - 'native/rikitu_map01_telemetry.*'
+      - 'native/test_map01_telemetry.c'
+      - 'switch_graphical/source/main.c'
+      - 'switch_graphical/Makefile'
+      - 'docs/STAGE159_MAP01_TELEMETRY.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage159-map01-telemetry.yml'
+      - 'native/rikitu_map01_telemetry.*'
+      - 'native/test_map01_telemetry.c'
+      - 'switch_graphical/source/main.c'
+      - 'switch_graphical/Makefile'
+permissions:
+  contents: read
+jobs:
+  map01-telemetry:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and run native MAP01 telemetry on GCC
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_telemetry.c -lm -o /tmp/rikitu-telemetry-gcc
+          /tmp/rikitu-telemetry-gcc
+      - name: Compile and run native MAP01 telemetry on Clang
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_telemetry.c -lm -o /tmp/rikitu-telemetry-clang
+          /tmp/rikitu-telemetry-clang
+      - name: Address and undefined-behavior sanitizers
+        run: |
+          clang -std=c99 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_telemetry.c -lm -o /tmp/rikitu-telemetry-asan
+          /tmp/rikitu-telemetry-asan
+      # No artifacts, screenshots, raw saves, user data or remote telemetry.
