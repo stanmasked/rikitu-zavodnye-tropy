@@ -122,3 +122,21 @@ The tile strip contract is `20 × 64 = 1280` horizontal source pixels, each tile
 A new synthetic-only regression checks that the default native scene still uses the legacy debug background, that the optional background overlay is caller-owned and opt-in, and that the RGBA8 copier contains no filesystem/decoder path. It also asserts that the private GFX-01 SVG sources remain absent from the public checkout and that the documented draft/approval state stays explicit.
 
 The GFX-01 contract workflow pins Ubuntu 24.04 and runs this gate alongside the existing synthetic scroll contract and GCC/Clang crop tests. The test contains no private source bytes, Drive IDs, hashes, screenshots or public links. Passing it proves only that draft art is not silently integrated; it does not approve StreamBank v2. Full-size visual approval must remain separate from runtime integration and NeXium screenshot QA.
+
+
+## Stage182 — pinned GFX workflow environment
+
+The public synthetic graphics contract now pins the four related workflows
+(Stage148 framebuffer blit, Stage149 foreground compositing, Stage150 five-camera
+MAP01 composite, and the GFX-01 panorama crop contract) to `ubuntu-24.04`.
+The panorama contract regression checks each workflow for its runner pin,
+bounded timeout, and required synthetic test entry point. Its path filters
+include the three predecessor workflows so changing one re-runs the contract.
+
+This is a CI reproducibility measure only. All graphics tests use synthetic
+pixel buffers and existing level geometry. No private SVG, draft tileset,
+character artwork, screenshot, or original game resource is uploaded to public
+CI. It does not approve the private StreamBank draft, change gameplay, or
+enable real art loading. Stage148–150 and GFX-01 remain separate technical
+gates; art review and the verified private runtime-loading path are still
+required before integration.

@@ -21,7 +21,7 @@ permissions:
   contents: read
 jobs:
   map01-five-cameras:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
