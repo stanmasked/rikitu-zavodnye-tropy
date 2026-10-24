@@ -22,13 +22,13 @@ for(const forbidden of ['rikitu_save_store_pair','rikitu_save_load_pair',
 const plus=slice('if(pressed & HidNpadButton_Plus){','/* Y/X start a disposable');
 assert(plus.includes('if(save_ready && !campaign_debug)'));
 assert(plus.includes('if(save_ready && !campaign_debug &&'));
-assert.match(plus,/rikitu_campaign_uses_legacy_map01_checkpoint\\(&campaign\\) &&\\s*rikitu_save_encode\\(now,&scene,&game,1\\)/,
+assert.match(plus,/rikitu_campaign_uses_legacy_map01_checkpoint\(&campaign\) &&\s*rikitu_save_encode\(now,&scene,&game,1\)/,
   'manual RKS1 save must be restricted to the MAP01 legacy checkpoint');
 const game=slice('if(campaign.mode==RIKITU_CAMPAIGN_PLAYING){','frame=(uint32_t*)framebufferBegin');
 assert(game.includes('if(save_ready && !campaign_debug)'));
-assert.match(game,/if\\(scene\\.level_id==1 &&\\s*rikitu_campaign_uses_legacy_map01_checkpoint\\(&campaign\\) &&\\s*save_ready && !campaign_debug\\)/);
+assert.match(game,/if\(scene\.level_id==1 &&\s*rikitu_campaign_uses_legacy_map01_checkpoint\(&campaign\) &&\s*save_ready && !campaign_debug\)/);
 const auto=slice('framebufferEnd(&fb);','/* A short yielding sleep');
-assert.match(auto,/rikitu_campaign_uses_legacy_map01_checkpoint\\(&campaign\\) &&\\s*save_ready && !campaign_debug &&\\s*rikitu_save_encode\\(now,&scene,&game,1\\)/,
+assert.match(auto,/rikitu_campaign_uses_legacy_map01_checkpoint\(&campaign\) &&\s*save_ready && !campaign_debug &&\s*rikitu_save_encode\(now,&scene,&game,1\)/,
   'periodic RKS1 autosave must be restricted to the MAP01 legacy checkpoint');
 const campaignSaves=[...src.matchAll(/rikitu_campaign_save_store_pair\(CAMPAIGN_A,CAMPAIGN_B,&campaign\)/g)].length;
 assert(campaignSaves>=4,'campaign saves no longer wired');
