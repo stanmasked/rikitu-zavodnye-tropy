@@ -1,0 +1,60 @@
+name: RIKITU Stage175 MAP01 private evidence flow
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage175-map01-evidence-flow.yml'
+      - 'tools/analyze_map01_playtest_sessions.py'
+      - 'tools/analyze_private_pacing_csv.py'
+      - 'tools/crosscheck_map01_playtest_exports.py'
+      - 'tools/private_evidence_readback.py'
+      - 'tools/private_evidence_bundle.py'
+      - 'tests/test_map01_playtest_sessions.py'
+      - 'tests/test_map01_browser_export_crosscheck.py'
+      - 'tests/test_map01_evidence_flow.py'
+      - 'tests/test_private_evidence_readback.py'
+      - 'tests/test_private_evidence_bundle.py'
+      - 'docs/STAGE175_MAP01_EVIDENCE_FLOW.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage175-map01-evidence-flow.yml'
+      - 'tools/analyze_map01_playtest_sessions.py'
+      - 'tools/analyze_private_pacing_csv.py'
+      - 'tools/crosscheck_map01_playtest_exports.py'
+      - 'tools/private_evidence_readback.py'
+      - 'tools/private_evidence_bundle.py'
+      - 'tests/test_map01_playtest_sessions.py'
+      - 'tests/test_map01_browser_export_crosscheck.py'
+      - 'tests/test_map01_evidence_flow.py'
+      - 'tests/test_private_evidence_readback.py'
+      - 'tests/test_private_evidence_bundle.py'
+      - 'docs/STAGE175_MAP01_EVIDENCE_FLOW.md'
+permissions:
+  contents: read
+jobs:
+  synthetic-evidence-flow:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile private-only evidence tools
+        run: |
+          python -m py_compile tools/analyze_map01_playtest_sessions.py
+          python -m py_compile tools/analyze_private_pacing_csv.py
+          python -m py_compile tools/crosscheck_map01_playtest_exports.py
+          python -m py_compile tools/private_evidence_readback.py
+          python -m py_compile tools/private_evidence_bundle.py
+      - name: Stage173 session validation tests
+        run: python tests/test_map01_playtest_sessions.py
+      - name: Stage174 browser export cross-check tests
+        run: python tests/test_map01_browser_export_crosscheck.py
+      - name: Stage157 private manifest/readback regression
+        run: python tests/test_private_evidence_readback.py
+      - name: Stage158 private ZIP bundle regression
+        run: python tests/test_private_evidence_bundle.py
+      - name: Stage175 end-to-end synthetic MAP01 evidence flow
+        run: python tests/test_map01_evidence_flow.py
+      # Synthetic data only. No user exports, session logs, captures, or artifacts are uploaded.
