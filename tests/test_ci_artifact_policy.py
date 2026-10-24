@@ -44,7 +44,23 @@ def upload_blocks(yaml_text: str):
         yield "\n".join(lines[i:end])
 
 
+def check_policy_workflow():
+    """Keep both primary and recovery audits manually recoverable."""
+    for name in ("ci-storage-policy.yml", "stage180-storage-policy-recovery.yml"):
+        policy = (WORKFLOWS / name).read_text(encoding="utf-8")
+        assert "workflow_dispatch:" in policy, name
+        assert "permissions:\n  contents: read" in policy, name
+        assert "pull_request:" in policy and "push:" in policy, name
+        assert "      - '.github/workflows/**'" in policy, name
+        assert "      - 'tests/test_ci_artifact_policy.py'" in policy, name
+        assert "timeout-minutes: 3" in policy, name
+        assert "runs-on: ubuntu-24.04" in policy, name
+        assert "run: python3 tests/test_ci_artifact_policy.py" in policy, name
+    print("PASS Stage180: primary and recovery storage audits share guarded triggers")
+
+
 def main():
+    check_policy_workflow()
     total = 0
     seen = set()
     for workflow in sorted(WORKFLOWS.iterdir()):

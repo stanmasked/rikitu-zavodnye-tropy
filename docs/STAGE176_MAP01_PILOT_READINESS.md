@@ -51,7 +51,7 @@ hashes only. It does not authenticate human control or browser runtime.
 
 ## Supplemental matched-controller cohort audit (Stage179)
 
-The readiness report schema is now `rikitu-map01-controller-pilot-readiness-v2` and includes `paired_controller_cohort` as a diagnostic
+The readiness report schema is now `rikitu-map01-controller-pilot-readiness-v3` and includes `paired_controller_cohort` as a diagnostic
 in addition to the frozen first/repeat group medians above. It uses at most
 one pair per pseudonymous participant: a completed controller A1 and the
 earliest completed repeat attempt before any non-controller attempt appears
@@ -64,10 +64,13 @@ median of repeat-minus-first time differences. Negative differences mean the
 matched repeat was faster. Participant IDs are used only in memory and are
 not emitted in the aggregate report.
 
-The same report also emits aggregate-only input-method diagnostics: how many
-participants changed methods, and how many controller repeat rows follow a
-non-controller A1. These diagnostics do not alter the frozen medians; review
-them before interpreting first-versus-repeat comparisons.
+The same report also emits aggregate-only input-method diagnostics:
+participants who changed methods, controller repeat rows following a
+non-controller A1, and controller repeat rows following **any earlier**
+non-controller attempt. The last count includes cases such as controller A1,
+keyboard A2, controller A3, while excluding a keyboard A3 that occurs only
+after a completed controller A2. These diagnostics do not alter the frozen
+medians; review them before interpreting first-versus-repeat comparisons.
 
 This supplemental audit does **not** alter the preregistered pacing
 assessment: its existing first/repeat medians and five-completed-runs-per-group

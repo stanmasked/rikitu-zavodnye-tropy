@@ -73,10 +73,14 @@ def build_summary(session_bytes, exports):
     input_method_counts = {}
     participant_methods = {}
     first_method_by_participant = {}
+    noncontroller_attempt_numbers = {}
     for item in sessions:
         method = item['input_method']
         input_method_counts[method] = input_method_counts.get(method, 0) + 1
         participant_methods.setdefault(item['participant_id'], set()).add(method)
+        if method != 'controller':
+            noncontroller_attempt_numbers.setdefault(item['participant_id'], []).append(
+                item['attempt_number'])
         if item['attempt_number'] == 1:
             first_method_by_participant[item['participant_id']] = method
     controller = [item for item in sessions if item['input_method'] == 'controller']
@@ -87,6 +91,12 @@ def build_summary(session_bytes, exports):
     controller_repeats_after_noncontroller_first = sum(
         1 for item in controller_repeats
         if first_method_by_participant[item['participant_id']] != 'controller')
+    controller_repeats_after_any_noncontroller_attempt = sum(
+        1 for item in controller_repeats
+        if any(
+            prior_number < item['attempt_number']
+            for prior_number in noncontroller_attempt_numbers.get(
+                item['participant_id'], ())))
     mixed_input_participants = sum(1 for methods in participant_methods.values()
                                    if len(methods) > 1)
     stop_reasons = {}
@@ -159,7 +169,7 @@ def build_summary(session_bytes, exports):
     ]
 
     return {
-        'schema': 'rikitu-map01-controller-pilot-readiness-v2',
+        'schema': 'rikitu-map01-controller-pilot-readiness-v3',
         'provenance_verified': False,
         'interpretation': 'Descriptive pilot summary only; this does not authenticate human control or establish that the level is balanced.',
         'browser_exports_cross_checked': True,
@@ -176,7 +186,8 @@ def build_summary(session_bytes, exports):
         'controller_repeat_input_consistency': {
             'controller_repeat_attempts_after_controller_first': controller_repeats_after_controller_first,
             'controller_repeat_attempts_after_noncontroller_first': controller_repeats_after_noncontroller_first,
-            'interpretation': 'Diagnostic only. Frozen Stage176 medians still include all controller rows; review mixed-input sequences before interpreting first/repeat comparisons.',
+            'controller_repeat_attempts_after_any_noncontroller_attempt': controller_repeats_after_any_noncontroller_attempt,
+            'interpretation': 'Diagnostic only. The frozen Stage176 medians still include all controller rows. Counts distinguish repeats after a non-controller A1 from repeats after any earlier keyboard/touch attempt.',
         },
         'controller_groups': groups,
         'paired_controller_cohort': {
@@ -192,7 +203,7 @@ def build_summary(session_bytes, exports):
         'source_session_log_size_bytes': len(session_bytes),
         'notes': [
             'Only controller sessions contribute to the first/repeat pacing summaries under the frozen Stage176 rule.',
-            'Input-method consistency is reported separately: a controller repeat following a keyboard/touch first attempt remains in the controller repeat median, so review that diagnostic before interpreting the comparison.',
+            'Input-method consistency is reported separately: controller repeats after any earlier keyboard/touch attempt remain in the frozen controller repeat median, so review both first-attempt and any-prior-attempt diagnostics before interpreting comparisons.',
             'A group needs at least five completed controller runs before its median is compared with the 360–480 second target.',
             'A within-target median is a pilot signal for review, not proof of balanced pacing or a release criterion.',
             'Incomplete attempts are counted and their stop reasons retained, but their stop times are not treated as completed-run times.',

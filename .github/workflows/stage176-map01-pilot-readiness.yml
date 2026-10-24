@@ -16,6 +16,7 @@ on:
       - 'tests/test_private_evidence_readback.py'
       - 'tests/test_private_evidence_bundle.py'
       - 'docs/STAGE176_MAP01_PILOT_READINESS.md'
+      - 'docs/STAGE180_MAP01_MIXED_INPUT_REPEAT_DIAGNOSTIC.md'
   push:
     branches: [main]
     paths:
@@ -33,6 +34,7 @@ on:
       - 'tests/test_private_evidence_readback.py'
       - 'tests/test_private_evidence_bundle.py'
       - 'docs/STAGE176_MAP01_PILOT_READINESS.md'
+      - 'docs/STAGE180_MAP01_MIXED_INPUT_REPEAT_DIAGNOSTIC.md'
 permissions:
   contents: read
 jobs:
