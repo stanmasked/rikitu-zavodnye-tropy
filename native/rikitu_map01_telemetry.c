@@ -12,6 +12,7 @@ static int valid_sample(const RikituScene *s,const RikituLoop *l) {
      (size_t)s->reached_checkpoints>s->checkpoint_total||
      s->damage_count<0||
      (s->stage.completed!=0&&s->stage.completed!=1)||
+     (s->stage.completed&&!rikitu_stage_can_finish(&s->stage))||
      !isfinite(l->active_seconds)||l->active_seconds<0.0f)
     return 0;
   return 1;
