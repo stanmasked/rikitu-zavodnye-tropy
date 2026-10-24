@@ -13,7 +13,10 @@ static int valid_sample(const RikituScene *s,const RikituLoop *l) {
      s->damage_count<0||
      (s->stage.completed!=0&&s->stage.completed!=1)||
      (s->stage.completed&&!rikitu_stage_can_finish(&s->stage))||
-     !isfinite(l->active_seconds)||l->active_seconds<0.0f)
+     !isfinite(l->active_seconds)||l->active_seconds<0.0f||
+     !isfinite(s->world_width)||s->world_width<=0.0f||
+     !isfinite(l->player.x)||l->player.x<0.0f||
+     l->player.x>s->world_width)
     return 0;
   return 1;
 }
@@ -30,6 +33,7 @@ int rikitu_map01_telemetry_start(RikituMap01Telemetry *m,
   m->last_damage=s->damage_count;
   m->last_completed=s->stage.completed;
   m->last_active_seconds=l->active_seconds;
+  m->last_player_x=l->player.x;
   m->initialized=1;
   return 1;
 }
@@ -37,8 +41,16 @@ int rikitu_map01_telemetry_observe(RikituMap01Telemetry *m,
                                    const RikituScene *s,const RikituLoop *l,
                                    int ticks) {
   RikituMap01Telemetry next;
+  float dx;
   int cp;
-  if(!m||!m->initialized||!valid_sample(s,l)||ticks<0||ticks>6||
+  if(!m||!m->initialized||!valid_sample(s,l))return 0;
+  dx=l->player.x-m->last_player_x;
+  if(ticks<0||ticks>6||
+     /* Position cannot move if the fixed-step game loop executed 0 ticks. */
+     (ticks==0&&fabsf(dx)>0.01f)||
+     !isfinite(dx)||
+     (dx<0.0f&&dx>=-64.0f&&m->leftward_frames==UINT_MAX)||
+     (dx< -64.0f&&m->large_left_discontinuities==UINT_MAX)||
      (l->paused&&ticks!=0)||
      /* Float accumulation at long playtimes can lose a fraction of a tick. */
      l->active_seconds+0.02f<m->last_active_seconds||
@@ -54,6 +66,17 @@ int rikitu_map01_telemetry_observe(RikituMap01Telemetry *m,
   next.observed_frames++;
   next.observed_ticks+=(unsigned)ticks;
   if(l->paused)next.paused_frames++;
+  /* Exclude large leftward discontinuities (possible respawns/reloads)
+   * from the walk-back distance. This is a heuristic and does NOT
+   * infer an actual cause or claim voluntary player backtracking. */
+  if(dx< -64.0f){
+    next.large_left_discontinuities++;
+  }else if(dx<0.0f){
+    next.leftward_frames++;
+    next.leftward_distance_px+=-dx;
+    if(!isfinite(next.leftward_distance_px))return 0;
+  }
+  next.last_player_x=l->player.x;
   next.new_fragments+=(unsigned)(s->stage.fragment_count-m->last_fragments);
   next.new_coins+=(unsigned)(s->stage.coin_count-m->last_coins);
   next.new_checkpoints+=(unsigned)(s->reached_checkpoints-m->last_checkpoints);

@@ -32,8 +32,24 @@ int main(void) {
     assert(rikitu_map01_telemetry_observe(&m,&s,&l,ticks));
   }
   assert(m.observed_ticks==18&&m.observed_frames==19);
+  assert(m.leftward_distance_px==0.0f&&m.leftward_frames==0);
   assert(m.new_coins>0&&m.new_coins==(unsigned)s.stage.coin_count);
   assert(fabsf(l.active_seconds-18.0f*RIKITU_FIXED_DT)<0.01f);
+  /* Real engine steps going LEFT must count motion, not log positions. */
+  for(i=0;i<4;i++){
+    ticks=rikitu_demo_advance(&s,&l,RIKITU_FIXED_DT,RIKITU_INPUT_LEFT);
+    assert(ticks==1);
+    assert(rikitu_map01_telemetry_observe(&m,&s,&l,ticks));
+  }
+  assert(m.leftward_frames==4u);
+  assert(m.leftward_distance_px>14.0f&&m.leftward_distance_px<16.0f);
+  assert(m.large_left_discontinuities==0u);
+  /* Fail closed when coordinates change without a physics tick. */
+  old=m;
+  l.player.x+=1.0f;
+  assert(!rikitu_map01_telemetry_observe(&m,&s,&l,0));
+  assert(memcmp(&old,&m,sizeof(m))==0);
+  l.player.x-=1.0f;
   /* Tests below inject synthetic state changes, NOT player-route evidence. */
   s.reached_checkpoints=2;
   s.stage.fragment_count=2;
@@ -65,6 +81,16 @@ int main(void) {
   assert(!rikitu_map01_telemetry_observe(&m,&s,&l,0));
   assert(!rikitu_map01_telemetry_start(&m,&s,&l));
   assert(memcmp(&old,&m,sizeof(m))==0);
-  puts("PASS MAP01 observational telemetry: pause, fixed ticks, events, split baseline, invalid-state fail-closed");
+  /* A large artificial displacement is NOT counted as ordinary walking.
+   * This is a synthetic diagnostic sanity check, not player evidence. */
+  fresh(&s,&l);
+  assert(rikitu_map01_telemetry_start(&m,&s,&l));
+  l.player.x=250.0f;
+  assert(rikitu_map01_telemetry_observe(&m,&s,&l,1));
+  l.player.x=105.0f;
+  assert(rikitu_map01_telemetry_observe(&m,&s,&l,1));
+  assert(m.large_left_discontinuities==1u);
+  assert(m.leftward_frames==0u&&m.leftward_distance_px==0.0f);
+  puts("PASS MAP01 telemetry: real leftward movement, pause, events, synthetic discontinuity, zero-tick fail-closed");
   return 0;
 }
