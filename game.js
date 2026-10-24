@@ -374,7 +374,7 @@
     // Standard Gamepad mapping: D-pad left/right override a neutral or analog stick axis.
     const dpadLeft=!!(gp&&gp.buttons[14]?.pressed);
     const dpadRight=!!(gp&&gp.buttons[15]?.pressed);
-    if(dpadLeft!==dpadRight)gamepadX=dpadLeft?-1:1;
+    if(dpadLeft||dpadRight)gamepadX=dpadLeft===dpadRight?0:(dpadLeft?-1:1);
     gamepadJump=!!(gp&&(gp.buttons[0]?.pressed||gp.buttons[1]?.pressed));
     gamepadRun=!!(gp&&gp.buttons[5]?.pressed); // RB/R1, held for faster movement.
     const pause=!!(gp&&gp.buttons[9]?.pressed);
