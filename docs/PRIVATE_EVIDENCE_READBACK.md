@@ -15,12 +15,17 @@ The Stage157 tool supplies two explicit steps for a trusted private operator:
 1. **Seal** a runner-local private evidence tree into a versioned
    `PENDING_DRIVE_READBACK` JSON manifest, recording every relative path,
    exact byte count and SHA-256. The manifest is private too.
-2. Use the **connected Google Drive authenticated upload** process to store
+2. Pin the sealed manifest SHA-256 printed by the seal command in a
+   **separate private handoff record**. A successful readback must match the
+   pinned receipt digest; editing the file list and the pixels together
+   must not permit a false match.
+3. Use the **connected Google Drive authenticated upload** process to store
    the raw tree (typically packaged into an immutable versioned archive) and
    receipt under RIKITU's private archive, never in the Git repository.
    Independently download the uploaded exact files with authenticated Drive
    access into a fresh private directory.
-3. **Verify** the readback directory against the sealed manifest. The tool
+4. **Verify** the readback directory against the sealed manifest **and the
+   previously pinned SHA-256 of that exact manifest**. The tool
    rejects missing/extra files, byte or hash mismatches, symlinks, unsafe
    paths, changed manifests and unexpected schemas. Only then document the
    Drive object ID, size, SHA-256, `shared=false`, verification timestamp
@@ -35,7 +40,8 @@ python tools/private_evidence_readback.py seal \
 
 python tools/private_evidence_readback.py verify \
   --manifest /private/receipts/stage157-unique-run-v1.json \
-  --readback-dir /private/independently-downloaded-evidence-v1
+  --readback-dir /private/independently-downloaded-evidence-v1 \
+  --expected-manifest-sha256 PREVIOUSLY_PINNED_64_HEX_SHA256
 ```
 
 Do not treat the second command's success alone as authentication or
