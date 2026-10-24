@@ -85,7 +85,6 @@ int main(void) {
   float level_save_elapsed=0.0f;
   (void)rikitu_campaign_init(&campaign,1);
   begin_stage(&scene,&game,&campaign);
-  map01_metrics_active=0;
   /* libnx's default __appInit mounts sdmc before entering main().
    * Calling fsdevMountSdmc twice can return libnx 0x559 because the
    * devoptab already has a device called "sdmc". Reuse that valid
@@ -103,9 +102,10 @@ int main(void) {
     /* RKC2 is a different record family and does not decode old MAP01 RKS1.
      * The current chapter restarts at its beginning after loading campaign
      * metadata; only MAP01 retains its legacy intra-level checkpoint. */
-    if(rikitu_campaign_save_load_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign))
+    if(rikitu_campaign_save_load_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign)){
       begin_stage(&scene,&game,&campaign);
       map01_metrics_active=0;
+    }
     if(rikitu_campaign_uses_legacy_map01_checkpoint(&campaign) &&
        campaign.mode==RIKITU_CAMPAIGN_PLAYING){
       (void)rikitu_save_load_pair(MAP01_A,MAP01_B,&scene,&game);
@@ -183,7 +183,7 @@ int main(void) {
           begin_stage(&scene,&game,&campaign);
           map01_metrics_active=0;
           save_elapsed=0.0f;have_last=0;
-        level_save_elapsed=0.0f;level_have_last=0;
+          level_save_elapsed=0.0f;level_have_last=0;
         }
         if(transition && save_ready && !campaign_debug)
           (void)rikitu_campaign_save_store_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign);
