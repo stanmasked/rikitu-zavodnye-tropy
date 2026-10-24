@@ -1,0 +1,31 @@
+name: RIKITU Stage173 private human-playtest analyzer
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage173-private-playtest-analysis.yml'
+      - 'tools/analyze_map01_playtest_sessions.py'
+      - 'tests/test_map01_playtest_sessions.py'
+      - 'docs/STAGE173_MAP01_HUMAN_PLAYTEST_PROTOCOL.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage173-private-playtest-analysis.yml'
+      - 'tools/analyze_map01_playtest_sessions.py'
+      - 'tests/test_map01_playtest_sessions.py'
+      - 'docs/STAGE173_MAP01_HUMAN_PLAYTEST_PROTOCOL.md'
+permissions:
+  contents: read
+jobs:
+  private-playtest-analysis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile the local-only analyzer
+        run: python -m py_compile tools/analyze_map01_playtest_sessions.py
+      - name: Run synthetic privacy and integrity tests
+        run: python tests/test_map01_playtest_sessions.py
+      # No real player data, CSV exports, evidence files, or artifacts are uploaded.
