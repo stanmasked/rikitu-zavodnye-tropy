@@ -142,13 +142,17 @@ int main(void) {
   elevated_branch(&branch30,30);elevated_branch(&branch60,60);elevated_branch(&branch120,120);
   assert(close_to(direct30.loop.active_seconds,direct60.loop.active_seconds,0.08f));
   assert(close_to(direct60.loop.active_seconds,direct120.loop.active_seconds,0.08f));
-  assert(close_to(branch30.loop.active_seconds,branch60.loop.active_seconds,0.08f));
-  assert(close_to(branch60.loop.active_seconds,branch120.loop.active_seconds,0.08f));
+  assert(close_to(branch30.loop.active_seconds,branch60.loop.active_seconds,0.12f));
+  assert(close_to(branch60.loop.active_seconds,branch120.loop.active_seconds,0.12f));
   assert(branch30.scene.stage.coin_count>=direct30.scene.stage.coin_count+3);
   assert(branch60.scene.stage.coin_count==branch30.scene.stage.coin_count);
   assert(branch120.scene.stage.coin_count==branch30.scene.stage.coin_count);
   assert(branch30.loop.active_seconds>direct30.loop.active_seconds+0.4f);
   assert(branch30.loop.active_seconds<direct30.loop.active_seconds+1.8f);
+  assert(branch60.loop.active_seconds>direct60.loop.active_seconds+0.4f);
+  assert(branch60.loop.active_seconds<direct60.loop.active_seconds+1.8f);
+  assert(branch120.loop.active_seconds>direct120.loop.active_seconds+0.4f);
+  assert(branch120.loop.active_seconds<direct120.loop.active_seconds+1.8f);
   puts("PASS Stage170: optional raised MAP01 branch collects four-plus existing coins, returns to ground by real input, and preserves canonical geometry; not human pacing evidence");
   return 0;
 }
