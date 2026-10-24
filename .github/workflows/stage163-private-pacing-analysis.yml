@@ -1,0 +1,33 @@
+name: RIKITU Stage163 private pacing CSV audit (synthetic only)
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage163-private-pacing-analysis.yml'
+      - 'tools/analyze_private_pacing_csv.py'
+      - 'tests/test_private_pacing_csv.py'
+      - 'docs/STAGE163_PRIVATE_PACING_ANALYSIS.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage163-private-pacing-analysis.yml'
+      - 'tools/analyze_private_pacing_csv.py'
+      - 'tests/test_private_pacing_csv.py'
+      - 'docs/STAGE163_PRIVATE_PACING_ANALYSIS.md'
+permissions:
+  contents: read
+jobs:
+  private-csv-contract:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify Python parser and synthetic private-only CSV fixtures
+        run: python -m unittest discover -s tests -p 'test_private_pacing_csv.py' -v
+      - name: Verify syntax and public CI retention restrictions
+        run: |
+          python -m py_compile tools/analyze_private_pacing_csv.py
+          python tests/test_ci_artifact_policy.py
+      # No user data, game saves, artwork, raw captures or uploads in CI.
