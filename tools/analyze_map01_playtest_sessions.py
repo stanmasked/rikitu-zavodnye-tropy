@@ -103,6 +103,8 @@ def analyse(data):
         if outcome == 'completed':
             if fragments != 3 or stop_reason != 'none' or not SHA_RE.fullmatch(source_hash):
                 raise ValueError('completed attempt needs all fragments, no stop reason, and linked CSV hash')
+            if source_hash in linked_exports:
+                raise ValueError('browser export hash reused by multiple completed sessions')
             linked_exports.add(source_hash)
         else:
             if stop_reason == 'none' or source_hash:
