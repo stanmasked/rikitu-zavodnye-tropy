@@ -23,11 +23,11 @@ BROWSER_HEADER = ('Уровень', 'Название', 'Тип', 'Секунд�
 def browser_csv(seconds, hits, coins):
     verdict = 'Ниже цели' if seconds < 360 else ('Выше цели' if seconds > 480 else 'В пределах цели')
     out = io.StringIO(newline='')
-    writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n', quoting=csv.QUOTE_ALL)
+    writer = csv.writer(out, delimiter=';', lineterminator='\r\n', quoting=csv.QUOTE_ALL)
     writer.writerow(BROWSER_HEADER)
     writer.writerow(('1', 'Цветочная тропа', 'Обычный', str(seconds), str(hits),
                      str(coins), '360', '480', verdict))
-    return ('\\ufeff' + out.getvalue()).encode('utf-8')
+    return ('\ufeff' + out.getvalue()).encode('utf-8')
 
 
 def make_case(changed_first_seconds=None, identical_exports=False):
@@ -35,7 +35,7 @@ def make_case(changed_first_seconds=None, identical_exports=False):
     repeat = first if identical_exports else browser_csv(335.0, 1, 42)
     hashes = [hashlib.sha256(first).hexdigest(), hashlib.sha256(repeat).hexdigest()]
     out = io.StringIO(newline='')
-    writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n', quoting=csv.QUOTE_ALL)
+    writer = csv.writer(out, delimiter=';', lineterminator='\r\n', quoting=csv.QUOTE_ALL)
     writer.writerow(m.SESSIONS.HEADER)
     writer.writerow(('P001-A1','first','controller','completed','400.0','2','18','3','3','0','1','yes','yes','none','P001-A1.csv',hashes[0]))
     writer.writerow(('P001-A2','repeat','controller','completed',
@@ -43,7 +43,7 @@ def make_case(changed_first_seconds=None, identical_exports=False):
                      '2' if identical_exports else '1','18' if identical_exports else '42',
                      '3','3','0','2','yes','yes','none','P001-A2.csv',hashes[1]))
     writer.writerow(('P002-A1','first','keyboard','stopped','220.0','4','6','1','1','2','1','no','no','missed_fragment','',''))
-    sessions = ('\\ufeff' + out.getvalue()).encode('utf-8')
+    sessions = ('\ufeff' + out.getvalue()).encode('utf-8')
     return sessions, {'P001-A1.csv': first, 'P001-A2.csv': repeat}
 
 
@@ -125,7 +125,7 @@ class BrowserExportCrosscheckTests(unittest.TestCase):
             rows=list(csv.reader(io.StringIO(sessions.decode('utf-8-sig'),newline=''),delimiter=';',strict=True))
             rows[1][15]=hashlib.sha256(bad).hexdigest()
             out=io.StringIO(newline='')
-            writer=csv.writer(out,delimiter=';',lineterminator='\\r\\n',quoting=csv.QUOTE_ALL)
+            writer=csv.writer(out,delimiter=';',lineterminator='\r\n',quoting=csv.QUOTE_ALL)
             writer.writerows(rows)
             sessions=('\ufeff'+out.getvalue()).encode('utf-8')
             session_file,export_dir=write_case(root,sessions,exports)
