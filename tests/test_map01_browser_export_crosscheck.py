@@ -59,6 +59,7 @@ class BrowserExportCrosscheckTests(unittest.TestCase):
             report = json.loads(report_file.read_text(encoding='utf-8'))
             self.assertEqual(result['sessions'], 3)
             self.assertEqual(result['matched'], 2)
+            self.assertEqual(report['schema'], 'rikitu-map01-browser-crosscheck-v2')
             self.assertEqual(report['session_summary']['completed'], 2)
             self.assertEqual(report['session_summary']['incomplete'], 1)
             self.assertEqual(report['browser_export_crosscheck']['completed_sessions_matched'], 2)
