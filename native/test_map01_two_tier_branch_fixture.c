@@ -45,26 +45,27 @@ static void initialize(LayoutRun *r,int prototype) {
   }
   assert(rikitu_map01_telemetry_start(&r->telemetry,&r->scene,&r->loop));
 }
-static void observe_frame(LayoutRun *r,int hz,unsigned input) {
+static int observe_frame(LayoutRun *r,int hz,unsigned input) {
   int n=rikitu_demo_advance(&r->scene,&r->loop,1.0f/(float)hz,input);
   assert(n>=0);
   assert(rikitu_map01_telemetry_observe(&r->telemetry,&r->scene,&r->loop,n));
   r->ticks+=(unsigned)n;
   r->frames++;
+  return n;
 }
 static void direct_baseline(LayoutRun *r,int hz) {
   int f,jumped=0;
   initialize(r,0);
   for(f=0;f<hz*30;f++) {
     unsigned input=RIKITU_INPUT_RIGHT|RIKITU_INPUT_RUN;
-    int request=0;
+    int request=0,n;
     if(!jumped&&r->loop.player.grounded&&r->loop.player.x>=1542.0f&&
        r->loop.player.x<1600.0f) {
       input|=RIKITU_INPUT_JUMP;
       request=1;
     }
-    observe_frame(r,hz,input);
-    if(request&&r->ticks>0u) {
+    n=observe_frame(r,hz,input);
+    if(request&&n>0) {
       /* One input edge consumes one jump even when 30Hz advances two ticks. */
       jumped=1;r->jumps++;
     }
@@ -87,7 +88,7 @@ static void prototype_branch(LayoutRun *r,int hz) {
   r->phase=0; /* normal spawn to required first fragment */
   for(f=0;f<hz*30;f++) {
     unsigned input=RIKITU_INPUT_RIGHT|RIKITU_INPUT_RUN;
-    int request=0;
+    int request=0,n;
     was_grounded=r->loop.player.grounded;
     if(r->phase==1&&r->jumps==0u&&r->loop.player.grounded&&
        r->loop.player.x>=1542.0f&&r->loop.player.x<1600.0f) {
@@ -103,8 +104,8 @@ static void prototype_branch(LayoutRun *r,int hz) {
        r->loop.player.x>=2300.0f&&r->loop.player.x<=2320.0f) {
       input|=RIKITU_INPUT_JUMP;request=1;
     }
-    observe_frame(r,hz,input);
-    if(request&&r->ticks>0u)r->jumps++;
+    n=observe_frame(r,hz,input);
+    if(request&&n>0)r->jumps++;
     switch(r->phase) {
       case 0:
         if(r->loop.player.x>=1542.0f)r->phase=1;
