@@ -74,10 +74,14 @@ class SvgAuditTest(unittest.TestCase):
         # Synthetic analogue of a fill abruptly ending inside a panorama.
         _, issues = audit_svg(doc('<path d="M200 540 T620 560 L620 720 H200Z"'
                                   ' fill="#5eb3be"/>'))
-        self.assertEqual(issues, [("warning", "interior-bottom-vertical-fill-edge")])
+        self.assertEqual(issues, [
+            ("warning", "interior-bottom-vertical-fill-edge"),
+            ("warning", "interior-start-near-vertical-fill-edge"),
+        ])
 
     def test_does_not_flag_normal_canvas_edge_closure(self):
-        _, issues = audit_svg(doc('<path d="M200 540 T1280 560 L1280 720 H200Z"'
+        # Both vertical closures are exactly on the canvas borders.
+        _, issues = audit_svg(doc('<path d="M0 540 T1280 560 L1280 720 H0Z"'
                                   ' fill="#5eb3be"/>'))
         self.assertEqual(issues, [])
 
@@ -91,6 +95,37 @@ class SvgAuditTest(unittest.TestCase):
                 _, issues = audit_svg(doc(f'<path d="{path}" {attr}/>'))
                 self.assertNotIn(
                     ("warning", "interior-bottom-vertical-fill-edge"), issues)
+
+    def test_flags_tall_interior_left_closing_bank(self):
+        # Synthetic-only analogue of a filled stream beginning vertically.
+        _, issues = audit_svg(doc('<path d="M200 540 Q350 530 500 560'
+                                  ' L660 720 H180Z" fill="#69b9c7"/>'))
+        self.assertEqual(
+            issues, [("warning", "interior-start-near-vertical-fill-edge")])
+
+    def test_left_bank_taper_no_longer_warns(self):
+        _, issues = audit_svg(doc('<path d="M130 718 Q170 640 200 540'
+                                  ' Q350 530 500 560 L660 720 H130Z"'
+                                  ' fill="#69b9c7"/>'))
+        self.assertEqual(issues, [])
+
+    def test_left_edge_warning_ignores_open_canvas_border(self):
+        _, issues = audit_svg(doc('<path d="M0 530 Q300 520 500 540'
+                                  ' L660 720 H0Z" fill="#69b9c7"/>'))
+        self.assertEqual(issues, [])
+
+    def test_left_bank_warning_requires_fill_and_sharp_slope(self):
+        cases = (
+            ('fill="none"', "M200 540 Q350 530 500 560 L660 720 H180Z"),
+            ('fill="#69b9c7"', "M200 690 Q350 690 500 699 L660 720 H180Z"),
+            ('fill="#69b9c7"', "M260 540 Q350 530 500 560 L660 720 H180Z"),
+        )
+        for style, path in cases:
+            with self.subTest(style=style, path=path):
+                _, issues = audit_svg(doc(f'<path d="{path}" {style}/>'))
+                self.assertNotIn(
+                    ("warning", "interior-start-near-vertical-fill-edge"),
+                    issues)
 
     def test_path_arities_and_exponent(self):
         self.assertIsNone(check_path("M1e2,2 L3.0,-4.5 z"))

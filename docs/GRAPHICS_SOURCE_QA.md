@@ -13,6 +13,26 @@ The Stage146 auditor is a **code-only quality gate** for environment/vector art,
 
 The public GitHub workflow runs only `tests/test_svg_source_audit.py` with synthetic markup. It never fetches private Drive originals, artifacts, images, level screenshots, or extracted media.
 
+## Stage154 — opening/left-bank SVG closure warning (technical only)
+
+A separate non-fatal warning, `interior-start-near-vertical-fill-edge`,
+recognizes a filled absolute path that starts high inside the source canvas
+and closes from its bottom edge almost directly back to that start. Like the
+Stage147 closing-edge check, this is **not** an SVG syntax error; walls,
+buildings and other intentionally sharp shapes may warrant manual review.
+
+The restricted `M … L x bottom H x Z` heuristic checks that the internal
+opening edge is tall and nearly vertical, rather than flagging canvas-border
+fills or shallow/diagonal slopes. It never rewrites art. Synthetic CI checks
+the warning and several intentional/non-filled negative examples.
+
+During **private** 1280×720 source-frame review, the unapproved MAP01 stream
+draft showed an abrupt left-bank entry as well as the previously corrected
+right-bank end. A separate `StreamBank Taper v2` draft smooths that entry;
+the exact original ZIP and v1 remain unchanged, with all derived materials
+preserved privately. Neither is approved or integrated. Do not publish real
+SVG paths, private screenshots or rendered pixels in CI.
+
 ## Stage147 interior cliff warning (technical only)
 
 The structural SVG auditor additionally reports `interior-bottom-vertical-fill-edge` as a **warning** when a filled absolute path terminates vertically at the bottom of the canvas despite being well inside the canvas width. In a scrolling panorama this may indicate a hard visual seam (for example, the known MAP01 water shape). A vertically sided cliff or piece of architecture may be deliberate; this is not a fatal error, nor a replacement for rendering.
