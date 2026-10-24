@@ -12,9 +12,6 @@ on:
       - 'tests/test_ci_artifact_policy.py'
 permissions:
   contents: read
-concurrency:
-  group: ci-storage-policy-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 jobs:
   audit:
     runs-on: ubuntu-latest
