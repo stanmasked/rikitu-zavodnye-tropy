@@ -16,7 +16,7 @@ import re
 import sys
 
 HERE = Path(__file__).resolve().parent
-SHA256_RE = re.compile(r'[0-9a-f]{64}\\Z', re.ASCII)
+SHA256_RE = re.compile(r'[0-9a-f]{64}\Z', re.ASCII)
 
 
 def _load_sibling(filename, module_name):
@@ -85,7 +85,7 @@ def analyse_files(session_file, exports_dir, output_file, expected_sessions_sha2
             'All raw inputs remain local; no network access or upload is performed.',
         ],
     }
-    encoded = (json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False) + '\\n').encode('utf-8')
+    encoded = (json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False) + '\n').encode('utf-8')
     out_fd = os.open(dest, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
                      getattr(os, 'O_NOFOLLOW', 0), 0o600)
     try:
