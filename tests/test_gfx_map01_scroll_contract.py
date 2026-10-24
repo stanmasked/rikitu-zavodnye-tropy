@@ -28,15 +28,23 @@ def map_scroll(camera_world, world_width):
 
 
 def check_workflow_runner():
-    """Keep the panorama contract on a pinned, reproducible Ubuntu runner."""
-    workflow = (ROOT / ".github" / "workflows" / "gfx-map01-contract.yml").read_text(
-        encoding="utf-8")
-    assert "runs-on: ubuntu-24.04" in workflow
-    assert "runs-on: ubuntu-latest" not in workflow
-    assert "timeout-minutes: 3" in workflow
-    assert "python3 tests/test_gfx_map01_scroll_contract.py" in workflow
-    assert "native/test_parallax_map01.c" in workflow
-    print("PASS GFX-01 runner contract: pinned Ubuntu 24.04, bounded runtime, GCC/Clang native checks")
+    """Keep every public GFX-01 synthetic contract on a pinned runner."""
+    workflow_dir = ROOT / ".github" / "workflows"
+    expected = {
+        "stage148-background-blit.yml": ("timeout-minutes: 4", "native/test_background_blit.c"),
+        "stage149-background-overlay.yml": ("timeout-minutes: 5", "native/test_background_overlay.c"),
+        "stage150-map01-five-cameras.yml": ("timeout-minutes: 5", "native/test_map01_background_composite.c"),
+        "gfx-map01-contract.yml": ("timeout-minutes: 3", "native/test_parallax_map01.c"),
+    }
+    for name, required in expected.items():
+        workflow = (workflow_dir / name).read_text(encoding="utf-8")
+        assert "runs-on: ubuntu-24.04" in workflow, f"{name}: runner must be pinned"
+        assert "runs-on: ubuntu-latest" not in workflow, f"{name}: floating runner is forbidden"
+        assert required[0] in workflow, f"{name}: bounded timeout missing"
+        assert required[1] in workflow, f"{name}: required synthetic test missing"
+    assert "python3 tests/test_gfx_map01_scroll_contract.py" in (
+        workflow_dir / "gfx-map01-contract.yml").read_text(encoding="utf-8")
+    print("PASS GFX-01 runner contract: four pinned workflows, bounded timeouts and synthetic test gates")
 
 
 def main():
