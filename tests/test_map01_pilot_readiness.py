@@ -124,10 +124,10 @@ class PilotReadinessTests(unittest.TestCase):
                 if row[0] == 'P001-A1':
                     row[2] = 'keyboard'
             out = io.StringIO(newline='')
-            writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n',
+            writer = csv.writer(out, delimiter=';', lineterminator='\r\n',
                                 quoting=csv.QUOTE_ALL)
             writer.writerows(rows)
-            sessions = ('\\ufeff' + out.getvalue()).encode('utf-8')
+            sessions = ('\ufeff' + out.getvalue()).encode('utf-8')
 
             session_file, exports_dir = write_dataset(root, sessions, exports)
             result = m.analyse_files(session_file, exports_dir, root/'mixed-input.json',
