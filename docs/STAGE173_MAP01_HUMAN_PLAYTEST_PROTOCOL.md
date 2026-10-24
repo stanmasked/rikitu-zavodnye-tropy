@@ -108,18 +108,31 @@ session_id;attempt_type;input_method;outcome;elapsed_seconds;hits;coins;fragment
    allow identical hashes only for distinct named files. They refuse Git
    checkouts/overwrites, write mode-0600 reports, print aggregates/hashes
    only, and never upload anything.
-4. Archive both summaries, their SHA-256 values and the input hashes beside
-   the originals. Verify readback of each summary as well as the raw files.
+4. Run `tools/analyze_map01_pilot_readiness.py` with `--sessions`,
+   `--exports-dir`, `--output` and (when available)
+   `--expected-sessions-sha256`. It cross-checks exports again and computes
+   first/repeat medians from controller sessions only. At least five
+   completed controller runs in each group are required before comparing
+   medians with the target. A within-target median is a review signal, not
+   proof of balance; keyboard/touch rows are excluded from controller timing.
+5. Archive all summaries, their SHA-256 values and input hashes beside the
+   originals. Verify readback of each summary as well as the raw files.
 
 ## Interpretation and exit gate
 
-Ordinary MAP01 target remains **360–480 active seconds**. Report first
-attempts separately from repeat attempts; do not average scripted native
-fixtures with human sessions. Incomplete attempts are not completion-time
-samples. Review medians, completion rates, hits, respawns, required-fragment
-misses, return trips and platform discovery together. If times are below
-target, improve meaningful traversal/exploration rather than forcing all
-90 coins or adding a hard timer.
+Ordinary MAP01 target remains **360–480 active seconds**. The frozen
+pilot rule requires at least five completed controller first attempts and
+five completed controller repeat attempts. Only those controller runs feed
+the pacing medians; keyboard/touch observations are kept separate.
+Incomplete attempts are not completion-time samples. If both medians fall
+inside the target, the tool reports `PILOT_MEDIANS_WITHIN_TARGET_REVIEW_REQUIRED`;
+if either falls outside, it reports `PILOT_MEDIANS_OUTSIDE_TARGET_REVIEW_REQUIRED`.
+With fewer than five completed runs in either group it reports
+`INSUFFICIENT_COMPLETED_CONTROLLER_RUNS`. These are descriptive review
+signals, not pass/fail release criteria. Review medians, completion rates,
+hits, respawns, required-fragment misses, return trips and platform discovery
+together. If times are below target, improve meaningful traversal/exploration
+rather than forcing all 90 coins or adding a hard timer.
 
 Do not close issue #5 or claim the level is balanced until real, anonymized
 controller runs are archived and reviewed. This protocol and its synthetic
