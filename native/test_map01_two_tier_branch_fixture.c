@@ -207,6 +207,12 @@ int main(void) {
   assert(close_to(p60.telemetry.leftward_distance_px,p120.telemetry.leftward_distance_px,20.0f));
   /* The fixture must not force its branch: direct controller preserves the
    * same mandatory progress and incidental baseline coin count. */
+  assert(close_to(s30.loop.active_seconds,d30.loop.active_seconds,0.10f));
+  assert(close_to(s60.loop.active_seconds,d60.loop.active_seconds,0.10f));
+  assert(close_to(s120.loop.active_seconds,d120.loop.active_seconds,0.10f));
+  assert(close_to(s30.loop.player.x,d30.loop.player.x,10.0f));
+  assert(close_to(s60.loop.player.x,d60.loop.player.x,10.0f));
+  assert(close_to(s120.loop.player.x,d120.loop.player.x,10.0f));
   assert(s30.scene.stage.fragment_count==d30.scene.stage.fragment_count);
   assert(s30.scene.reached_checkpoints==d30.scene.reached_checkpoints);
   assert(s30.scene.stage.coin_count==d30.scene.stage.coin_count);
@@ -214,6 +220,8 @@ int main(void) {
   assert(s120.scene.stage.coin_count==d120.scene.stage.coin_count);
   assert(s30.scene.stage.fragments[0]&&s30.scene.reached_checkpoints==1);
   assert(!s30.scene.stage.coins[47]&&!s30.scene.stage.coins[48]&&!s30.scene.stage.coins[49]);
+  assert(!s60.scene.stage.coins[47]&&!s60.scene.stage.coins[48]&&!s60.scene.stage.coins[49]);
+  assert(!s120.scene.stage.coins[47]&&!s120.scene.stage.coins[48]&&!s120.scene.stage.coins[49]);
   assert(p30.scene.stage.coin_count>=s30.scene.stage.coin_count+3);
   assert(p60.scene.stage.coin_count>=s60.scene.stage.coin_count+3);
   assert(p120.scene.stage.coin_count>=s120.scene.stage.coin_count+3);
