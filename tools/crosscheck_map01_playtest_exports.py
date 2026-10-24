@@ -128,7 +128,7 @@ def analyse_files(session_file, browser_files, output_file, expected_sessions_sh
         raise ValueError('destination unavailable or would overwrite')
 
     report = {
-        'schema': 'rikitu-map01-browser-crosscheck-v1',
+        'schema': 'rikitu-map01-browser-crosscheck-v2',
         'provenance_verified': False,
         'interpretation': 'Manual notes cross-checked against linked browser CSV values; this does not authenticate human control or game runtime.',
         'source_session_log_size_bytes': len(session_bytes),
