@@ -16,6 +16,7 @@ rule for the small pilot, not a claim that the level is balanced.
 - Only rows whose input method is `controller` contribute to the first/repeat
   pacing medians. Keyboard/touch rows remain counted in aggregate but are
   excluded from the controller timing groups.
+- The report also counts participants who changed input method and controller repeat attempts whose A1 used keyboard/touch. The frozen median rule is unchanged, so review these diagnostics before interpreting first-versus-repeat results.
 - Incomplete attempts count toward attempt totals and controller stop reasons,
   but their stop-time observations are never treated as completed-run times.
 - Repeat attempts must be linked to the same pseudonymous participant as a complete prior attempt sequence (A2 requires A1; A3 requires A1 and A2). Missing attempt rows invalidate the log rather than silently changing the repeat group.
