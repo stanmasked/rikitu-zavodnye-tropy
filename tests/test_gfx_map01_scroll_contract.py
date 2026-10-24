@@ -27,7 +27,20 @@ def map_scroll(camera_world, world_width):
     return camera_world * (BG_W - VIEW_W) / (world_width - VIEW_W)
 
 
+def check_workflow_runner():
+    """Keep the panorama contract on a pinned, reproducible Ubuntu runner."""
+    workflow = (ROOT / ".github" / "workflows" / "gfx-map01-contract.yml").read_text(
+        encoding="utf-8")
+    assert "runs-on: ubuntu-24.04" in workflow
+    assert "runs-on: ubuntu-latest" not in workflow
+    assert "timeout-minutes: 3" in workflow
+    assert "python3 tests/test_gfx_map01_scroll_contract.py" in workflow
+    assert "native/test_parallax_map01.c" in workflow
+    print("PASS GFX-01 runner contract: pinned Ubuntu 24.04, bounded runtime, GCC/Clang native checks")
+
+
 def main():
+    check_workflow_runner()
     world_width = read_world_width()
     assert world_width == 7900.0, f"Re-review the draft panorama if MAP01 world width changes: {world_width}"
     assert BG_H == VIEW_H
