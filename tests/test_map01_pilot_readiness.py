@@ -102,6 +102,9 @@ class PilotReadinessTests(unittest.TestCase):
             self.assertEqual(report['controller_groups']['repeat']['completed_within_360_480_seconds'], 4)
             self.assertEqual(report['session_counts']['non_controller_sessions_excluded_from_timing'], 1)
             self.assertEqual(report['session_counts']['input_method_counts'], {'controller': 11, 'keyboard': 1})
+            self.assertEqual(report['session_counts']['participants_with_multiple_input_methods'], 0)
+            self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_controller_first'], 5)
+            self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_noncontroller_first'], 0)
             self.assertEqual(report['schema'], 'rikitu-map01-controller-pilot-readiness-v2')
             paired = report['paired_controller_cohort']
             self.assertEqual(paired['matched_participants'], 5)
@@ -164,6 +167,9 @@ class PilotReadinessTests(unittest.TestCase):
             output = root/'summary.json'
             m.analyse_files(session_file, exports_dir, output)
             report = json.loads(output.read_text(encoding='utf-8'))
+            self.assertEqual(report['session_counts']['participants_with_multiple_input_methods'], 1)
+            self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_controller_first'], 4)
+            self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_noncontroller_first'], 1)
             paired = report['paired_controller_cohort']
             self.assertEqual(paired['matched_participants'], 3)
             self.assertEqual(paired['first_median_seconds'], '400.0')
