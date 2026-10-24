@@ -92,17 +92,16 @@ session_id;attempt_type;input_method;outcome;elapsed_seconds;hits;coins;fragment
    and confirm byte-identical readback. Do not upload raw exports or
    session rows to public GitHub. GitHub Actions does not have Drive
    credentials.
-2. Run the existing `tools/analyze_private_pacing_csv.py` on each original
-   browser export in a private working directory, pinning the original
-   SHA-256. Compare the stage seconds/hits/coins with the matching session
-   row.
+2. Run `tools/analyze_private_pacing_csv.py` on each original browser
+   export in the private working directory, pinning each original SHA-256.
 3. Run `tools/analyze_map01_playtest_sessions.py` against the manual log,
-   writing the JSON summary to a new path in the private directory. The
-   tool refuses Git checkouts and overwrites, writes mode-0600 output, and
-   prints aggregates/hashes only. It does not authenticate provenance or
-   upload anything.
-4. Archive the summary, its SHA-256 and the input hash alongside the
-   originals. Verify readback of the summary as well as the raw files.
+   then use `tools/crosscheck_map01_playtest_exports.py` with that log and
+   one `--browser-csv` argument per completed attempt. Stage174 cross-checks
+   the exact linked bytes and compares MAP01 seconds/hits/coins automatically.
+   Both tools refuse Git checkouts and overwrites, write mode-0600 output,
+   print aggregates/hashes only, and never upload anything.
+4. Archive both summaries, their SHA-256 values and the input hashes beside
+   the originals. Verify readback of each summary as well as the raw files.
 
 ## Interpretation and exit gate
 
