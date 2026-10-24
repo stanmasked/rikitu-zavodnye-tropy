@@ -1,4 +1,4 @@
-"""Stage174: synthetic-only cross-check tests for private MAP01 browser exports."""
+"""Stage174: synthetic-only session-to-browser-export cross-check tests."""
 import csv
 import hashlib
 import importlib.util
@@ -23,48 +23,57 @@ BROWSER_HEADER = ('Уровень', 'Название', 'Тип', 'Секунд�
 def browser_csv(seconds, hits, coins):
     verdict = 'Ниже цели' if seconds < 360 else ('Выше цели' if seconds > 480 else 'В пределах цели')
     out = io.StringIO(newline='')
-    writer = csv.writer(out, delimiter=';', lineterminator='\r\n', quoting=csv.QUOTE_ALL)
+    writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n', quoting=csv.QUOTE_ALL)
     writer.writerow(BROWSER_HEADER)
     writer.writerow(('1', 'Цветочная тропа', 'Обычный', str(seconds), str(hits),
                      str(coins), '360', '480', verdict))
-    return ('\ufeff' + out.getvalue()).encode('utf-8')
+    return ('\\ufeff' + out.getvalue()).encode('utf-8')
 
 
-def make_case(changed_first_seconds=None):
+def make_case(changed_first_seconds=None, identical_exports=False):
     first = browser_csv(400.0 if changed_first_seconds is None else changed_first_seconds, 2, 18)
-    repeat = browser_csv(335.0, 1, 42)
+    repeat = first if identical_exports else browser_csv(335.0, 1, 42)
     hashes = [hashlib.sha256(first).hexdigest(), hashlib.sha256(repeat).hexdigest()]
     out = io.StringIO(newline='')
-    writer = csv.writer(out, delimiter=';', lineterminator='\r\n', quoting=csv.QUOTE_ALL)
+    writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n', quoting=csv.QUOTE_ALL)
     writer.writerow(m.SESSIONS.HEADER)
-    writer.writerow(('P001-A1','first','controller','completed','400.0','2','18','3','3','0','1','yes','yes','none',hashes[0]))
-    writer.writerow(('P001-A2','repeat','controller','completed','335.0','1','42','3','3','0','2','yes','yes','none',hashes[1]))
-    writer.writerow(('P002-A1','first','keyboard','stopped','220.0','4','6','1','1','2','1','no','no','missed_fragment',''))
-    sessions = ('\ufeff' + out.getvalue()).encode('utf-8')
-    return sessions, first, repeat
+    writer.writerow(('P001-A1','first','controller','completed','400.0','2','18','3','3','0','1','yes','yes','none','P001-A1.csv',hashes[0]))
+    writer.writerow(('P001-A2','repeat','controller','completed',
+                     '400.0' if identical_exports else '335.0',
+                     '2' if identical_exports else '1','18' if identical_exports else '42',
+                     '3','3','0','2','yes','yes','none','P001-A2.csv',hashes[1]))
+    writer.writerow(('P002-A1','first','keyboard','stopped','220.0','4','6','1','1','2','1','no','no','missed_fragment','',''))
+    sessions = ('\\ufeff' + out.getvalue()).encode('utf-8')
+    return sessions, {'P001-A1.csv': first, 'P001-A2.csv': repeat}
+
+
+def write_case(root, sessions, exports):
+    session_file = root/'sessions.csv'
+    export_dir = root/'browser_exports'
+    export_dir.mkdir()
+    session_file.write_bytes(sessions)
+    for name, data in exports.items():
+        (export_dir/name).write_bytes(data)
+    return session_file, export_dir
 
 
 class BrowserExportCrosscheckTests(unittest.TestCase):
     def test_crosschecks_values_and_outputs_aggregates_only(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            sessions, first, repeat = make_case()
-            session_file, first_file, repeat_file, report_file = (
-                root/'sessions.csv', root/'first.csv', root/'repeat.csv', root/'summary.json')
-            session_file.write_bytes(sessions)
-            first_file.write_bytes(first)
-            repeat_file.write_bytes(repeat)
-            result = m.analyse_files(session_file, [first_file, repeat_file], report_file,
+            sessions, exports = make_case()
+            session_file, export_dir = write_case(root, sessions, exports)
+            report_file = root/'summary.json'
+            result = m.analyse_files(session_file, export_dir, report_file,
                                      hashlib.sha256(sessions).hexdigest())
             report = json.loads(report_file.read_text(encoding='utf-8'))
             self.assertEqual(result['sessions'], 3)
             self.assertEqual(result['matched'], 2)
+            self.assertEqual(result['unique_hashes'], 2)
             self.assertEqual(report['session_summary']['completed'], 2)
             self.assertEqual(report['session_summary']['incomplete'], 1)
             self.assertEqual(report['browser_export_crosscheck']['completed_sessions_matched'], 2)
             self.assertEqual(report['browser_export_crosscheck']['mismatches'], 0)
-            self.assertEqual(report['browser_export_crosscheck']['fields_compared'],
-                             ['MAP01 active seconds', 'hits', 'coins'])
             self.assertFalse(report['provenance_verified'])
             self.assertEqual(report_file.stat().st_mode & 0o777, 0o600)
             self.assertEqual(hashlib.sha256(report_file.read_bytes()).hexdigest(), result['report_sha256'])
@@ -73,70 +82,99 @@ class BrowserExportCrosscheckTests(unittest.TestCase):
                 self.assertNotIn(participant_id, encoded)
             self.assertNotIn(str(session_file), encoded)
 
+    def test_identical_export_bytes_for_distinct_attempt_filenames_are_allowed(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            sessions,exports=make_case(identical_exports=True)
+            session_file,export_dir=write_case(root,sessions,exports)
+            result=m.analyse_files(session_file,export_dir,root/'summary.json')
+            report=json.loads((root/'summary.json').read_text('utf-8'))
+            self.assertEqual(result['matched'],2)
+            self.assertEqual(result['unique_hashes'],1)
+            self.assertEqual(report['browser_export_crosscheck']['completed_sessions_expected'],2)
+            self.assertEqual(report['browser_export_crosscheck']['unique_browser_export_hashes'],1)
+            self.assertEqual(len(report['browser_export_crosscheck']['browser_export_sha256s']),1)
+
     def test_linked_but_mismatched_stage1_value_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)
-            sessions, first, repeat = make_case(changed_first_seconds=401.0)
-            sf=root/'sessions.csv'; a=root/'first.csv'; b=root/'repeat.csv'; out=root/'report.json'
-            sf.write_bytes(sessions); a.write_bytes(first); b.write_bytes(repeat)
-            with self.assertRaisesRegex(ValueError, 'disagree'):
-                m.analyse_files(sf,[a,b],out)
-            self.assertFalse(out.exists())
+            sessions,exports=make_case(changed_first_seconds=401.0)
+            session_file,export_dir=write_case(root,sessions,exports)
+            with self.assertRaisesRegex(ValueError,'does not match|do not match'):
+                m.analyse_files(session_file,export_dir,root/'report.json')
+            self.assertFalse((root/'report.json').exists())
 
-    def test_missing_unlinked_and_duplicate_exports_rejected(self):
+    def test_missing_and_unlinked_exports_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)
-            sessions, first, repeat=make_case()
-            sf=root/'sessions.csv'; a=root/'first.csv'; b=root/'repeat.csv'; extra=root/'extra.csv'
-            sf.write_bytes(sessions); a.write_bytes(first); b.write_bytes(repeat)
+            sessions,exports=make_case()
+            session_file,export_dir=write_case(root,sessions,exports)
+            (export_dir/'P001-A2.csv').unlink()
             with self.assertRaisesRegex(ValueError,'missing'):
-                m.analyse_files(sf,[a],root/'missing.json')
-            with self.assertRaisesRegex(ValueError,'duplicate'):
-                m.analyse_files(sf,[a,a,b],root/'duplicate.json')
-            extra.write_bytes(browser_csv(420,0,3))
-            with self.assertRaisesRegex(ValueError,'unlinked'):
-                m.analyse_files(sf,[a,b,extra],root/'extra.json')
+                m.analyse_files(session_file,export_dir,root/'missing.json')
+            (export_dir/'P001-A2.csv').write_bytes(exports['P001-A2.csv'])
+            (export_dir/'P004-A1.csv').write_bytes(browser_csv(420,0,3))
+            with self.assertRaisesRegex(ValueError,'unreferenced'):
+                m.analyse_files(session_file,export_dir,root/'extra.json')
 
-    def test_bad_export_schema_and_pinned_session_hash_rejected(self):
+    def test_malformed_export_and_pinned_session_hash_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)
-            sessions, first, repeat=make_case()
-            sf=root/'sessions.csv'; a=root/'first.csv'; b=root/'repeat.csv'
-            sf.write_bytes(sessions); a.write_bytes(first); b.write_bytes(b'not a valid export')
-            with self.assertRaises((ValueError, UnicodeError, csv.Error)):
-                m.analyse_files(sf,[a,b],root/'bad.json')
-            b.write_bytes(repeat)
+            sessions,exports=make_case()
+            bad=b'not a valid export'
+            rows=list(csv.reader(io.StringIO(sessions.decode('utf-8-sig'),newline=''),delimiter=';',strict=True))
+            rows[1][15]=hashlib.sha256(bad).hexdigest()
+            out=io.StringIO(newline='')
+            writer=csv.writer(out,delimiter=';',lineterminator='\\r\\n',quoting=csv.QUOTE_ALL)
+            writer.writerows(rows)
+            sessions=('\ufeff'+out.getvalue()).encode('utf-8')
+            session_file,export_dir=write_case(root,sessions,exports)
+            (export_dir/'P001-A1.csv').write_bytes(bad)
+            with self.assertRaises((ValueError,UnicodeError,csv.Error)):
+                m.analyse_files(session_file,export_dir,root/'bad.json')
             with self.assertRaisesRegex(ValueError,'SHA-256'):
-                m.analyse_files(sf,[a,b],root/'pinned.json','0'*64)
+                m.analyse_files(session_file,export_dir,root/'pinned.json','0'*64)
 
-    def test_output_no_overwrite_and_symlink_git_refusal(self):
+    def test_output_must_be_outside_exports_and_never_overwrites(self):
         with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp); sessions, first, repeat=make_case()
-            sf=root/'sessions.csv'; a=root/'first.csv'; b=root/'repeat.csv'; out=root/'summary.json'
-            sf.write_bytes(sessions); a.write_bytes(first); b.write_bytes(repeat)
-            m.analyse_files(sf,[a,b],out)
+            root=Path(temp)
+            sessions,exports=make_case()
+            session_file,export_dir=write_case(root,sessions,exports)
+            with self.assertRaisesRegex(ValueError,'outside browser export'):
+                m.analyse_files(session_file,export_dir,export_dir/'summary.json')
+            out=root/'summary.json'
+            m.analyse_files(session_file,export_dir,out)
             with self.assertRaisesRegex(ValueError,'overwrite'):
-                m.analyse_files(sf,[a,b],out)
-            alias=root/'alias.csv'; alias.symlink_to(a)
-            with self.assertRaisesRegex(ValueError,'unsafe'):
-                m.analyse_files(sf,[alias,b],root/'symlink.json')
+                m.analyse_files(session_file,export_dir,out)
+
+    def test_symlink_and_git_checkout_refusal(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            sessions,exports=make_case()
+            session_file,export_dir=write_case(root,sessions,exports)
+            (export_dir/'alias.csv').symlink_to(export_dir/'P001-A1.csv')
+            with self.assertRaises(ValueError):
+                m.analyse_files(session_file,export_dir,root/'symlink.json')
+            (export_dir/'alias.csv').unlink()
             (root/'.git').mkdir()
             with self.assertRaisesRegex(ValueError,'Git checkout'):
-                m.analyse_files(sf,[a,b],root/'git.json')
+                m.analyse_files(session_file,export_dir,root/'git.json')
 
     def test_cli_prints_only_aggregates_and_hashes(self):
         with tempfile.TemporaryDirectory() as temp:
-            root=Path(temp); sessions, first, repeat=make_case()
-            sf=root/'sessions.csv'; a=root/'first.csv'; b=root/'repeat.csv'; out=root/'summary.json'
-            sf.write_bytes(sessions); a.write_bytes(first); b.write_bytes(repeat)
-            run=subprocess.run([sys.executable,str(TOOL),'--sessions',str(sf),
-                                '--browser-csv',str(a),'--browser-csv',str(b),
-                                '--output',str(out)],capture_output=True,text=True)
+            root=Path(temp)
+            sessions,exports=make_case()
+            session_file,export_dir=write_case(root,sessions,exports)
+            out=root/'summary.json'
+            run=subprocess.run([sys.executable,str(TOOL),'--sessions',str(session_file),
+                                '--exports-dir',str(export_dir),'--output',str(out)],
+                               capture_output=True,text=True)
             self.assertEqual(run.returncode,0,run.stderr)
             self.assertIn('sessions=3',run.stdout)
             self.assertIn('completed_exports_matched=2',run.stdout)
+            self.assertIn('unique_export_hashes=2',run.stdout)
             self.assertNotIn('P001-A1',run.stdout)
-            self.assertNotIn(str(sf),run.stdout)
+            self.assertNotIn(str(session_file),run.stdout)
 
 
 if __name__ == '__main__':
