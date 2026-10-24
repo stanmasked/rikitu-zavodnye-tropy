@@ -13,6 +13,8 @@ typedef struct RikituCampaign {
 } RikituCampaign;
 int rikitu_campaign_init(RikituCampaign *c,int level);
 int rikitu_campaign_valid(const RikituCampaign *c);
+/* RKS1 is reserved for the legacy MAP01 intra-level checkpoint. */
+int rikitu_campaign_uses_legacy_map01_checkpoint(const RikituCampaign *c);
 int rikitu_campaign_finish(RikituCampaign *c,const RikituStage *stage);
 /* Returns 1 on next level, 2 for final victory, 0 for no transition. */
 int rikitu_campaign_continue(RikituCampaign *c);
