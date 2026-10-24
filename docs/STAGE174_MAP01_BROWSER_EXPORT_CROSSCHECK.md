@@ -21,17 +21,19 @@ attempt:
 ```sh
 python /path/to/repo/tools/crosscheck_map01_playtest_exports.py \
   --sessions /private/evidence/map01-sessions.csv \
-  --browser-csv /private/evidence/P001-A1-browser.csv \
-  --browser-csv /private/evidence/P001-A2-browser.csv \
+  --browser-csv /private/evidence/P001-A1.csv \
+  --browser-csv /private/evidence/P001-A2.csv \
   --expected-sessions-sha256 PINNED_SESSION_LOG_SHA256 \
   --output /private/evidence/map01-crosscheck-summary.json
 ```
 
 Replace the example paths and hash with real values; do not put private data
-in the command line beyond local paths. Each completed session's exact CSV
-bytes must hash to the value recorded in its manual row. Every supplied CSV
-must be linked to exactly one completed attempt; missing, duplicate or
-unlinked exports are rejected.
+in the command line beyond local paths. Each completed session has a `source_csv_filename` such as `P001-A1.csv`;
+the supplied file's basename must match that field and its exact bytes must
+hash to `source_csv_sha256`. Every named export must match exactly one
+completed attempt; missing, duplicate filenames or unlinked exports are
+rejected. Two different named files are allowed to have identical content
+and therefore identical SHA-256 values.
 
 ## Cross-checked fields
 
@@ -50,7 +52,8 @@ Manual fragment/checkpoint/respawn/backtrack/platform observations do not
 exist in the browser CSV and therefore are **not** independently confirmed.
 
 The output is aggregate-only JSON with the session-log size/SHA-256,
-browser-export hashes, compared field list and mismatch count. It is written
+unique browser-export hashes, number of matched files, compared field list
+and mismatch count. The report omits session IDs and filenames. It is written
 with mode 0600, refuses symlinks, Git checkouts and overwrites, and the CLI
 prints only counts and hashes. A successful cross-check proves data
 consistency and byte identity only; it does not authenticate human control,
