@@ -35,7 +35,7 @@ GCC, Clang and ASan/UBSan must pass at 30/60/120Hz. The prototype must
 collect all three optional fixture coins, preserve the required fragment
 and checkpoint, return alive to the main ground, and show genuine
 leftward movement with no large discontinuities. It must collect at least
-three more coins and take modestly longer than the direct baseline.
+three more coins and take modestly longer than the direct baseline. Because 30Hz render frames can consume two fixed physics ticks before the controller can react, the incidental total coin count may differ by at most one between display rates; all three fixture branch coins and mandatory progression must still match.
 
 This is **layout feasibility only**. It does not prove visual discoverability,
 fun, art readability, player comprehension or the 6–8 minute pacing target.
