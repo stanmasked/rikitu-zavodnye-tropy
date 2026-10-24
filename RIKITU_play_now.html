@@ -22,7 +22,7 @@
   <div class="touchbar" aria-label="Экранное управление"><button data-touch="left">◀</button><button data-touch="right">▶</button><button data-touch="jump">ПРЫЖОК</button></div>
   <div class="help">
     <div><b>Управление:</b> ← → или A/D — движение · Пробел / ↑ / W — прыжок · Shift — быстрее</div>
-    <div><b>Геймпад:</b> левый стик или крестовина — движение · A/B — прыжок · удерживай RB/R1 — бег · Start — пауза</div>
+    <div><b>Геймпад:</b> левый стик или крестовина — движение · A/B — прыжок · удерживай RB/R1 — бег · Start — начать/далее; пауза в игре</div>
     <div><b>Дополнительно:</b> Enter — начать/следующий уровень · P — пауза · R — заново</div>
     <div><b>Статистика:</b> секундомер считает только активное игровое время и фиксирует потери здоровья. После завершения уровня можно скачать локальный отчёт CSV с временем, повреждениями и монетами; данные никуда не отправляются.</div>
     <div><b>Задача:</b> найти 3 бирюзовых фрагмента, собрать монетки по желанию и добраться до выхода. Мини-боссы после каждого чётного уровня, включая 16-й: три прыжка сверху. Затем лавка Моки: B — купить, Enter — продолжить.</div>
@@ -471,7 +471,11 @@
     gamepadJump=!!(gp&&(gp.buttons[0]?.pressed||gp.buttons[1]?.pressed));
     gamepadRun=!!(gp&&gp.buttons[5]?.pressed); // RB/R1, held for faster movement.
     const pause=!!(gp&&gp.buttons[9]?.pressed);
-    if(pause&&!gamepadPause)togglePause(); gamepadPause=pause;
+    if(pause&&!gamepadPause){
+      if(mode==='playing'||mode==='paused')togglePause();
+      else act();
+    }
+    gamepadPause=pause;
   }
   function update(dt){
     frame++;readGamepad();
