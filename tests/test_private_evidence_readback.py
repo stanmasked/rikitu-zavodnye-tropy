@@ -29,7 +29,7 @@ class PrivateEvidenceReadbackTests(unittest.TestCase):
         (self.runner / "guest.log").write_bytes(b"synthetic-marker\n")
 
     def _seal(self):
-        result = self._seal()
+        result = seal(self.runner, self.manifest)
         self.sealed_digest = result["manifest_sha256"]
         return result
 
