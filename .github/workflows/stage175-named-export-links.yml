@@ -1,0 +1,44 @@
+name: RIKITU Stage175 named export links and identical-content parity
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage175-named-export-links.yml'
+      - 'tools/analyze_map01_playtest_sessions.py'
+      - 'tools/crosscheck_map01_playtest_exports.py'
+      - 'tests/test_map01_playtest_sessions.py'
+      - 'tests/test_map01_browser_export_crosscheck.py'
+      - 'docs/STAGE173_MAP01_HUMAN_PLAYTEST_PROTOCOL.md'
+      - 'docs/STAGE174_MAP01_BROWSER_EXPORT_CROSSCHECK.md'
+      - 'docs/STAGE175_NAMED_EXPORT_LINKS.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage175-named-export-links.yml'
+      - 'tools/analyze_map01_playtest_sessions.py'
+      - 'tools/crosscheck_map01_playtest_exports.py'
+      - 'tests/test_map01_playtest_sessions.py'
+      - 'tests/test_map01_browser_export_crosscheck.py'
+      - 'docs/STAGE173_MAP01_HUMAN_PLAYTEST_PROTOCOL.md'
+      - 'docs/STAGE174_MAP01_BROWSER_EXPORT_CROSSCHECK.md'
+      - 'docs/STAGE175_NAMED_EXPORT_LINKS.md'
+permissions:
+  contents: read
+jobs:
+  named-export-links:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile private analyzers
+        run: |
+          python -m py_compile tools/analyze_map01_playtest_sessions.py
+          python -m py_compile tools/analyze_private_pacing_csv.py
+          python -m py_compile tools/crosscheck_map01_playtest_exports.py
+      - name: Validate manual session schema and private path guards
+        run: python tests/test_map01_playtest_sessions.py
+      - name: Cross-check named browser exports including identical-byte files
+        run: python tests/test_map01_browser_export_crosscheck.py
+      # Synthetic rows and browser CSVs only. No real player records are uploaded.
