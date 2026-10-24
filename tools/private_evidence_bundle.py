@@ -91,6 +91,8 @@ def _validate_archive(path, expected_receipt_sha):
                         raise EvidenceError("unexpected-bundle-member")
                     _safe_rel(info.filename[len(CONTENT_PREFIX):])
                 seen.add(info.filename)
+            if members[0].file_size > MAX_MANIFEST_BYTES:
+                raise EvidenceError("oversized-bundle-receipt")
             receipt = archive.read(RECEIPT_MEMBER)
             if len(receipt) > MAX_MANIFEST_BYTES or not hmac.compare_digest(
                     hashlib.sha256(receipt).hexdigest(), receipt_sha):
@@ -129,7 +131,7 @@ def _validate_archive(path, expected_receipt_sha):
 
 def pack(source_dir, manifest, pinned_manifest_sha, destination):
     source_root = _safe_root(source_dir)
-    raw_receipt, expected = _load_receipt(manifest, pinned_manifest_sha)
+    raw_receipt, expected = _load_receipt(_safe_manifest_file(manifest), pinned_manifest_sha)
     actual, total = _inventory(source_root)
     observed = [(v["path"], v["bytes"], v["sha256"]) for v in actual]
     if observed != expected:
