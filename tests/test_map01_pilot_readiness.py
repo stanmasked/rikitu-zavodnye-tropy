@@ -248,11 +248,11 @@ class PilotReadinessTests(unittest.TestCase):
                 '1', '1', '2', '1', 'no', 'no', 'missed_fragment', '', ''))
 
             out = io.StringIO(newline='')
-            writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n',
+            writer = csv.writer(out, delimiter=';', lineterminator='\r\n',
                                 quoting=csv.QUOTE_ALL)
             writer.writerow(header)
             writer.writerows(rows)
-            sessions = ('\\ufeff' + out.getvalue()).encode('utf-8')
+            sessions = ('\ufeff' + out.getvalue()).encode('utf-8')
 
             session_file, exports_dir = write_dataset(root, sessions, exports)
             output = root/'summary.json'
