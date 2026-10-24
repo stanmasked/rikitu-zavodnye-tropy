@@ -194,7 +194,15 @@ class PilotReadinessTests(unittest.TestCase):
             header, rows = parsed[0], parsed[1:]
             for row in rows:
                 if row[0] == 'P001-A2':
+                    # An incomplete keyboard attempt must still count as an
+                    # earlier non-controller attempt for the later controller A3.
+                    old_filename = row[14]
                     row[2] = 'keyboard'
+                    row[3] = 'stopped'
+                    row[13] = 'missed_fragment'
+                    row[14] = ''
+                    row[15] = ''
+                    exports.pop(old_filename, None)
 
             sid = 'P001-A3'
             data = browser_csv(340, 1, 42)
