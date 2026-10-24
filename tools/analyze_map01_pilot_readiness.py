@@ -58,7 +58,11 @@ def build_summary(session_bytes, exports):
     rows = list(csv.reader(io.StringIO(text, newline=''), delimiter=';', strict=True))
     sessions = []
     for row in rows[1:]:
+        session_id = row[0]
+        participant_id, attempt_suffix = session_id.rsplit('-A', 1)
         sessions.append({
+            'participant_id': participant_id,
+            'attempt_number': int(attempt_suffix),
             'attempt_type': row[1],
             'input_method': row[2],
             'outcome': row[3],
@@ -67,10 +71,24 @@ def build_summary(session_bytes, exports):
         })
 
     input_method_counts = {}
+    participant_methods = {}
+    first_method_by_participant = {}
     for item in sessions:
         method = item['input_method']
         input_method_counts[method] = input_method_counts.get(method, 0) + 1
+        participant_methods.setdefault(item['participant_id'], set()).add(method)
+        if item['attempt_number'] == 1:
+            first_method_by_participant[item['participant_id']] = method
     controller = [item for item in sessions if item['input_method'] == 'controller']
+    controller_repeats = [item for item in controller if item['attempt_type'] == 'repeat']
+    controller_repeats_after_controller_first = sum(
+        1 for item in controller_repeats
+        if first_method_by_participant[item['participant_id']] == 'controller')
+    controller_repeats_after_noncontroller_first = sum(
+        1 for item in controller_repeats
+        if first_method_by_participant[item['participant_id']] != 'controller')
+    mixed_input_participants = sum(1 for methods in participant_methods.values()
+                                   if len(methods) > 1)
     stop_reasons = {}
     for item in controller:
         if item['stop_reason'] != 'none':
@@ -108,8 +126,40 @@ def build_summary(session_bytes, exports):
         else:
             assessment = 'PILOT_MEDIANS_OUTSIDE_TARGET_REVIEW_REQUIRED'
 
+    # Supplemental paired audit: one pair per participant, using completed
+    # controller A1 and the earliest completed repeat before any non-controller
+    # attempt. This is descriptive only and does not change the frozen rule.
+    attempts_by_participant = {}
+    for item in sessions:
+        attempts_by_participant.setdefault(item['participant_id'], []).append(item)
+
+    paired_first_times = []
+    paired_repeat_times = []
+    for participant_attempts in attempts_by_participant.values():
+        participant_attempts.sort(key=lambda item: item['attempt_number'])
+        first_attempt = participant_attempts[0]
+        if (first_attempt['attempt_number'] != 1 or
+                first_attempt['input_method'] != 'controller' or
+                first_attempt['outcome'] != 'completed'):
+            continue
+
+        controller_prefix = True
+        for repeat_attempt in participant_attempts[1:]:
+            if repeat_attempt['input_method'] != 'controller':
+                controller_prefix = False
+            if (controller_prefix and repeat_attempt['attempt_type'] == 'repeat' and
+                    repeat_attempt['outcome'] == 'completed'):
+                paired_first_times.append(first_attempt['elapsed_seconds'])
+                paired_repeat_times.append(repeat_attempt['elapsed_seconds'])
+                break
+
+    paired_deltas = [
+        repeat_time - first_time
+        for first_time, repeat_time in zip(paired_first_times, paired_repeat_times)
+    ]
+
     return {
-        'schema': 'rikitu-map01-controller-pilot-readiness-v1',
+        'schema': 'rikitu-map01-controller-pilot-readiness-v2',
         'provenance_verified': False,
         'interpretation': 'Descriptive pilot summary only; this does not authenticate human control or establish that the level is balanced.',
         'browser_exports_cross_checked': True,
@@ -121,16 +171,33 @@ def build_summary(session_bytes, exports):
             'controller_sessions': len(controller),
             'non_controller_sessions_excluded_from_timing': len(sessions) - len(controller),
             'input_method_counts': dict(sorted(input_method_counts.items())),
+            'participants_with_multiple_input_methods': mixed_input_participants,
+        },
+        'controller_repeat_input_consistency': {
+            'controller_repeat_attempts_after_controller_first': controller_repeats_after_controller_first,
+            'controller_repeat_attempts_after_noncontroller_first': controller_repeats_after_noncontroller_first,
+            'interpretation': 'Diagnostic only. Frozen Stage176 medians still include all controller rows; review mixed-input sequences before interpreting first/repeat comparisons.',
         },
         'controller_groups': groups,
+        'paired_controller_cohort': {
+            'matched_participants': len(paired_first_times),
+            'first_median_seconds': _median(paired_first_times),
+            'repeat_median_seconds': _median(paired_repeat_times),
+            'median_repeat_minus_first_seconds': _median(paired_deltas),
+            'rule': 'One pair per participant: completed controller A1 and the earliest completed repeat before any non-controller attempt.',
+            'affects_frozen_assessment': False,
+        },
         'controller_stop_reasons': dict(sorted(stop_reasons.items())),
         'pacing_assessment': assessment,
         'source_session_log_size_bytes': len(session_bytes),
         'notes': [
-            'Only controller sessions contribute to the first/repeat pacing summaries.',
+            'Only controller sessions contribute to the first/repeat pacing summaries under the frozen Stage176 rule.',
+            'Input-method consistency is reported separately: a controller repeat following a keyboard/touch first attempt remains in the controller repeat median, so review that diagnostic before interpreting the comparison.',
             'A group needs at least five completed controller runs before its median is compared with the 360–480 second target.',
             'A within-target median is a pilot signal for review, not proof of balanced pacing or a release criterion.',
             'Incomplete attempts are counted and their stop reasons retained, but their stop times are not treated as completed-run times.',
+            'Matched controller pairs are supplemental diagnostics: one completed controller A1 is paired with the earliest completed controller repeat before any non-controller attempt.',
+            'The paired repeat-minus-first median is repeat time minus first time; a negative value means faster repeat attempts. Pair metrics do not alter the frozen pacing assessment.',
             'Browser export consistency and SHA-256 checks do not authenticate human control or runtime provenance.',
             'No session IDs, raw rows, source paths or browser CSV contents are emitted.',
         ],

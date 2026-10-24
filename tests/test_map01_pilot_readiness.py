@@ -102,6 +102,16 @@ class PilotReadinessTests(unittest.TestCase):
             self.assertEqual(report['controller_groups']['repeat']['completed_within_360_480_seconds'], 4)
             self.assertEqual(report['session_counts']['non_controller_sessions_excluded_from_timing'], 1)
             self.assertEqual(report['session_counts']['input_method_counts'], {'controller': 11, 'keyboard': 1})
+            self.assertEqual(report['session_counts']['participants_with_multiple_input_methods'], 0)
+            self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_controller_first'], 5)
+            self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_noncontroller_first'], 0)
+            self.assertEqual(report['schema'], 'rikitu-map01-controller-pilot-readiness-v2')
+            paired = report['paired_controller_cohort']
+            self.assertEqual(paired['matched_participants'], 5)
+            self.assertEqual(paired['first_median_seconds'], '400.0')
+            self.assertEqual(paired['repeat_median_seconds'], '410.0')
+            self.assertEqual(paired['median_repeat_minus_first_seconds'], '-20.0')
+            self.assertFalse(paired['affects_frozen_assessment'])
             self.assertEqual(report['controller_groups']['first']['incomplete'], 1)
             self.assertFalse(report['provenance_verified'])
             self.assertEqual(output.stat().st_mode & 0o777, 0o600)
@@ -110,6 +120,114 @@ class PilotReadinessTests(unittest.TestCase):
             for sid in ('P001-A1', 'P001-A2', 'P998-A1', 'P999-A1'):
                 self.assertNotIn(sid, text)
             self.assertNotIn(str(session_file), text)
+
+    def test_matched_controller_pairs_exclude_mixed_input_and_incomplete_first(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            sessions, exports = build_dataset(
+                [400, 420, 390, 480, 360],
+                [350, 400, 440, 460, 410])
+            parsed = list(csv.reader(
+                io.StringIO(sessions.decode('utf-8-sig'), newline=''),
+                delimiter=';', strict=True))
+            header, rows = parsed[0], parsed[1:]
+            for row in rows:
+                if row[0] == 'P004-A1':
+                    row[3] = 'stopped'
+                    row[4] = '220'
+                    row[5] = '4'
+                    row[6] = '6'
+                    row[7] = '1'
+                    row[8] = '1'
+                    row[9] = '2'
+                    row[10] = '1'
+                    row[11] = 'no'
+                    row[12] = 'no'
+                    row[13] = 'missed_fragment'
+                    row[14] = ''
+                    row[15] = ''
+                elif row[0] == 'P005-A1':
+                    row[2] = 'keyboard'
+            exports.pop('P004-A1.csv')
+
+            out = io.StringIO(newline='')
+            writer = csv.writer(out, delimiter=';', lineterminator='\r\n',
+                                quoting=csv.QUOTE_ALL)
+            writer.writerow(header)
+            writer.writerows(rows)
+            sessions = ('\ufeff' + out.getvalue()).encode('utf-8')
+
+            session_file = root/'manual-sessions.csv'
+            exports_dir = root/'browser_exports'
+            exports_dir.mkdir()
+            session_file.write_bytes(sessions)
+            for name, data in exports.items():
+                (exports_dir/name).write_bytes(data)
+
+            output = root/'summary.json'
+            m.analyse_files(session_file, exports_dir, output)
+            report = json.loads(output.read_text(encoding='utf-8'))
+            self.assertEqual(report['session_counts']['participants_with_multiple_input_methods'], 1)
+            self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_controller_first'], 4)
+            self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_noncontroller_first'], 1)
+            paired = report['paired_controller_cohort']
+            self.assertEqual(paired['matched_participants'], 3)
+            self.assertEqual(paired['first_median_seconds'], '400.0')
+            self.assertEqual(paired['repeat_median_seconds'], '400.0')
+            self.assertEqual(paired['median_repeat_minus_first_seconds'], '-20.0')
+            # The frozen assessment still uses all controller runs and remains
+            # insufficient here because only three controller A1 runs completed.
+            self.assertEqual(report['pacing_assessment'],
+                             'INSUFFICIENT_COMPLETED_CONTROLLER_RUNS')
+
+    def test_pair_excludes_controller_repeat_after_intervening_keyboard_attempt(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            sessions, exports = build_dataset(
+                [400, 420, 390, 480, 360],
+                [350, 400, 440, 460, 410],
+                add_keyboard=False, add_incomplete=False)
+            parsed = list(csv.reader(
+                io.StringIO(sessions.decode('utf-8-sig'), newline=''),
+                delimiter=';', strict=True))
+            header, rows = parsed[0], parsed[1:]
+            for row in rows:
+                if row[0] == 'P001-A2':
+                    row[2] = 'keyboard'
+
+            sid = 'P001-A3'
+            data = browser_csv(340, 1, 42)
+            filename = sid + '.csv'
+            exports[filename] = data
+            rows.append((sid, 'repeat', 'controller', 'completed', '340', '1', '42',
+                         '3', '3', '0', '2', 'yes', 'yes', 'none', filename,
+                         hashlib.sha256(data).hexdigest()))
+
+            out = io.StringIO(newline='')
+            writer = csv.writer(out, delimiter=';', lineterminator='\r\n',
+                                quoting=csv.QUOTE_ALL)
+            writer.writerow(header)
+            writer.writerows(rows)
+            sessions = ('\ufeff' + out.getvalue()).encode('utf-8')
+
+            session_file, exports_dir = write_dataset(root, sessions, exports)
+            output = root/'summary.json'
+            m.analyse_files(session_file, exports_dir, output)
+            report = json.loads(output.read_text(encoding='utf-8'))
+
+            self.assertEqual(report['session_counts']['participants_with_multiple_input_methods'], 1)
+            self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_controller_first'], 5)
+            self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_noncontroller_first'], 0)
+            self.assertEqual(report['controller_groups']['repeat']['completed'], 5)
+            paired = report['paired_controller_cohort']
+            self.assertEqual(paired['matched_participants'], 4)
+            self.assertEqual(paired['first_median_seconds'], '405.0')
+            self.assertEqual(paired['repeat_median_seconds'], '425.0')
+            self.assertEqual(paired['median_repeat_minus_first_seconds'], '15.0')
+            # The later controller repeat stays in the frozen independent-group
+            # median, but is excluded from the matched cohort after keyboard A2.
+            self.assertEqual(report['controller_groups']['repeat']['completed_median_seconds'], '410.0')
+            self.assertFalse(paired['affects_frozen_assessment'])
 
     def test_fewer_than_five_completed_per_group_is_insufficient(self):
         with tempfile.TemporaryDirectory() as temp:
