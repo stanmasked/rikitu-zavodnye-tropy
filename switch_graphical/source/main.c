@@ -27,6 +27,7 @@
 #include "rikitu_campaign.h"
 #include "rikitu_campaign_save.h"
 #include "rikitu_level_save.h"
+#include "rikitu_map01_telemetry.h"
 
 #define MAP01_A "sdmc:/switch/RIKITU/map01-a.rks"
 #define MAP01_B "sdmc:/switch/RIKITU/map01-b.rks"
@@ -69,6 +70,8 @@ int main(void) {
   RikituScene scene;
   RikituLoop game;
   RikituCampaign campaign;
+  RikituMap01Telemetry map01_metrics;
+  int map01_metrics_active=0;
   int campaign_debug=0;
   u64 last_tick;
   int error=0;
@@ -99,8 +102,10 @@ int main(void) {
     /* RKC2 is a different record family and does not decode old MAP01 RKS1.
      * The current chapter restarts at its beginning after loading campaign
      * metadata; only MAP01 retains its legacy intra-level checkpoint. */
-    if(rikitu_campaign_save_load_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign))
+    if(rikitu_campaign_save_load_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign)){
       begin_stage(&scene,&game,&campaign);
+      map01_metrics_active=0;
+    }
     if(rikitu_campaign_uses_legacy_map01_checkpoint(&campaign) &&
        campaign.mode==RIKITU_CAMPAIGN_PLAYING){
       (void)rikitu_save_load_pair(MAP01_A,MAP01_B,&scene,&game);
@@ -155,6 +160,7 @@ int main(void) {
       const int selected=scene.level_id==16?1:scene.level_id+1;
       (void)rikitu_campaign_init(&campaign,selected);
       begin_stage(&scene,&game,&campaign);
+      map01_metrics_active=0;
       save_elapsed=0.0f;have_last=0;
       level_save_elapsed=0.0f;level_have_last=0;
     }else if(pressed & HidNpadButton_X){
@@ -162,6 +168,7 @@ int main(void) {
       const int selected=scene.level_id;
       (void)rikitu_campaign_init(&campaign,selected);
       begin_stage(&scene,&game,&campaign);
+      map01_metrics_active=0;
       save_elapsed=0.0f;have_last=0;
       level_save_elapsed=0.0f;level_have_last=0;
     }else if(campaign.mode==RIKITU_CAMPAIGN_SHOP){
@@ -174,8 +181,9 @@ int main(void) {
         const int transition=rikitu_campaign_continue(&campaign);
         if(transition==1){
           begin_stage(&scene,&game,&campaign);
+          map01_metrics_active=0;
           save_elapsed=0.0f;have_last=0;
-        level_save_elapsed=0.0f;level_have_last=0;
+          level_save_elapsed=0.0f;level_have_last=0;
         }
         if(transition && save_ready && !campaign_debug)
           (void)rikitu_campaign_save_store_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign);
@@ -184,6 +192,7 @@ int main(void) {
              (pressed & HidNpadButton_A)){
       if(rikitu_campaign_continue(&campaign)==1){
         begin_stage(&scene,&game,&campaign);
+        map01_metrics_active=0;
         save_elapsed=0.0f;have_last=0;
         level_save_elapsed=0.0f;level_have_last=0;
         if(save_ready && !campaign_debug)
@@ -192,8 +201,19 @@ int main(void) {
     }
     if(campaign.mode==RIKITU_CAMPAIGN_PLAYING){
       if(pressed & HidNpadButton_Minus)game.paused=!game.paused;
-      if(rikitu_demo_advance(&scene,&game,wall_seconds,input_mask(held))<0){
-        error=1;break;
+      /* Observational diagnostics only. Never interrupt gameplay or saves. */
+      if(scene.level_id==1 && !map01_metrics_active)
+        map01_metrics_active=rikitu_map01_telemetry_start(
+                               &map01_metrics,&scene,&game);
+      else if(scene.level_id!=1)map01_metrics_active=0;
+      {
+        const int simulated_ticks=rikitu_demo_advance(
+                                     &scene,&game,wall_seconds,input_mask(held));
+        if(simulated_ticks<0){error=1;break;}
+        if(map01_metrics_active &&
+           !rikitu_map01_telemetry_observe(
+                    &map01_metrics,&scene,&game,simulated_ticks))
+          map01_metrics_active=0;
       }
       if(scene.stage.completed){
         if(!rikitu_campaign_finish(&campaign,&scene.stage)){
