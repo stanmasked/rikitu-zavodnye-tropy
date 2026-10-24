@@ -8,6 +8,8 @@ private filenames, paths, payloads or manifest bodies in public CI logs.
 """
 import argparse
 import hashlib
+import hmac
+import re
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -154,13 +156,19 @@ def seal(source_dir: Path, output_manifest: Path):
             "manifest_sha256": hashlib.sha256(content).hexdigest()}
 
 
-def verify(manifest: Path, readback_dir: Path):
+def verify(manifest: Path, readback_dir: Path, expected_manifest_sha256: str):
+    if not isinstance(expected_manifest_sha256, str) or not re.fullmatch(
+            r"[0-9a-fA-F]{64}", expected_manifest_sha256):
+        raise EvidenceError("invalid-expected-manifest-digest")
     path = _safe_manifest_file(manifest)
     root = _safe_root(readback_dir)
     try:
         raw = path.read_bytes()
         if len(raw) > 128 * 1024:
             raise EvidenceError("manifest-too-large")
+        if not hmac.compare_digest(hashlib.sha256(raw).hexdigest(),
+                                   expected_manifest_sha256.lower()):
+            raise EvidenceError("manifest-sha256-mismatch")
         data = json.loads(raw)
     except (OSError, ValueError, UnicodeError) as exc:
         raise EvidenceError("manifest-read-error") from exc
@@ -185,11 +193,13 @@ def main():
     v = sub.add_parser("verify")
     v.add_argument("--manifest", required=True, type=Path)
     v.add_argument("--readback-dir", required=True, type=Path)
+    v.add_argument("--expected-manifest-sha256", required=True)
     args = parser.parse_args()
     try:
         result = (seal(args.source_dir, args.manifest)
                   if args.command == "seal"
-                  else verify(args.manifest, args.readback_dir))
+                  else verify(args.manifest, args.readback_dir,
+                              args.expected_manifest_sha256))
     except EvidenceError as error:
         print("RESULT: FAIL " + str(error), file=sys.stderr)
         return 1
