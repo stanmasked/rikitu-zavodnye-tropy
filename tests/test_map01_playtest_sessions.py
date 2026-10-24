@@ -68,12 +68,12 @@ class SessionAnalyzerTests(unittest.TestCase):
         bad = list(good); bad[0] = bad[0][:0] + ('P001-A2',) + bad[0][1:]; invalid.append(bad)
         bad = list(good); bad[0] = bad[0][:1] + ('repeat',) + bad[0][2:]; invalid.append(bad)
         bad = list(good); bad[0] = bad[0][:7] + ('2',) + bad[0][8:]; invalid.append(bad)
-        bad = list(good); bad[0] = bad[0][:12] + ('no',) + bad[0][13:]; invalid.append(bad)
+        bad = list(good); bad[0] = bad[0][:11] + ('no',) + bad[0][12:]; invalid.append(bad)
         bad = list(good); bad[0] = bad[0][:14] + ('0'*64,); bad[1] = bad[1][:14] + ('0'*64,); invalid.append(bad)
         bad = list(good); bad[2] = bad[2][:14] + ('f'*64,); invalid.append(bad)
         bad = list(good); bad[2] = bad[2][:13] + ('none',) + bad[2][14:]; invalid.append(bad)
-        bad = list(good); bad[2] = bad[2][:5] + ('91',) + bad[2][6:]; invalid.append(bad)
-        bad = list(good); bad[2] = bad[2[:]] if False else bad; bad[2] = bad[2][:13] + ('unknown',) + bad[2][14:]; invalid.append(bad)
+        bad = list(good); bad[2] = bad[2][:6] + ('91',) + bad[2][7:]; invalid.append(bad)
+        bad = list(good); bad[2] = bad[2][:13] + ('unknown',) + bad[2][14:]; invalid.append(bad)
         for data_rows in invalid:
             with self.subTest(row=data_rows[0][0]):
                 with self.assertRaises(ValueError):
