@@ -37,8 +37,6 @@ with sync_playwright() as pw:
     # Start must launch the game without keyboard or mouse assistance.
     pad("window.__testPad.buttons[9].pressed=true")
     page.wait_for_function("()=>RIKITU_TEST_STATE().mode==='playing'", timeout=5000)
-    pad("window.__testPad.buttons[9].pressed=false")
-    page.wait_for_timeout(100)
 
     # Holding Start through the title-to-game transition must not repeat menu actions.
     page.wait_for_timeout(200)
