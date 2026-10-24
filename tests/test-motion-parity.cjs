@@ -16,7 +16,7 @@ assert(start!==-1&&end>start,'game.js movement segment was changed; update parit
 const segment=game.slice(start,end);
 for(const guard of ['p.vx=','p.jumpBuffer=','p.coyote=','p.vy=','p.y+=','p.grounded=false','const solids='])
   assert(segment.includes(guard),'missing browser movement guard: '+guard);
-const playerStep=new Function('p','keys','touch','gamepadX','jumpHeld','previous','dt','level','d','C','clamp','sfx',
+const playerStep=new Function('p','keys','touch','gamepadX','gamepadRun','jumpHeld','previous','dt','level','d','C','clamp','sfx',
   'let previousJump=previous.value;const jumpPressed=()=>jumpHeld;\n'+segment+'\nprevious.value=previousJump;');
 const dt=1/60;
 const floor={x:0,y:100,w:1000,h:300};
@@ -43,7 +43,7 @@ for(const scene of cases){
     if(mask&I.LEFT)keys.add('ArrowLeft');
     if(mask&I.RIGHT)keys.add('ArrowRight');
     if(mask&I.RUN)keys.add('ShiftLeft');
-    playerStep(p,keys,{left:false,right:false,jump:false},0,!!(mask&I.JUMP),previous,dt,
+    playerStep(p,keys,{left:false,right:false,jump:false},0,false,!!(mask&I.JUMP),previous,dt,
                level,core.SETTINGS,core,(x,min,max)=>Math.min(max,Math.max(min,x)),()=>{});
     expected.push({scene:scene.name,p:{...p},previous:previous.value});
     stdin+='S '+mask+' '+Number(scene.floor)+'\n';

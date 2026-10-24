@@ -366,14 +366,23 @@
     // Collected parts and coins persist, to keep the game accessible.
   }
   function jumpPressed(){return keys.has('Space')||keys.has('ArrowUp')||keys.has('KeyW')||touch.jump||gamepadJump;}
-  let gamepadJump=false,gamepadX=0,gamepadPause=false,previousJump=false;
+  let gamepadJump=false,gamepadX=0,gamepadRun=false,gamepadPause=false,previousJump=false;
   function readGamepad(){
     let pads=[];try{pads=navigator.getGamepads?navigator.getGamepads():[];}catch(e){}
     const gp=Array.from(pads).find(g=>g&&g.connected);
     gamepadX=gp?gp.axes[0]||0:0;
+    // Standard Gamepad mapping: D-pad left/right override a neutral or analog stick axis.
+    const dpadLeft=!!(gp&&gp.buttons[14]?.pressed);
+    const dpadRight=!!(gp&&gp.buttons[15]?.pressed);
+    if(dpadLeft||dpadRight)gamepadX=dpadLeft===dpadRight?0:(dpadLeft?-1:1);
     gamepadJump=!!(gp&&(gp.buttons[0]?.pressed||gp.buttons[1]?.pressed));
+    gamepadRun=!!(gp&&gp.buttons[5]?.pressed); // RB/R1, held for faster movement.
     const pause=!!(gp&&gp.buttons[9]?.pressed);
-    if(pause&&!gamepadPause)togglePause(); gamepadPause=pause;
+    if(pause&&!gamepadPause){
+      if(mode==='playing'||mode==='paused')togglePause();
+      else act();
+    }
+    gamepadPause=pause;
   }
   function update(dt){
     frame++;readGamepad();
@@ -384,7 +393,7 @@
     p.inv=Math.max(0,p.inv-dt);
     const left=keys.has('ArrowLeft')||keys.has('KeyA')||touch.left||gamepadX<-.30;
     const right=keys.has('ArrowRight')||keys.has('KeyD')||touch.right||gamepadX>.30;
-    p.vx=((right?1:0)-(left?1:0))*(keys.has('ShiftLeft')?d.runSpeed:d.walkSpeed);
+    p.vx=((right?1:0)-(left?1:0))*((keys.has('ShiftLeft')||gamepadRun)?d.runSpeed:d.walkSpeed);
     if(p.vx)p.facing=Math.sign(p.vx);
     const jumpNow=jumpPressed();
     p.jumpBuffer=(jumpNow&&!previousJump)?d.jumpBuffer:Math.max(0,p.jumpBuffer-dt);
@@ -746,12 +755,12 @@
       text('RIKITU',480,190,69,'#318168','center','900');
       text('ЗАВОДНЫЕ ТРОПЫ',480,250,35,'#284b5f','center','850');
       text('Игровой прототип • Четыре мира, шестнадцать уровней',480,293,18,'#5d7d79','center','600');
-      rounded(268,341,424,55,15,'#338f70');text(startupSave?'ENTER — ПРОДОЛЖИТЬ':'ENTER / ПРОБЕЛ — НАЧАТЬ',480,378,20,'#fff','center');
+      rounded(268,341,424,55,15,'#338f70');text(startupSave?'ENTER / START — ПРОДОЛЖИТЬ':'ENTER / ПРОБЕЛ / START — НАЧАТЬ',480,378,20,'#fff','center');
       text('Герой временно обозначен маркером «Р» — дизайн Рикиту не изменяется.',480,486,15,'#345e65','center','500');
     } else {
       drawWorld();
       if(mode==='paused')overlay('ПАУЗА',['Игра остановлена.','P — продолжить • R — начать заново'],'P — ПРОДОЛЖИТЬ');
-      else if(mode==='between')overlay('УРОВЕНЬ ПРОЙДЕН!',[level.endText,`Время: ${formatClock(stageSeconds)} · попаданий: ${stageHits} · монет: ${stageCoins}/90`,`Следующий уровень: ${chapterInfo[levelIndex+1].name}`],`ENTER — УРОВЕНЬ ${levelIndex+2}`);
+      else if(mode==='between')overlay('УРОВЕНЬ ПРОЙДЕН!',[level.endText,`Время: ${formatClock(stageSeconds)} · попаданий: ${stageHits} · монет: ${stageCoins}/90`,`Следующий уровень: ${chapterInfo[levelIndex+1].name}`],`ENTER / START — УРОВЕНЬ ${levelIndex+2}`);
       else if(mode==='shop'){
         const offer=C.nextHeartPurchase(shopStage,purchasedHearts,allCoins);
         const n=C.unlockedUpgrades(shopStage);
@@ -763,10 +772,10 @@
           lines.push(offer.available?'B — КУПИТЬ СЕРДЕЧКО':'Монет пока не хватает — покупку можно отложить!');
         }else if(lifeCapacity()===7)lines.push('Получены все семь сердечек!');
         else lines.push('Следующее сердечко станет доступно в следующем мире.');
-        overlay('МОКИ — ЛАВКА СЕРДЕЦ',lines,'ENTER — ПРОДОЛЖИТЬ');
+        overlay('МОКИ — ЛАВКА СЕРДЕЦ',lines,'ENTER / START — ПРОДОЛЖИТЬ');
         text('♥',745,180,33,'#d75f6d','center');
       }
-      else if(mode==='victory')overlay('СЕРДЦЕ ДОРОГ СПАСЕНО!',['Хроном остановил механизм, чтобы не допустить катастрофы.','Рикиту собрал 48 фрагментов и установил регулятор Моториуса.','Часы снова идут: 07:13. Королевство объединено!',`Последний уровень: ${formatClock(stageSeconds)} · попаданий: ${stageHits}`],'ENTER — НАЧАТЬ НОВУЮ ИГРУ');
+      else if(mode==='victory')overlay('СЕРДЦЕ ДОРОГ СПАСЕНО!',['Хроном остановил механизм, чтобы не допустить катастрофы.','Рикиту собрал 48 фрагментов и установил регулятор Моториуса.','Часы снова идут: 07:13. Королевство объединено!',`Последний уровень: ${formatClock(stageSeconds)} · попаданий: ${stageHits}`],'ENTER / START — НАЧАТЬ НОВУЮ ИГРУ');
     }
   }
   function togglePause(){if(mode==='playing'){mode='paused'}else if(mode==='paused'){mode='playing'}}

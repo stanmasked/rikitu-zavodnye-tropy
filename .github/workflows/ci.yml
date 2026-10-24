@@ -46,6 +46,7 @@ jobs:
       - run: python tests/test-castle.py
       - run: python tests/test-finale.py
       - run: python tests/test-real-controls.py
+      - run: python tests/test-gamepad-controls.py
       - run: python tests/test-export-results.py
       # Real-control PNGs are temporary runner outputs. Do not publish raw frames
       # as public GitHub artifacts; durable evidence belongs in the private Drive archive.
