@@ -1,0 +1,37 @@
+name: RIKITU Stage174 private session-to-export cross-check
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage174-playtest-export-crosscheck.yml'
+      - 'tools/analyze_map01_playtest_sessions.py'
+      - 'tools/analyze_private_pacing_csv.py'
+      - 'tests/test_map01_playtest_sessions.py'
+      - 'docs/STAGE173_MAP01_HUMAN_PLAYTEST_PROTOCOL.md'
+      - 'docs/STAGE174_MAP01_EXPORT_CROSSCHECK.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage174-playtest-export-crosscheck.yml'
+      - 'tools/analyze_map01_playtest_sessions.py'
+      - 'tools/analyze_private_pacing_csv.py'
+      - 'tests/test_map01_playtest_sessions.py'
+      - 'docs/STAGE173_MAP01_HUMAN_PLAYTEST_PROTOCOL.md'
+      - 'docs/STAGE174_MAP01_EXPORT_CROSSCHECK.md'
+permissions:
+  contents: read
+jobs:
+  private-export-crosscheck:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile private analyzers
+        run: |
+          python -m py_compile tools/analyze_private_pacing_csv.py
+          python -m py_compile tools/analyze_map01_playtest_sessions.py
+      - name: Synthetic source-export, privacy and integrity tests
+        run: python tests/test_map01_playtest_sessions.py
+      # No real player data, browser exports, reports, or artifacts are uploaded.
