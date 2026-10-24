@@ -45,7 +45,7 @@ the paired cohort can differ from the frozen independent groups.
 Synthetic-only tests verify:
 - clean controller data reports zero controller repeats after any earlier
   non-controller attempt;
-- controller A1, keyboard A2, controller A3 reports one such controller repeat;
+- controller A1, an incomplete/stopped keyboard A2, and controller A3 reports one such controller repeat;
 - a keyboard A3 after a completed controller A2 does not retroactively count
   the earlier controller repeat;
 - the frozen repeat group and paired cohort are unchanged;
