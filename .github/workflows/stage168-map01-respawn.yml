@@ -1,0 +1,40 @@
+name: RIKITU Stage168 MAP01 checkpoint respawn controller recovery
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage168-map01-respawn.yml'
+      - 'native/test_map01_checkpoint_respawn.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'native/rikitu_map01_telemetry.*'
+      - 'docs/STAGE168_MAP01_CHECKPOINT_RESPAWN.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage168-map01-respawn.yml'
+      - 'native/test_map01_checkpoint_respawn.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'native/rikitu_map01_telemetry.*'
+      - 'docs/STAGE168_MAP01_CHECKPOINT_RESPAWN.md'
+permissions:
+  contents: read
+jobs:
+  checkpoint-respawn:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: GCC original physics recovery after a fall
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_checkpoint_respawn.c -lm -o /tmp/rikitu-respawn-gcc
+          /tmp/rikitu-respawn-gcc
+      - name: Clang original physics recovery after a fall
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_checkpoint_respawn.c -lm -o /tmp/rikitu-respawn-clang
+          /tmp/rikitu-respawn-clang
+      - name: Clang ASan UBSan after a fall
+        run: |
+          clang -std=c99 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_checkpoint_respawn.c -lm -o /tmp/rikitu-respawn-sanitized
+          /tmp/rikitu-respawn-sanitized
+      # No user data, screenshots, gameplay captures, saves or uploads.
