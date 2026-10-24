@@ -141,6 +141,7 @@ int main(void) {
                                            &scene,&game,&campaign);
       if(save_ready && !campaign_debug &&
          rikitu_campaign_uses_legacy_map01_checkpoint(&campaign) &&
+         scene.level_id==1 &&
          rikitu_save_encode(now,&scene,&game,1) &&
          (!have_last || memcmp(now,last_saved,sizeof(last_saved))!=0))
         (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
@@ -223,6 +224,7 @@ int main(void) {
     framebufferEnd(&fb);
     if(campaign.mode==RIKITU_CAMPAIGN_PLAYING &&
        rikitu_campaign_uses_legacy_map01_checkpoint(&campaign) &&
+       scene.level_id==1 &&
        save_ready && !campaign_debug &&
        rikitu_save_encode(now,&scene,&game,1)){
       /* Ignore elapsed time for change detection: save at progress events,
