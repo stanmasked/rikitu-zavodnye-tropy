@@ -19,14 +19,16 @@ static int close_(float a,float b,float eps){
   return isfinite(a)&&isfinite(b)&&fabsf(a-b)<=eps;
 }
 static void run(RouteResult *r,int hz){
-  /* Jumps cover six patrol zones, three collectibles and ground gaps.
-   * All triggers inspect the actual character's current native position.
-   * Movement itself is exclusively executed by rikitu_demo_advance(). */
-  static const float jump_at[]={
-    620.0f,1542.0f,2340.0f,2920.0f,3180.0f,3590.0f,
-    4230.0f,4720.0f,5380.0f,5670.0f,6820.0f,7040.0f
+  /* SCHEDULE AT SHARED 60Hz TICK BOUNDARIES, not at render-frame
+   * positions. Odd-tick button edges cannot exist in the 30Hz sampler
+   * (which executes two fixed steps per rendered frame). Keeping these
+   * triggers at even ticks makes the SAME controller-input timeline
+   * executable at 30, 60 and 120 display Hz. Physics remains unchanged. */
+  static const unsigned jump_on_tick[]={
+    118u,326u,508u,638u,698u,790u,
+    934u,1046u,1196u,1260u,1522u,1572u
   };
-  const unsigned planned=(unsigned)(sizeof(jump_at)/sizeof(jump_at[0]));
+  const unsigned planned=(unsigned)(sizeof(jump_on_tick)/sizeof(jump_on_tick[0]));
   int prev_checkpoint=0;
   int i;
   assert(hz==30||hz==60||hz==120);
@@ -39,7 +41,7 @@ static void run(RouteResult *r,int hz){
     unsigned input=RIKITU_INPUT_RIGHT|RIKITU_INPUT_RUN;
     int n,pressed=0;
     if(r->jumps<planned&&r->loop.player.grounded&&
-       r->loop.player.x>=jump_at[r->jumps]){
+       r->ticks>=jump_on_tick[r->jumps]){
       input|=RIKITU_INPUT_JUMP;
       pressed=1;
     }
