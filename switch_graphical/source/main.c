@@ -101,7 +101,8 @@ int main(void) {
      * metadata; only MAP01 retains its legacy intra-level checkpoint. */
     if(rikitu_campaign_save_load_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign))
       begin_stage(&scene,&game,&campaign);
-    if(campaign.level==1 && campaign.mode==RIKITU_CAMPAIGN_PLAYING){
+    if(rikitu_campaign_uses_legacy_map01_checkpoint(&campaign) &&
+       campaign.mode==RIKITU_CAMPAIGN_PLAYING){
       (void)rikitu_save_load_pair(MAP01_A,MAP01_B,&scene,&game);
       if(rikitu_save_encode(now,&scene,&game,1)){
         memcpy(last_saved,now,sizeof(last_saved));have_last=1;
@@ -139,6 +140,7 @@ int main(void) {
         (void)rikitu_level_save_store_pair(LEVEL_A,LEVEL_B,
                                            &scene,&game,&campaign);
       if(save_ready && !campaign_debug &&
+         rikitu_campaign_uses_legacy_map01_checkpoint(&campaign) &&
          rikitu_save_encode(now,&scene,&game,1) &&
          (!have_last || memcmp(now,last_saved,sizeof(last_saved))!=0))
         (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
@@ -198,7 +200,9 @@ int main(void) {
         }
         if(save_ready && !campaign_debug)
           (void)rikitu_campaign_save_store_pair(CAMPAIGN_A,CAMPAIGN_B,&campaign);
-        if(scene.level_id==1 && save_ready && !campaign_debug)
+        if(scene.level_id==1 &&
+           rikitu_campaign_uses_legacy_map01_checkpoint(&campaign) &&
+           save_ready && !campaign_debug)
           (void)rikitu_save_store_pair(MAP01_A,MAP01_B,&scene,&game);
       }
     }
@@ -217,8 +221,10 @@ int main(void) {
       }
     }
     framebufferEnd(&fb);
-    if(campaign.mode==RIKITU_CAMPAIGN_PLAYING && save_ready &&
-       !campaign_debug && rikitu_save_encode(now,&scene,&game,1)){
+    if(campaign.mode==RIKITU_CAMPAIGN_PLAYING &&
+       rikitu_campaign_uses_legacy_map01_checkpoint(&campaign) &&
+       save_ready && !campaign_debug &&
+       rikitu_save_encode(now,&scene,&game,1)){
       /* Ignore elapsed time for change detection: save at progress events,
        * not on each 60-Hz frame. Time is recorded in the chosen snapshot. */
       const int dirty=!have_last ||
