@@ -25,11 +25,11 @@ def browser_csv(seconds, hits=2, coins=18):
     value = float(seconds)
     verdict = 'Ниже цели' if value < 360 else ('Выше цели' if value > 480 else 'В пределах цели')
     out = io.StringIO(newline='')
-    writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n', quoting=csv.QUOTE_ALL)
+    writer = csv.writer(out, delimiter=';', lineterminator='\r\n', quoting=csv.QUOTE_ALL)
     writer.writerow(BROWSER_HEADER)
     writer.writerow(('1', 'Цветочная тропа', 'Обычный', seconds, str(hits), str(coins),
                      '360', '480', verdict))
-    return ('\\ufeff' + out.getvalue()).encode('utf-8')
+    return ('\ufeff' + out.getvalue()).encode('utf-8')
 
 
 def build_dataset(first_times, repeat_times, add_keyboard=True, add_incomplete=True):
@@ -63,10 +63,10 @@ def build_dataset(first_times, repeat_times, add_keyboard=True, add_incomplete=T
                      '3', '3', '0', '0', 'yes', 'no', 'none', filename,
                      hashlib.sha256(data).hexdigest()))
     out = io.StringIO(newline='')
-    writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n', quoting=csv.QUOTE_ALL)
+    writer = csv.writer(out, delimiter=';', lineterminator='\r\n', quoting=csv.QUOTE_ALL)
     writer.writerow(m.SESSIONS.HEADER)
     writer.writerows(rows)
-    return ('\\ufeff' + out.getvalue()).encode('utf-8'), exports
+    return ('\ufeff' + out.getvalue()).encode('utf-8'), exports
 
 
 def write_dataset(root, session_bytes, exports):
