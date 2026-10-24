@@ -34,15 +34,19 @@ static void sector_run(SectorRun *r,int render_hz) {
   for(i=0;i<render_hz*12;i++) {
     unsigned input=RIKITU_INPUT_RIGHT|RIKITU_INPUT_RUN;
     int n;
+    int jump_requested=0;
     if(r->jump_attempts==0 &&
        r->loop.player.grounded &&
        r->loop.player.x>=1542.0f && r->loop.player.x<1600.0f){
       input|=RIKITU_INPUT_JUMP;
-      r->jump_attempts++;
+      jump_requested=1;
     }
     n=rikitu_demo_advance(&r->scene,&r->loop,
                           1.0f/(float)render_hz,input);
     assert(n>=0);
+    /* A 120Hz render frame may execute ZERO 60Hz physics ticks.
+     * Keep holding the input until the simulation has consumed it. */
+    if(jump_requested&&n>0)r->jump_attempts++;
     r->ticks+=n;
     r->frames++;
     if(!crossed&&r->scene.reached_checkpoints>=1){
