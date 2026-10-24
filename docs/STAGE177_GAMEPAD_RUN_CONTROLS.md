@@ -12,7 +12,7 @@ as a keyboard player. The help text also did not explain the actual mapping.
 - Left analog stick and standard D-pad left/right control movement.
 - Standard gamepad A/B buttons (indices 0/1) trigger jump.
 - Hold RB/R1 (standard button index 5) to run at the existing run speed.
-- Start (button index 9) toggles pause.
+- Start (button index 9) starts the title screen, advances between levels/menus, and toggles pause during play.
 - Keyboard movement and Shift-running remain unchanged.
 - Regenerated `RIKITU_play_now.html` from `index.html`, `style.css`,
   `game-core.js` and `game.js`; source/standalone parity is enforced by
@@ -20,7 +20,7 @@ as a keyboard player. The help text also did not explain the actual mapping.
 - Updated the movement parity harness for the new gamepad-run state and added
   `tests/test-gamepad-controls.py`, which injects a synthetic standard Gamepad
   API object and verifies D-pad motion, A-button jump, analog walk versus RB
-  run speed, and Start/pause timer behavior.
+  run speed, Start-only launch and Start/pause timer behavior.
 
 ## Evidence boundary
 
