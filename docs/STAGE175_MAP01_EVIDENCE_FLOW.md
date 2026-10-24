@@ -13,7 +13,9 @@ inventing a new pipeline.
 
 1. Generate a synthetic MAP01 browser CSV and anonymized manual session log.
 2. Run `crosscheck_map01_playtest_exports.py`; verify the completed session's
-   exact browser CSV SHA-256 and Stage 1 seconds/hits/coins.
+   anonymized filename plus exact browser CSV SHA-256 and Stage 1 seconds/hits/coins.
+   Distinct filenames may share identical hashes if their bytes match; the manifest
+   preserves both paths. Reusing one filename/file for two attempts is rejected.
 3. Place only the synthetic source CSVs and aggregate cross-check report in
    a temporary evidence directory.
 4. Seal the directory with `private_evidence_readback.py seal`, pinning
