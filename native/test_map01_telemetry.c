@@ -27,7 +27,7 @@ int main(void) {
   l.paused=0;
   for(i=0;i<18;i++) {
     ticks=rikitu_demo_advance(&s,&l,RIKITU_FIXED_DT,
-                              RIKITU_INPUT_RIGHT|RIKITU_INPUT_RUN);
+                              RIKITU_INPUT_RIGHT|RIKITU_INPUT_RUN|RIKITU_INPUT_JUMP);
     assert(ticks==1);
     assert(rikitu_map01_telemetry_observe(&m,&s,&l,ticks));
   }
