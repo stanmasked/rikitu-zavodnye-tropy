@@ -23,7 +23,7 @@ python /path/to/repo/tools/crosscheck_map01_playtest_exports.py \
   --sessions /private/evidence/map01-sessions.csv \
   --browser-csv /private/evidence/P001-A1-browser.csv \
   --browser-csv /private/evidence/P001-A2-browser.csv \
-  --expected-sessions-sha256 <previously-pinned-session-log-sha256> \
+  --expected-sessions-sha256 PINNED_SESSION_LOG_SHA256 \
   --output /private/evidence/map01-crosscheck-summary.json
 ```
 
