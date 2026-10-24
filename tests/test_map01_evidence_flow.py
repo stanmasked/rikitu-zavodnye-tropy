@@ -25,23 +25,23 @@ BROWSER_HEADER = ('Уровень', 'Название', 'Тип', 'Секунд�
 
 def make_browser_export():
     out = io.StringIO(newline='')
-    writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n', quoting=csv.QUOTE_ALL)
+    writer = csv.writer(out, delimiter=';', lineterminator='\r\n', quoting=csv.QUOTE_ALL)
     writer.writerow(BROWSER_HEADER)
     writer.writerow(('1', 'Цветочная тропа', 'Обычный', '400.0', '2', '18',
                      '360', '480', 'В пределах цели'))
-    return ('\\ufeff' + out.getvalue()).encode('utf-8')
+    return ('\ufeff' + out.getvalue()).encode('utf-8')
 
 
 def make_session_log(export_bytes):
     export_sha = hashlib.sha256(export_bytes).hexdigest()
     out = io.StringIO(newline='')
-    writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n', quoting=csv.QUOTE_ALL)
+    writer = csv.writer(out, delimiter=';', lineterminator='\r\n', quoting=csv.QUOTE_ALL)
     writer.writerow(crosscheck.SESSIONS.HEADER)
     writer.writerow(('P001-A1','first','controller','completed','400.0','2','18',
                      '3','3','0','1','yes','yes','none',export_sha))
     writer.writerow(('P002-A1','first','controller','stopped','220.0','4','6',
                      '1','1','2','1','no','no','missed_fragment',''))
-    return ('\\ufeff' + out.getvalue()).encode('utf-8')
+    return ('\ufeff' + out.getvalue()).encode('utf-8')
 
 
 class Map01EvidenceFlowTests(unittest.TestCase):
