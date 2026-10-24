@@ -68,14 +68,18 @@ def _read_private_csv(value, limit):
 def _manual_links(data):
     text = data.decode('utf-8-sig', errors='strict')
     rows = list(csv.reader(io.StringIO(text, newline=''), delimiter=';', strict=True))
+    if not rows or tuple(rows[0]) != SESSIONS.HEADER:
+        raise ValueError('unexpected manual session schema')
     expected = {}
     for row in rows[1:]:
         if row[3] != 'completed':
             continue
-        source_hash = row[14]
-        # The Stage173 analyzer has already validated the schema, unique IDs,
-        # hash format, outcomes and uniqueness of completed export hashes.
-        expected[source_hash] = {
+        source_filename = row[14]
+        source_hash = row[15]
+        if source_filename in expected:
+            raise ValueError('duplicate anonymized browser export filename')
+        expected[source_filename] = {
+            'sha256': source_hash,
             'seconds': Decimal(row[4]),
             'hits': int(row[5]),
             'coins': int(row[6]),
@@ -97,20 +101,22 @@ def analyse_files(session_file, browser_files, output_file, expected_sessions_sh
     supplied = {}
     for filename in browser_files:
         path, data = _read_private_csv(filename, MAX_EXPORT_BYTES)
-        digest = hashlib.sha256(data).hexdigest()
-        if digest in supplied:
-            raise ValueError('duplicate browser export supplied')
-        if digest not in expected:
+        if path.name in supplied:
+            raise ValueError('duplicate browser export filename supplied')
+        if path.name not in expected:
             raise ValueError('unlinked browser export supplied')
+        digest = hashlib.sha256(data).hexdigest()
+        target = expected[path.name]
+        if digest != target['sha256']:
+            raise ValueError('browser export SHA-256 disagrees with linked session row')
         report = BROWSER.analyse(data)
-        stage1 = next((stage for stage in report['stages'] if stage['stage'] == 1), None)
-        if stage1 is None:
-            raise ValueError('linked browser export has no MAP01 record')
-        target = expected[digest]
+        if len(report['stages']) != 1 or report['stages'][0]['stage'] != 1:
+            raise ValueError('each linked browser export must contain exactly one MAP01 record')
+        stage1 = report['stages'][0]
         if (Decimal(stage1['active_seconds']) != target['seconds'] or
                 stage1['hits'] != target['hits'] or stage1['coins'] != target['coins']):
             raise ValueError('manual MAP01 values disagree with linked browser export')
-        supplied[digest] = {'size': len(data), 'path': path}
+        supplied[path.name] = {'size': len(data), 'path': path, 'sha256': digest}
 
     if set(supplied) != set(expected):
         raise ValueError('missing completed-session browser export')
@@ -136,7 +142,8 @@ def analyse_files(session_file, browser_files, output_file, expected_sessions_sh
             'unmatched_exports': 0,
             'fields_compared': ['MAP01 active seconds', 'hits', 'coins'],
             'mismatches': 0,
-            'browser_export_sha256s': sorted(supplied),
+            'browser_export_sha256s': sorted({item['sha256'] for item in supplied.values()}),
+            'browser_export_files_matched': len(supplied),
         },
         'notes': [
             'Manual fragment, checkpoint, respawn, backtrack and platform observations are not present in the browser CSV and are not independently cross-checked.',
