@@ -111,6 +111,39 @@ class PilotReadinessTests(unittest.TestCase):
                 self.assertNotIn(sid, text)
             self.assertNotIn(str(session_file), text)
 
+    def test_mixed_input_repeat_is_flagged_without_changing_frozen_medians(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            sessions, exports = build_dataset(
+                [400, 420, 390, 480, 360, 430],
+                [350, 400, 440, 460, 410],
+                add_keyboard=False, add_incomplete=False)
+            rows = list(csv.reader(io.StringIO(sessions.decode('utf-8-sig'), newline=''),
+                                   delimiter=';', strict=True))
+            for row in rows[1:]:
+                if row[0] == 'P001-A1':
+                    row[2] = 'keyboard'
+            out = io.StringIO(newline='')
+            writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n',
+                                quoting=csv.QUOTE_ALL)
+            writer.writerows(rows)
+            sessions = ('\\ufeff' + out.getvalue()).encode('utf-8')
+
+            session_file, exports_dir = write_dataset(root, sessions, exports)
+            result = m.analyse_files(session_file, exports_dir, root/'mixed-input.json',
+                                     hashlib.sha256(sessions).hexdigest())
+            report = json.loads((root/'mixed-input.json').read_text(encoding='utf-8'))
+            self.assertEqual(result['first_completed'], 5)
+            self.assertEqual(result['repeat_completed'], 5)
+            self.assertEqual(result['assessment'],
+                             'PILOT_MEDIANS_WITHIN_TARGET_REVIEW_REQUIRED')
+            self.assertEqual(report['session_counts']['participants_with_multiple_input_methods'], 1)
+            self.assertEqual(
+                report['controller_repeat_input_consistency']['controller_repeat_attempts_after_controller_first'], 4)
+            self.assertEqual(
+                report['controller_repeat_input_consistency']['controller_repeat_attempts_after_noncontroller_first'], 1)
+            self.assertNotIn('P001', json.dumps(report))
+
     def test_fewer_than_five_completed_per_group_is_insufficient(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
