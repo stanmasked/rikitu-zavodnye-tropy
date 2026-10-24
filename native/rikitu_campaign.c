@@ -23,6 +23,11 @@ int rikitu_campaign_valid(const RikituCampaign *c){
     default:return 0;
   }
 }
+/* Keep the legacy RKS1 save family isolated from MAP02–MAP16 RKL3 state. */
+int rikitu_campaign_uses_legacy_map01_checkpoint(const RikituCampaign *c){
+  return rikitu_campaign_valid(c)&&c->level==1;
+}
+
 int rikitu_campaign_finish(RikituCampaign *c,const RikituStage *stage){
   RikituNextMode next;
   if(!rikitu_campaign_valid(c)||!stage||
