@@ -121,7 +121,7 @@ class BrowserExportCrosscheckTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)
             sessions, first, repeat=make_case()
-            sf=root/'sessions.csv'; a=root/'first.csv'; b=root/'repeat.csv'
+            sf=root/'sessions.csv'; a=root/'P001-A1.csv'; b=root/'P001-A2.csv'
             sf.write_bytes(sessions); a.write_bytes(first); b.write_bytes(b'not a valid export')
             with self.assertRaises((ValueError, UnicodeError, csv.Error)):
                 m.analyse_files(sf,[a,b],root/'bad.json')
@@ -132,7 +132,7 @@ class BrowserExportCrosscheckTests(unittest.TestCase):
     def test_output_no_overwrite_and_symlink_git_refusal(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp); sessions, first, repeat=make_case()
-            sf=root/'sessions.csv'; a=root/'first.csv'; b=root/'repeat.csv'; out=root/'summary.json'
+            sf=root/'sessions.csv'; a=root/'P001-A1.csv'; b=root/'P001-A2.csv'; out=root/'summary.json'
             sf.write_bytes(sessions); a.write_bytes(first); b.write_bytes(repeat)
             m.analyse_files(sf,[a,b],out)
             with self.assertRaisesRegex(ValueError,'overwrite'):
@@ -147,7 +147,7 @@ class BrowserExportCrosscheckTests(unittest.TestCase):
     def test_cli_prints_only_aggregates_and_hashes(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp); sessions, first, repeat=make_case()
-            sf=root/'sessions.csv'; a=root/'first.csv'; b=root/'repeat.csv'; out=root/'summary.json'
+            sf=root/'sessions.csv'; a=root/'P001-A1.csv'; b=root/'P001-A2.csv'; out=root/'summary.json'
             sf.write_bytes(sessions); a.write_bytes(first); b.write_bytes(repeat)
             run=subprocess.run([sys.executable,str(TOOL),'--sessions',str(sf),
                                 '--browser-csv',str(a),'--browser-csv',str(b),
