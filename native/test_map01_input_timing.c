@@ -52,7 +52,7 @@ static void deterministic_one_second(void){
   assert(at60.scene.stage.coin_count==at120.scene.stage.coin_count);
   assert(at60.scene.hearts==at120.scene.hearts);
   assert(at60.scene.reached_checkpoints==0 && !at60.scene.stage.completed);
-  printf("MAP01 input-only 1s: walk=%.1f, run=%.1f, coins=%u\n",
+  printf("MAP01 input-only 1s: walk=%.1f, run=%.1f, coins=%d\n",
          walk.scene.player.x-initial,at60.scene.player.x-initial,
          at60.scene.stage.coin_count);
 }
