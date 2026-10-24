@@ -26,6 +26,7 @@ HEADER = (
 MAX_BYTES = 262144
 MAX_ROWS = 1000
 ID_RE = re.compile(r'P[0-9]{3}-A[1-9][0-9]?\Z', re.ASCII)
+CSV_NAME_RE = re.compile(r'P[0-9]{3}-A[1-9][0-9]?\.csv\Z', re.ASCII)
 INT_RE = re.compile(r'[0-9]{1,7}\Z', re.ASCII)
 SECONDS_RE = re.compile(r'[0-9]{1,5}(?:\.[0-9]{1,3})?\Z', re.ASCII)
 SHA_RE = re.compile(r'[0-9a-f]{64}\Z', re.ASCII)
