@@ -54,8 +54,11 @@ def check_policy_workflow():
         assert "      - '.github/workflows/**'" in policy, name
         assert "      - 'tests/test_ci_artifact_policy.py'" in policy, name
         assert "timeout-minutes: 3" in policy, name
+        assert "runs-on: ubuntu-24.04" in policy, name
         assert "run: python3 tests/test_ci_artifact_policy.py" in policy, name
     print("PASS Stage180: primary and recovery storage audits share guarded triggers")
+
+
 def main():
     check_policy_workflow()
     total = 0
