@@ -49,7 +49,7 @@ def check_policy_workflow():
     for name in ("ci-storage-policy.yml", "stage180-storage-policy-recovery.yml"):
         policy = (WORKFLOWS / name).read_text(encoding="utf-8")
         assert "workflow_dispatch:" in policy, name
-        assert "permissions:\\n  contents: read" in policy, name
+        assert "permissions:\n  contents: read" in policy, name
         assert "pull_request:" in policy and "push:" in policy, name
         assert "      - '.github/workflows/**'" in policy, name
         assert "      - 'tests/test_ci_artifact_policy.py'" in policy, name
