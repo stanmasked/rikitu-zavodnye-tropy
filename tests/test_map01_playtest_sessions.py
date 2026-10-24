@@ -99,6 +99,21 @@ class SessionAnalyzerTests(unittest.TestCase):
         for private_id in ('P001-A1','P001-A2','P002-A1','P003-A1'):
             self.assertNotIn(private_id,encoded)
 
+    def test_repeat_attempt_requires_all_prior_attempts_for_same_participant(self):
+        session_rows, exports = rows_and_exports()
+        session_rows = [row for row in session_rows if row[0] != 'P001-A1']
+        exports.pop('P001-A1.csv')
+        raw, _ = fixture(session_rows)
+        with self.assertRaisesRegex(ValueError, 'missing a prior attempt'):
+            m.analyse(raw, export_metadata(exports))
+
+        # A3 also requires A1 and A2; the attempt sequence cannot contain gaps.
+        extra = ('P004-A3','repeat','controller','stopped','220','4','6','1','1','2','1',
+                 'no','no','missed_fragment','','')
+        raw_gap, _ = fixture(session_rows + [extra])
+        with self.assertRaisesRegex(ValueError, 'missing a prior attempt'):
+            m.analyse(raw_gap, export_metadata(exports))
+
     def test_identical_export_bytes_allowed_for_distinct_named_sessions(self):
         identical = browser_export('400.0', 2, 18)
         digest = hashlib.sha256(identical).hexdigest()
