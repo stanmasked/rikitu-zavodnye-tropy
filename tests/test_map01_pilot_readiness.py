@@ -102,6 +102,7 @@ class PilotReadinessTests(unittest.TestCase):
             self.assertEqual(report['controller_groups']['repeat']['completed_within_360_480_seconds'], 4)
             self.assertEqual(report['session_counts']['non_controller_sessions_excluded_from_timing'], 1)
             self.assertEqual(report['session_counts']['input_method_counts'], {'controller': 11, 'keyboard': 1})
+            self.assertEqual(report['schema'], 'rikitu-map01-controller-pilot-readiness-v2')
             paired = report['paired_controller_cohort']
             self.assertEqual(paired['matched_participants'], 5)
             self.assertEqual(paired['first_median_seconds'], '400.0')
