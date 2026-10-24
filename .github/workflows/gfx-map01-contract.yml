@@ -3,6 +3,9 @@ on:
   pull_request:
     paths:
       - '.github/workflows/gfx-map01-contract.yml'
+      - '.github/workflows/stage148-background-blit.yml'
+      - '.github/workflows/stage149-background-overlay.yml'
+      - '.github/workflows/stage150-map01-five-cameras.yml'
       - 'docs/GRAPHICS_PIPELINE.md'
       - 'tests/test_gfx_map01_scroll_contract.py'
       - 'native/rikitu_flower_data.h'
@@ -12,6 +15,9 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/gfx-map01-contract.yml'
+      - '.github/workflows/stage148-background-blit.yml'
+      - '.github/workflows/stage149-background-overlay.yml'
+      - '.github/workflows/stage150-map01-five-cameras.yml'
       - 'tests/test_gfx_map01_scroll_contract.py'
       - 'native/rikitu_flower_data.h'
       - 'native/rikitu_parallax.*'
