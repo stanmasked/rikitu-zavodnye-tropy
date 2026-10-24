@@ -1,0 +1,40 @@
+name: RIKITU Stage159 native MAP01 input-timing sanity
+on:
+  pull_request:
+    paths:
+      - 'native/test_map01_input_timing.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'native/rikitu_loop.*'
+      - 'docs/STAGE159_MAP01_INPUT_TIMING.md'
+      - '.github/workflows/stage159-map01-input-timing.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'native/test_map01_input_timing.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'native/rikitu_loop.*'
+      - 'docs/STAGE159_MAP01_INPUT_TIMING.md'
+      - '.github/workflows/stage159-map01-input-timing.yml'
+permissions:
+  contents: read
+jobs:
+  input-timing:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: GCC 30 60 120Hz native MAP01 true-input metrics
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_boss.c native/test_map01_input_timing.c -lm -o /tmp/rikitu-map01-input-gcc
+          /tmp/rikitu-map01-input-gcc
+      - name: Clang 30 60 120Hz native MAP01 true-input metrics
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_boss.c native/test_map01_input_timing.c -lm -o /tmp/rikitu-map01-input-clang
+          /tmp/rikitu-map01-input-clang
+      - name: Clang ASan UBSan native MAP01 true-input metrics
+        run: |
+          clang -std=c99 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_flower.c native/rikitu_enemies.c native/rikitu_boss.c native/test_map01_input_timing.c -lm -o /tmp/rikitu-map01-input-sanitized
+          /tmp/rikitu-map01-input-sanitized
+      # All fixtures are geometry/inputs only. No real art or raw capture upload.
