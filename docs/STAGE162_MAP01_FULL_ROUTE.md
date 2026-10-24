@@ -8,7 +8,13 @@ after the canonical scene initialization.
 
 Check all three mandatory fragments (x=1530, 3650 and 6870), all three
 checkpoints (x=2050, 4490, 6150), the exit gate, and frame-rate parity
-at 30 / 60 / 120 display Hz. Record deterministic per-checkpoint active
+at 30 / 60 / 120 display Hz. The scripted jump inputs are scheduled on
+**even 60Hz simulation tick boundaries**, so each display rate receives
+the same physics-input timeline. A per-render-frame *position* trigger
+proved inadequate: it produced a 27-vs-28 coin difference across
+30 and 60/120Hz while everything else completed successfully. Neither
+the physics nor pickup collision tolerances are changed to conceal that
+discrepancy. Record deterministic per-checkpoint active
 times, damage and coin counts. All output is synthetic aggregate test
 data (CI logs only). No game asset, artwork, recording, private save,
 raw emulator screenshot, or personal session is uploaded.
