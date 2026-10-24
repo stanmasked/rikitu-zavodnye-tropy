@@ -37,9 +37,9 @@ def make_case(changed_first_seconds=None):
     out = io.StringIO(newline='')
     writer = csv.writer(out, delimiter=';', lineterminator='\r\n', quoting=csv.QUOTE_ALL)
     writer.writerow(m.SESSIONS.HEADER)
-    writer.writerow(('P001-A1','first','controller','completed','400.0','2','18','3','3','0','1','yes','yes','none',hashes[0]))
-    writer.writerow(('P001-A2','repeat','controller','completed','335.0','1','42','3','3','0','2','yes','yes','none',hashes[1]))
-    writer.writerow(('P002-A1','first','keyboard','stopped','220.0','4','6','1','1','2','1','no','no','missed_fragment',''))
+    writer.writerow(('P001-A1','first','controller','completed','400.0','2','18','3','3','0','1','yes','yes','none','P001-A1.csv',hashes[0]))
+    writer.writerow(('P001-A2','repeat','controller','completed','335.0','1','42','3','3','0','2','yes','yes','none','P001-A2.csv',hashes[1]))
+    writer.writerow(('P002-A1','first','keyboard','stopped','220.0','4','6','1','1','2','1','no','no','missed_fragment','',''))
     sessions = ('\ufeff' + out.getvalue()).encode('utf-8')
     return sessions, first, repeat
 
@@ -50,7 +50,7 @@ class BrowserExportCrosscheckTests(unittest.TestCase):
             root = Path(temp)
             sessions, first, repeat = make_case()
             session_file, first_file, repeat_file, report_file = (
-                root/'sessions.csv', root/'first.csv', root/'repeat.csv', root/'summary.json')
+                root/'sessions.csv', root/'P001-A1.csv', root/'P001-A2.csv', root/'summary.json')
             session_file.write_bytes(sessions)
             first_file.write_bytes(first)
             repeat_file.write_bytes(repeat)
@@ -73,11 +73,31 @@ class BrowserExportCrosscheckTests(unittest.TestCase):
                 self.assertNotIn(participant_id, encoded)
             self.assertNotIn(str(session_file), encoded)
 
+    def test_identical_content_hash_is_allowed_for_distinct_named_exports(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root=Path(temp)
+            data=browser_csv(400.0,2,18)
+            digest=hashlib.sha256(data).hexdigest()
+            out=io.StringIO(newline='')
+            writer=csv.writer(out,delimiter=';',lineterminator='\\r\\n',quoting=csv.QUOTE_ALL)
+            writer.writerow(m.SESSIONS.HEADER)
+            writer.writerow(('P001-A1','first','controller','completed','400.0','2','18','3','3','0','1','yes','yes','none','P001-A1.csv',digest))
+            writer.writerow(('P001-A2','repeat','controller','completed','400.0','2','18','3','3','0','1','yes','yes','none','P001-A2.csv',digest))
+            sf=root/'sessions.csv'; a=root/'P001-A1.csv'; b=root/'P001-A2.csv'; report_path=root/'report.json'
+            sf.write_bytes(('\\ufeff'+out.getvalue()).encode('utf-8'))
+            a.write_bytes(data); b.write_bytes(data)
+            result=m.analyse_files(sf,[a,b],report_path)
+            report=json.loads(report_path.read_text(encoding='utf-8'))
+            self.assertEqual(result['matched'],2)
+            self.assertEqual(report['browser_export_crosscheck']['completed_sessions_matched'],2)
+            self.assertEqual(report['browser_export_crosscheck']['browser_export_files_matched'],2)
+            self.assertEqual(len(report['browser_export_crosscheck']['browser_export_sha256s']),1)
+
     def test_linked_but_mismatched_stage1_value_rejected(self):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)
             sessions, first, repeat = make_case(changed_first_seconds=401.0)
-            sf=root/'sessions.csv'; a=root/'first.csv'; b=root/'repeat.csv'; out=root/'report.json'
+            sf=root/'sessions.csv'; a=root/'P001-A1.csv'; b=root/'P001-A2.csv'; out=root/'report.json'
             sf.write_bytes(sessions); a.write_bytes(first); b.write_bytes(repeat)
             with self.assertRaisesRegex(ValueError, 'disagree'):
                 m.analyse_files(sf,[a,b],out)
@@ -87,7 +107,7 @@ class BrowserExportCrosscheckTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root=Path(temp)
             sessions, first, repeat=make_case()
-            sf=root/'sessions.csv'; a=root/'first.csv'; b=root/'repeat.csv'; extra=root/'extra.csv'
+            sf=root/'sessions.csv'; a=root/'P001-A1.csv'; b=root/'P001-A2.csv'; extra=root/'extra.csv'
             sf.write_bytes(sessions); a.write_bytes(first); b.write_bytes(repeat)
             with self.assertRaisesRegex(ValueError,'missing'):
                 m.analyse_files(sf,[a],root/'missing.json')
