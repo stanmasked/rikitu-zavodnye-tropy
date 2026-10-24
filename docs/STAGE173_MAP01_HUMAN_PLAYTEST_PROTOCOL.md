@@ -68,6 +68,7 @@ session_id;attempt_type;input_method;outcome;elapsed_seconds;hits;coins;fragment
 ```
 
 - `session_id`: anonymized `P001-A1`, `P001-A2`, etc.; no real names.
+  For each participant, attempt numbers must be contiguous: A2 requires an A1 row, A3 requires A1 and A2, etc. Keep incomplete or technical attempts in the log rather than skipping an attempt number.
 - `attempt_type`: `first` for A1; `repeat` for A2 and later.
 - `input_method`: `controller`, `keyboard` or `touch`.
 - `outcome`: `completed`, `stopped`, `abandoned` or `technical_issue`.
