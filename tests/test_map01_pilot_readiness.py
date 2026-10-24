@@ -105,7 +105,8 @@ class PilotReadinessTests(unittest.TestCase):
             self.assertEqual(report['session_counts']['participants_with_multiple_input_methods'], 0)
             self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_controller_first'], 5)
             self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_noncontroller_first'], 0)
-            self.assertEqual(report['schema'], 'rikitu-map01-controller-pilot-readiness-v2')
+            self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_any_noncontroller_attempt'], 0)
+            self.assertEqual(report['schema'], 'rikitu-map01-controller-pilot-readiness-v3')
             paired = report['paired_controller_cohort']
             self.assertEqual(paired['matched_participants'], 5)
             self.assertEqual(paired['first_median_seconds'], '400.0')
@@ -218,6 +219,8 @@ class PilotReadinessTests(unittest.TestCase):
             self.assertEqual(report['session_counts']['participants_with_multiple_input_methods'], 1)
             self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_controller_first'], 5)
             self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_noncontroller_first'], 0)
+            self.assertEqual(report['controller_repeat_input_consistency']['controller_repeat_attempts_after_any_noncontroller_attempt'], 1)
+            self.assertEqual(report['schema'], 'rikitu-map01-controller-pilot-readiness-v3')
             self.assertEqual(report['controller_groups']['repeat']['completed'], 5)
             paired = report['paired_controller_cohort']
             self.assertEqual(paired['matched_participants'], 4)
@@ -228,6 +231,42 @@ class PilotReadinessTests(unittest.TestCase):
             # median, but is excluded from the matched cohort after keyboard A2.
             self.assertEqual(report['controller_groups']['repeat']['completed_median_seconds'], '410.0')
             self.assertFalse(paired['affects_frozen_assessment'])
+
+    def test_noncontroller_attempt_after_controller_repeat_does_not_reclassify_it(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            sessions, exports = build_dataset(
+                [400, 420, 390, 480, 360],
+                [350, 400, 440, 460, 410],
+                add_keyboard=False, add_incomplete=False)
+            parsed = list(csv.reader(
+                io.StringIO(sessions.decode('utf-8-sig'), newline=''),
+                delimiter=';', strict=True))
+            header, rows = parsed[0], parsed[1:]
+            rows.append((
+                'P001-A3', 'repeat', 'keyboard', 'stopped', '220', '4', '6',
+                '1', '1', '2', '1', 'no', 'no', 'missed_fragment', '', ''))
+
+            out = io.StringIO(newline='')
+            writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n',
+                                quoting=csv.QUOTE_ALL)
+            writer.writerow(header)
+            writer.writerows(rows)
+            sessions = ('\\ufeff' + out.getvalue()).encode('utf-8')
+
+            session_file, exports_dir = write_dataset(root, sessions, exports)
+            output = root/'summary.json'
+            m.analyse_files(session_file, exports_dir, output)
+            report = json.loads(output.read_text(encoding='utf-8'))
+
+            # A keyboard A3 must not retroactively classify the earlier
+            # controller A2 as following a non-controller attempt.
+            self.assertEqual(
+                report['controller_repeat_input_consistency']['controller_repeat_attempts_after_any_noncontroller_attempt'],
+                0)
+            self.assertEqual(report['session_counts']['participants_with_multiple_input_methods'], 1)
+            self.assertEqual(report['controller_groups']['repeat']['completed'], 5)
+            self.assertEqual(report['paired_controller_cohort']['matched_participants'], 5)
 
     def test_fewer_than_five_completed_per_group_is_insufficient(self):
         with tempfile.TemporaryDirectory() as temp:
