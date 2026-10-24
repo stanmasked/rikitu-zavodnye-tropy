@@ -40,6 +40,13 @@ with sync_playwright() as pw:
     pad("window.__testPad.buttons[9].pressed=false")
     page.wait_for_timeout(100)
 
+    # Holding Start through the title-to-game transition must not repeat menu actions.
+    page.wait_for_timeout(200)
+    assert state()["mode"] == "playing"
+    assert state()["level"] == 1
+    pad("window.__testPad.buttons[9].pressed=false")
+    page.wait_for_timeout(100)
+
     # Standard Gamepad button 15 is D-pad right. No teleport/test movement helper is used.
     before = state()["playerX"]
     pad("window.__testPad.buttons[15].pressed=true")
@@ -47,6 +54,42 @@ with sync_playwright() as pw:
     dpad_distance = state()["playerX"] - before
     pad("window.__testPad.buttons[15].pressed=false")
     page.wait_for_timeout(100)
+
+    # D-pad left moves back; contradictory left+right input cancels out.
+    before_left = state()["playerX"]
+    pad("window.__testPad.buttons[14].pressed=true")
+    page.wait_for_function("(x)=>RIKITU_TEST_STATE().playerX<x-30", arg=before_left, timeout=3000)
+    left_distance = before_left - state()["playerX"]
+    pad("window.__testPad.buttons[14].pressed=false")
+    page.wait_for_timeout(100)
+    before_conflict = state()["playerX"]
+    pad("window.__testPad.buttons[14].pressed=true;window.__testPad.buttons[15].pressed=true")
+    page.wait_for_timeout(200)
+    conflict_drift = abs(state()["playerX"] - before_conflict)
+    pad("window.__testPad.buttons[14].pressed=false;window.__testPad.buttons[15].pressed=false")
+    assert conflict_drift < 1.0, {"conflicting_dpad_drift": conflict_drift}
+
+    # Analog deadzone must ignore small noise and accept a deliberate deflection.
+    before_deadzone = state()["playerX"]
+    pad("window.__testPad.axes[0]=0.29")
+    page.wait_for_timeout(250)
+    deadzone_drift = abs(state()["playerX"] - before_deadzone)
+    pad("window.__testPad.axes[0]=0")
+    assert deadzone_drift < 1.0, {"deadzone_drift": deadzone_drift}
+    before_axis = state()["playerX"]
+    pad("window.__testPad.axes[0]=0.8")
+    page.wait_for_function("(x)=>RIKITU_TEST_STATE().playerX>x+20", arg=before_axis, timeout=2500)
+    axis_distance = state()["playerX"] - before_axis
+    pad("window.__testPad.axes[0]=0")
+    page.wait_for_timeout(100)
+
+    # A disconnected pad must not leave a stuck direction active.
+    pad("window.__testPad.connected=false;window.__testPad.axes[0]=1")
+    before_disconnected = state()["playerX"]
+    page.wait_for_timeout(200)
+    disconnect_drift = abs(state()["playerX"] - before_disconnected)
+    pad("window.__testPad.axes[0]=0;window.__testPad.connected=true")
+    assert disconnect_drift < 1.0, {"disconnected_pad_drift": disconnect_drift}
 
     # A button (index 0) must trigger a real jump through the normal update loop.
     ground_y = state()["playerY"]
@@ -87,5 +130,5 @@ with sync_playwright() as pw:
     assert dpad_distance > 30
     assert walk_distance > 70
     assert not errors, errors
-    print("PASS synthetic gamepad: D-pad, A jump, analog walk, RB/R1 run and Start pause")
+    print("PASS synthetic gamepad: Start, D-pad both ways/conflict, deadzone, disconnect, A jump, analog walk, RB/R1 run and pause")
     browser.close()
