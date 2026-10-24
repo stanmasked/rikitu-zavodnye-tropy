@@ -1,0 +1,40 @@
+name: RIKITU Stage166 MAP01 missed fragment backtracking
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage166-map01-backtracking.yml'
+      - 'native/test_map01_fragment_backtrack.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'native/rikitu_map01_telemetry.*'
+      - 'docs/STAGE166_MAP01_BACKTRACKING.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage166-map01-backtracking.yml'
+      - 'native/test_map01_fragment_backtrack.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'native/rikitu_map01_telemetry.*'
+      - 'docs/STAGE166_MAP01_BACKTRACKING.md'
+permissions:
+  contents: read
+jobs:
+  missed-fragment:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: GCC native MAP01 recovery through ordinary backtracking
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_fragment_backtrack.c -lm -o /tmp/rikitu-backtrack-gcc
+          /tmp/rikitu-backtrack-gcc
+      - name: Clang native MAP01 recovery
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_fragment_backtrack.c -lm -o /tmp/rikitu-backtrack-clang
+          /tmp/rikitu-backtrack-clang
+      - name: Sanitizers MAP01 normal-input backtracking
+        run: |
+          clang -std=c99 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_fragment_backtrack.c -lm -o /tmp/rikitu-backtrack-sanitized
+          /tmp/rikitu-backtrack-sanitized
+      # Synthetic C99 input events only. Never publish raw gameplay or private saves.
