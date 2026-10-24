@@ -99,6 +99,37 @@ class SessionAnalyzerTests(unittest.TestCase):
         for private_id in ('P001-A1','P001-A2','P002-A1','P003-A1'):
             self.assertNotIn(private_id,encoded)
 
+    def test_identical_export_bytes_allowed_for_distinct_named_sessions(self):
+        identical = browser_export('400.0', 2, 18)
+        digest = hashlib.sha256(identical).hexdigest()
+        session_rows = [
+            ('P001-A1','first','controller','completed','400.0','2','18','3','3','0','1','yes','yes','none','P001-A1.csv',digest),
+            ('P001-A2','repeat','controller','completed','400.0','2','18','3','3','0','1','yes','yes','none','P001-A2.csv',digest),
+        ]
+        out = io.StringIO(newline='')
+        writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n', quoting=csv.QUOTE_ALL)
+        writer.writerow(m.HEADER)
+        writer.writerows(session_rows)
+        raw = ('\\ufeff' + out.getvalue()).encode('utf-8')
+        exports = {'P001-A1.csv': identical, 'P001-A2.csv': identical}
+        report = m.analyse(raw, export_metadata(exports))
+        self.assertEqual(report['counts']['completed'], 2)
+        self.assertEqual(report['linked_browser_exports_verified'], 2)
+        self.assertEqual(report['unique_browser_export_hashes'], 1)
+        self.assertEqual(report['linked_browser_export_sha256s'], [digest])
+
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            source = root/'sessions.csv'
+            destination = root/'summary.json'
+            exports_dir = root/'exports'
+            source.write_bytes(raw)
+            write_exports(exports_dir, exports)
+            result = m.private_report(source, destination, exports_dir,
+                                      hashlib.sha256(raw).hexdigest())
+            self.assertEqual(result['linked_exports'], 2)
+            self.assertEqual(json.loads(destination.read_text('utf-8'))['unique_browser_export_hashes'], 1)
+
     def test_strict_rejections(self):
         good,exports=fixture()
         metadata=export_metadata(exports)
