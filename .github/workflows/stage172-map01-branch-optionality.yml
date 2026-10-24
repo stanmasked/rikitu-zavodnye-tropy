@@ -1,0 +1,40 @@
+name: RIKITU Stage172 optional branch skip-path parity
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage172-map01-branch-optionality.yml'
+      - 'native/test_map01_two_tier_branch_fixture.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'native/rikitu_map01_telemetry.*'
+      - 'docs/STAGE172_MAP01_OPTIONALITY_GATE.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage172-map01-branch-optionality.yml'
+      - 'native/test_map01_two_tier_branch_fixture.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'native/rikitu_map01_telemetry.*'
+      - 'docs/STAGE172_MAP01_OPTIONALITY_GATE.md'
+permissions:
+  contents: read
+jobs:
+  optionality-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: GCC direct canonical, skip fixture, and optional branch
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_two_tier_branch_fixture.c -lm -o /tmp/rikitu-optionality-gcc
+          /tmp/rikitu-optionality-gcc
+      - name: Clang direct canonical, skip fixture, and optional branch
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_two_tier_branch_fixture.c -lm -o /tmp/rikitu-optionality-clang
+          /tmp/rikitu-optionality-clang
+      - name: Clang ASan and UBSan
+        run: |
+          clang -std=c99 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/rikitu_map01_telemetry.c native/test_map01_two_tier_branch_fixture.c -lm -o /tmp/rikitu-optionality-san
+          /tmp/rikitu-optionality-san
+      # Synthetic in-memory geometry only; no user files or play records.

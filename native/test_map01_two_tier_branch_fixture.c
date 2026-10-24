@@ -54,9 +54,9 @@ static int observe_frame(LayoutRun *r,int hz,unsigned input) {
   r->frames++;
   return n;
 }
-static void direct_baseline(LayoutRun *r,int hz) {
+static void direct_baseline(LayoutRun *r,int hz,int prototype_fixture) {
   int f,jumped=0;
-  initialize(r,0);
+  initialize(r,prototype_fixture);
   for(f=0;f<hz*30;f++) {
     unsigned input=RIKITU_INPUT_RIGHT|RIKITU_INPUT_RUN;
     int request=0,n;
@@ -191,24 +191,48 @@ static void prototype_branch(LayoutRun *r,int hz) {
   assert(r->telemetry.observed_frames==r->frames);
 }
 int main(void) {
-  LayoutRun d30,d60,d120,p30,p60,p120;
-  direct_baseline(&d30,30);direct_baseline(&d60,60);direct_baseline(&d120,120);
+  LayoutRun d30,d60,d120,s30,s60,s120,p30,p60,p120;
+  direct_baseline(&d30,30,0);direct_baseline(&d60,60,0);direct_baseline(&d120,120,0);
+  /* Same test-only platforms and relocated rewards, but a controller that
+   * never enters the branch. This proves the detour is genuinely optional. */
+  direct_baseline(&s30,30,1);direct_baseline(&s60,60,1);direct_baseline(&s120,120,1);
   prototype_branch(&p30,30);prototype_branch(&p60,60);prototype_branch(&p120,120);
   assert(close_to(d30.loop.active_seconds,d60.loop.active_seconds,0.08f));
   assert(close_to(d60.loop.active_seconds,d120.loop.active_seconds,0.08f));
+  assert(close_to(s30.loop.active_seconds,s60.loop.active_seconds,0.08f));
+  assert(close_to(s60.loop.active_seconds,s120.loop.active_seconds,0.08f));
   assert(close_to(p30.loop.active_seconds,p60.loop.active_seconds,0.15f));
   assert(close_to(p60.loop.active_seconds,p120.loop.active_seconds,0.15f));
   assert(close_to(p30.telemetry.leftward_distance_px,p60.telemetry.leftward_distance_px,20.0f));
   assert(close_to(p60.telemetry.leftward_distance_px,p120.telemetry.leftward_distance_px,20.0f));
-  assert(p30.scene.stage.coin_count>=d30.scene.stage.coin_count+3);
+  /* The fixture must not force its branch: direct controller preserves the
+   * same mandatory progress and incidental baseline coin count. */
+  assert(close_to(s30.loop.active_seconds,d30.loop.active_seconds,0.10f));
+  assert(close_to(s60.loop.active_seconds,d60.loop.active_seconds,0.10f));
+  assert(close_to(s120.loop.active_seconds,d120.loop.active_seconds,0.10f));
+  assert(close_to(s30.loop.player.x,d30.loop.player.x,10.0f));
+  assert(close_to(s60.loop.player.x,d60.loop.player.x,10.0f));
+  assert(close_to(s120.loop.player.x,d120.loop.player.x,10.0f));
+  assert(s30.scene.stage.fragment_count==d30.scene.stage.fragment_count);
+  assert(s30.scene.reached_checkpoints==d30.scene.reached_checkpoints);
+  assert(s30.scene.stage.coin_count==d30.scene.stage.coin_count);
+  assert(s60.scene.stage.coin_count==d60.scene.stage.coin_count);
+  assert(s120.scene.stage.coin_count==d120.scene.stage.coin_count);
+  assert(s30.scene.stage.fragments[0]&&s30.scene.reached_checkpoints==1);
+  assert(!s30.scene.stage.coins[47]&&!s30.scene.stage.coins[48]&&!s30.scene.stage.coins[49]);
+  assert(!s60.scene.stage.coins[47]&&!s60.scene.stage.coins[48]&&!s60.scene.stage.coins[49]);
+  assert(!s120.scene.stage.coins[47]&&!s120.scene.stage.coins[48]&&!s120.scene.stage.coins[49]);
+  assert(p30.scene.stage.coin_count>=s30.scene.stage.coin_count+3);
+  assert(p60.scene.stage.coin_count>=s60.scene.stage.coin_count+3);
+  assert(p120.scene.stage.coin_count>=s120.scene.stage.coin_count+3);
   assert(abs(p60.scene.stage.coin_count-p30.scene.stage.coin_count)<=1);
   assert(abs(p120.scene.stage.coin_count-p30.scene.stage.coin_count)<=1);
-  assert(p30.loop.active_seconds>d30.loop.active_seconds+0.15f);
-  assert(p30.loop.active_seconds<d30.loop.active_seconds+1.5f);
-  assert(p60.loop.active_seconds>d60.loop.active_seconds+0.15f);
-  assert(p60.loop.active_seconds<d60.loop.active_seconds+1.5f);
-  assert(p120.loop.active_seconds>d120.loop.active_seconds+0.15f);
-  assert(p120.loop.active_seconds<d120.loop.active_seconds+1.5f);
-  puts("PASS Stage171: disposable two-tier branch fixture is reachable, rewards optional exploration, and returns safely; not production geometry or human pacing");
+  assert(p30.loop.active_seconds>s30.loop.active_seconds+0.15f);
+  assert(p30.loop.active_seconds<s30.loop.active_seconds+1.5f);
+  assert(p60.loop.active_seconds>s60.loop.active_seconds+0.15f);
+  assert(p60.loop.active_seconds<s60.loop.active_seconds+1.5f);
+  assert(p120.loop.active_seconds>s120.loop.active_seconds+0.15f);
+  assert(p120.loop.active_seconds<s120.loop.active_seconds+1.5f);
+  puts("PASS Stage172: same-fixture skip route preserves mandatory progression; two-tier branch remains optional and adds three fixture rewards");
   return 0;
 }
