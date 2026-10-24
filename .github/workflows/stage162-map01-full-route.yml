@@ -1,0 +1,38 @@
+name: RIKITU Stage162 MAP01 complete native input route
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage162-map01-full-route.yml'
+      - 'native/test_map01_complete_input_route.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'docs/STAGE162_MAP01_FULL_ROUTE.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage162-map01-full-route.yml'
+      - 'native/test_map01_complete_input_route.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'docs/STAGE162_MAP01_FULL_ROUTE.md'
+permissions:
+  contents: read
+jobs:
+  full-route:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: GCC all MAP01 fragments, checkpoints and exit at 30 60 120Hz
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/test_map01_complete_input_route.c -lm -o /tmp/rikitu-full-gcc
+          /tmp/rikitu-full-gcc
+      - name: Clang full native input MAP01
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/test_map01_complete_input_route.c -lm -o /tmp/rikitu-full-clang
+          /tmp/rikitu-full-clang
+      - name: Sanitizers full native input MAP01
+        run: |
+          clang -std=c99 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/test_map01_complete_input_route.c -lm -o /tmp/rikitu-full-san
+          /tmp/rikitu-full-san
+      # No CI artifacts, private screenshots, game saves or recorded play.
