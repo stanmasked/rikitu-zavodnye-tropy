@@ -1,0 +1,44 @@
+name: RIKITU Stage174 private MAP01 browser export cross-check
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage174-map01-browser-crosscheck.yml'
+      - 'tools/analyze_map01_playtest_sessions.py'
+      - 'tools/analyze_private_pacing_csv.py'
+      - 'tools/crosscheck_map01_playtest_exports.py'
+      - 'tests/test_map01_playtest_sessions.py'
+      - 'tests/test_map01_browser_export_crosscheck.py'
+      - 'docs/STAGE174_MAP01_BROWSER_EXPORT_CROSSCHECK.md'
+      - 'docs/STAGE173_MAP01_HUMAN_PLAYTEST_PROTOCOL.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage174-map01-browser-crosscheck.yml'
+      - 'tools/analyze_map01_playtest_sessions.py'
+      - 'tools/analyze_private_pacing_csv.py'
+      - 'tools/crosscheck_map01_playtest_exports.py'
+      - 'tests/test_map01_playtest_sessions.py'
+      - 'tests/test_map01_browser_export_crosscheck.py'
+      - 'docs/STAGE174_MAP01_BROWSER_EXPORT_CROSSCHECK.md'
+      - 'docs/STAGE173_MAP01_HUMAN_PLAYTEST_PROTOCOL.md'
+permissions:
+  contents: read
+jobs:
+  private-crosscheck:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile private-only analyzers
+        run: |
+          python -m py_compile tools/analyze_map01_playtest_sessions.py
+          python -m py_compile tools/analyze_private_pacing_csv.py
+          python -m py_compile tools/crosscheck_map01_playtest_exports.py
+      - name: Stage173 synthetic session privacy and integrity tests
+        run: python tests/test_map01_playtest_sessions.py
+      - name: Stage174 synthetic browser export cross-check tests
+        run: python tests/test_map01_browser_export_crosscheck.py
+      # Synthetic data only. No real playtest inputs, exports, captures, or artifacts.
