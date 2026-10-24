@@ -15,7 +15,9 @@ The report selects at most one pair per pseudonymous participant:
 
 Incomplete and technical attempts remain in the session log and continue to establish the attempt sequence, but an incomplete A1 cannot form a completed pair. A keyboard/touch attempt before a repeat breaks the controller-only sequence for this paired diagnostic.
 
-## Added aggregate fields
+## Output schema and added aggregate fields
+
+The report schema advances to `rikitu-map01-controller-pilot-readiness-v2` because the aggregate output shape now includes this paired-cohort object.
 
 - `paired_controller_cohort.matched_participants`
 - `paired_controller_cohort.first_median_seconds`
