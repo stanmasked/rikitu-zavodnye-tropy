@@ -1,0 +1,38 @@
+name: RIKITU Stage161 MAP01 second sector real input
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage161-map01-second-sector.yml'
+      - 'native/test_map01_second_sector_route.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'docs/STAGE161_MAP01_SECOND_SECTOR.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage161-map01-second-sector.yml'
+      - 'native/test_map01_second_sector_route.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'docs/STAGE161_MAP01_SECOND_SECTOR.md'
+permissions:
+  contents: read
+jobs:
+  second-sector:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: GCC normal input MAP01 two sectors, 30/60/120Hz
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/test_map01_second_sector_route.c -lm -o /tmp/rikitu-map01-sector2-gcc
+          /tmp/rikitu-map01-sector2-gcc
+      - name: Clang normal input MAP01 two sectors, 30/60/120Hz
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/test_map01_second_sector_route.c -lm -o /tmp/rikitu-map01-sector2-clang
+          /tmp/rikitu-map01-sector2-clang
+      - name: Clang sanitizers for two-sector input
+        run: |
+          clang -std=c99 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/test_map01_second_sector_route.c -lm -o /tmp/rikitu-map01-sector2-san
+          /tmp/rikitu-map01-sector2-san
+      # No upload-artifact, screenshots, saves, sprites or private evidence.
