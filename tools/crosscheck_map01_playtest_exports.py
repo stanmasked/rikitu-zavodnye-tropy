@@ -20,7 +20,7 @@ import sys
 MAX_SESSION_BYTES = 262144
 MAX_EXPORT_BYTES = 65536
 MAX_EXPORTS = 100
-SHA256_RE = __import__('re').compile(r'[0-9a-f]{64}\\Z', __import__('re').ASCII)
+SHA256_RE = __import__('re').compile(r'[0-9a-f]{64}\Z', __import__('re').ASCII)
 HERE = Path(__file__).resolve().parent
 
 
@@ -144,7 +144,7 @@ def analyse_files(session_file, browser_files, output_file, expected_sessions_sh
             'All raw inputs remain local; no network access or upload is performed.',
         ],
     }
-    encoded = (json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False) + '\\n').encode('utf-8')
+    encoded = (json.dumps(report, indent=2, sort_keys=True, ensure_ascii=False) + '\n').encode('utf-8')
     out_fd = os.open(dest, os.O_WRONLY | os.O_CREAT | os.O_EXCL |
                      getattr(os, 'O_NOFOLLOW', 0), 0o600)
     try:
