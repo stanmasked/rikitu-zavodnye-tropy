@@ -21,7 +21,7 @@ HEADER = (
     'session_id', 'attempt_type', 'input_method', 'outcome',
     'elapsed_seconds', 'hits', 'coins', 'fragments', 'checkpoints',
     'respawns', 'backtrack_count', 'raised_platform_seen',
-    'raised_platform_used', 'stop_reason', 'source_csv_sha256',
+    'raised_platform_used', 'stop_reason', 'source_csv_filename', 'source_csv_sha256',
 )
 MAX_BYTES = 262144
 MAX_ROWS = 1000
@@ -71,13 +71,14 @@ def analyse(data):
 
     sessions = []
     seen_ids = set()
-    linked_exports = set()
+    linked_export_names = set()
+    linked_hashes = set()
     for row in rows[1:]:
         if len(row) != len(HEADER):
             raise ValueError('incorrect session-log column count')
         (session_id, attempt_type, input_method, outcome, elapsed_text, hits_text,
          coins_text, fragments_text, checkpoints_text, respawns_text, backtrack_text,
-         platform_seen, platform_used, stop_reason, source_hash) = row
+         platform_seen, platform_used, stop_reason, source_filename, source_hash) = row
         if not ID_RE.fullmatch(session_id) or session_id in seen_ids:
             raise ValueError('invalid or duplicate anonymized session ID')
         seen_ids.add(session_id)
@@ -101,14 +102,16 @@ def analyse(data):
         if stop_reason not in STOP_REASONS:
             raise ValueError('invalid stop reason')
         if outcome == 'completed':
-            if fragments != 3 or stop_reason != 'none' or not SHA_RE.fullmatch(source_hash):
-                raise ValueError('completed attempt needs all fragments, no stop reason, and linked CSV hash')
-            if source_hash in linked_exports:
-                raise ValueError('browser export hash reused by multiple completed sessions')
-            linked_exports.add(source_hash)
+            if (fragments != 3 or stop_reason != 'none' or
+                    source_filename != session_id + '.csv' or
+                    not CSV_NAME_RE.fullmatch(source_filename) or
+                    not SHA_RE.fullmatch(source_hash)):
+                raise ValueError('completed attempt needs all fragments, no stop reason, named browser CSV, and SHA-256')
+            linked_export_names.add(source_filename)
+            linked_hashes.add(source_hash)
         else:
-            if stop_reason == 'none' or source_hash:
-                raise ValueError('incomplete attempt needs a stop reason and no completion CSV hash')
+            if stop_reason == 'none' or source_filename or source_hash:
+                raise ValueError('incomplete attempt needs a stop reason and blank browser CSV filename/hash')
             if outcome == 'technical_issue' and stop_reason != 'technical_issue':
                 raise ValueError('technical issue outcome needs matching stop reason')
         sessions.append({
@@ -125,6 +128,7 @@ def analyse(data):
             'raised_platform_seen': platform_seen,
             'raised_platform_used': platform_used,
             'stop_reason': stop_reason,
+            'source_csv_filename': source_filename,
             'source_csv_sha256': source_hash,
         })
 
@@ -172,8 +176,9 @@ def analyse(data):
             'repeat_attempt_median': _median([s['elapsed_seconds'] for s in repeat_done]),
         },
         'stop_reasons': dict(sorted(stop_counts.items())),
-        'linked_browser_exports': len(linked_exports),
-        'linked_browser_export_sha256s': sorted(linked_exports),
+        'linked_browser_exports': len(linked_export_names),
+        'unique_browser_export_hashes': len(linked_hashes),
+        'linked_browser_export_sha256s': sorted(linked_hashes),
         'notes': [
             'Ordinary MAP01 target is 360-480 active seconds.',
             'Incomplete elapsed times are stop-time observations, not completed-run durations.',
