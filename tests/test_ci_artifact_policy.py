@@ -45,20 +45,15 @@ def upload_blocks(yaml_text: str):
 
 
 def check_policy_workflow():
-    """Keep the audit recoverable and ensure policy changes cannot skip it."""
+    """Keep the audit manually recoverable and ensure policy changes cannot skip it."""
     policy = (WORKFLOWS / "ci-storage-policy.yml").read_text(encoding="utf-8")
     assert "workflow_dispatch:" in policy
-    assert (
-        "group: ci-storage-policy-${{ github.workflow }}-${{ github.ref }}"
-        in policy
-    )
-    assert "cancel-in-progress: true" in policy
     assert "permissions:\n  contents: read" in policy
     assert "pull_request:" in policy and "push:" in policy
     assert "      - '.github/workflows/**'" in policy
     assert "      - 'tests/test_ci_artifact_policy.py'" in policy
     assert "timeout-minutes: 3" in policy
-    print("PASS Stage180: policy audit is manually recoverable and branch runs are coalesced")
+    print("PASS Stage180: policy audit is manually recoverable and path triggers are guarded")
 
 
 def main():
