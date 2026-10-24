@@ -115,3 +115,10 @@ The tile strip contract is `20 × 64 = 1280` horizontal source pixels, each tile
 - Raster exports should use PNG with alpha where needed. Preserve lossless source files and record exact export dimensions in the private manifest.
 - Backgrounds and foreground decoration must be separate from collision/platform geometry.
 - Do not claim a sprite, animation, or background is integrated until it is actually loaded by the browser or native renderer and verified in a rendered capture.
+
+
+## Stage181 — enforce the GFX-01 approval gate (code-only)
+
+A new synthetic-only regression checks that the default native scene still uses the legacy debug background, that the optional background overlay is caller-owned and opt-in, and that the RGBA8 copier contains no filesystem/decoder path. It also asserts that the private GFX-01 SVG sources remain absent from the public checkout and that the documented draft/approval state stays explicit.
+
+The GFX-01 contract workflow pins Ubuntu 24.04 and runs this gate alongside the existing synthetic scroll contract and GCC/Clang crop tests. The test contains no private source bytes, Drive IDs, hashes, screenshots or public links. Passing it proves only that draft art is not silently integrated; it does not approve StreamBank v2. Full-size visual approval must remain separate from runtime integration and NeXium screenshot QA.
