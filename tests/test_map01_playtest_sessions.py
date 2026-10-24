@@ -107,10 +107,10 @@ class SessionAnalyzerTests(unittest.TestCase):
             ('P001-A2','repeat','controller','completed','400.0','2','18','3','3','0','1','yes','yes','none','P001-A2.csv',digest),
         ]
         out = io.StringIO(newline='')
-        writer = csv.writer(out, delimiter=';', lineterminator='\\r\\n', quoting=csv.QUOTE_ALL)
+        writer = csv.writer(out, delimiter=';', lineterminator='\r\n', quoting=csv.QUOTE_ALL)
         writer.writerow(m.HEADER)
         writer.writerows(session_rows)
-        raw = ('\\ufeff' + out.getvalue()).encode('utf-8')
+        raw = ('\ufeff' + out.getvalue()).encode('utf-8')
         exports = {'P001-A1.csv': identical, 'P001-A2.csv': identical}
         report = m.analyse(raw, export_metadata(exports))
         self.assertEqual(report['counts']['completed'], 2)
