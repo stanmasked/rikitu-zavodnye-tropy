@@ -1,0 +1,40 @@
+name: RIKITU Stage156 MAP01 legacy save isolation
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage156-rks1-isolation.yml'
+      - 'switch_graphical/source/main.c'
+      - 'native/rikitu_campaign.*'
+      - 'native/test_campaign_flow.c'
+      - 'tests/test-debug-save-isolation.cjs'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage156-rks1-isolation.yml'
+      - 'switch_graphical/source/main.c'
+      - 'native/rikitu_campaign.*'
+      - 'native/test_campaign_flow.c'
+      - 'tests/test-debug-save-isolation.cjs'
+permissions:
+  contents: read
+jobs:
+  map01-rks1-scope:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: GCC campaign ownership and MAP01-only legacy RKS1
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/test_campaign_flow.c -lm -o /tmp/rikitu-rks1-scope-gcc
+          /tmp/rikitu-rks1-scope-gcc
+      - name: Clang campaign ownership and MAP01-only legacy RKS1
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/test_campaign_flow.c -lm -o /tmp/rikitu-rks1-scope-clang
+          /tmp/rikitu-rks1-scope-clang
+      - name: Clang ASan and UBSan campaign state transitions
+        run: |
+          clang -std=c99 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Inative native/rikitu_rules.c native/rikitu_stage.c native/rikitu_campaign.c native/test_campaign_flow.c -lm -o /tmp/rikitu-rks1-scope-sanitize
+          /tmp/rikitu-rks1-scope-sanitize
+      - name: Static Switch main callsites reject MAP02-MAP16 RKS1 writes
+        run: node tests/test-debug-save-isolation.cjs
+      # No upload-artifact. Tests use no saved data or original game art.
