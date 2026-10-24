@@ -1,0 +1,38 @@
+name: RIKITU Stage169 MAP01 optional coin choice input route
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage169-map01-optional-coins.yml'
+      - 'native/test_map01_optional_coin_route.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'docs/STAGE169_MAP01_OPTIONAL_COINS.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage169-map01-optional-coins.yml'
+      - 'native/test_map01_optional_coin_route.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'docs/STAGE169_MAP01_OPTIONAL_COINS.md'
+permissions:
+  contents: read
+jobs:
+  optional-coins:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: GCC all MAP01 fragments, checkpoints and exit at 30 60 120Hz
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/test_map01_optional_coin_route.c -lm -o /tmp/rikitu-optional-coin-gcc
+          /tmp/rikitu-optional-coin-gcc
+      - name: Clang full native input MAP01
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/test_map01_optional_coin_route.c -lm -o /tmp/rikitu-optional-coin-clang
+          /tmp/rikitu-optional-coin-clang
+      - name: Sanitizers full native input MAP01
+        run: |
+          clang -std=c99 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/test_map01_optional_coin_route.c -lm -o /tmp/rikitu-optional-coin-san
+          /tmp/rikitu-optional-coin-san
+      # No CI artifacts, private screenshots, game saves or recorded play.
