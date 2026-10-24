@@ -50,7 +50,8 @@ int main(void) {
   s.stage.fragment_count=1;
   assert(!rikitu_map01_telemetry_observe(&m,&s,&l,0));
   assert(memcmp(&old,&m,sizeof(m))==0);
-  s.stage.fragment_count=2;
+  s.stage.fragment_count=3;
+  s.stage.fragments[2]=1;
   s.stage.completed=1;
   assert(rikitu_map01_telemetry_observe(&m,&s,&l,0));
   assert(rikitu_map01_telemetry_observe(&m,&s,&l,0));
