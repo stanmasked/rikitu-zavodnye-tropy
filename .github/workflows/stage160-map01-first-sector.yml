@@ -1,0 +1,38 @@
+name: RIKITU Stage160 MAP01 first sector input route
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/stage160-map01-first-sector.yml'
+      - 'native/test_map01_first_sector_route.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'docs/STAGE160_MAP01_FIRST_SECTOR.md'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/stage160-map01-first-sector.yml'
+      - 'native/test_map01_first_sector_route.c'
+      - 'native/rikitu_demo.*'
+      - 'native/rikitu_flower.*'
+      - 'docs/STAGE160_MAP01_FIRST_SECTOR.md'
+permissions:
+  contents: read
+jobs:
+  first-sector:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and verify real input first-sector route (GCC)
+        run: |
+          gcc -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/test_map01_first_sector_route.c -lm -o /tmp/rikitu-sector-gcc
+          /tmp/rikitu-sector-gcc
+      - name: Build and verify real input first-sector route (Clang)
+        run: |
+          clang -std=c99 -O2 -Wall -Wextra -Werror -pedantic -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/test_map01_first_sector_route.c -lm -o /tmp/rikitu-sector-clang
+          /tmp/rikitu-sector-clang
+      - name: Clang ASan and UBSan first-sector route
+        run: |
+          clang -std=c99 -O1 -g -Wall -Wextra -Werror -pedantic -fsanitize=address,undefined -fno-omit-frame-pointer -Inative native/rikitu_rules.c native/rikitu_loop.c native/rikitu_surfaces.c native/rikitu_stage.c native/rikitu_demo.c native/rikitu_enemies.c native/rikitu_boss.c native/rikitu_flower.c native/test_map01_first_sector_route.c -lm -o /tmp/rikitu-sector-san
+          /tmp/rikitu-sector-san
+      # Synthetic geometry/input only; no uploads and no personal session data.
